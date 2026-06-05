@@ -5,6 +5,19 @@ Prioritāte = dependency secība + ieņēmumu atbloķēšana. Nebūvē augstāku
 
 ---
 
+## PROGRESS (resume punkts)
+- ✅ **V1.1** Auth + RBAC + RLS izolācija
+- ✅ **V1.2** Super-admin (venue CRUD, seats, client_admin provisioning + reset/delete patch)
+- ✅ **V1.3a** Klienta admin: balvas + personāls CRUD (+ seat enforce, super_admin edit-any)
+- ✅ **V1.3b** Novērtējumu jautājumi CRUD + venue statistika
+- ✅ **V1.4a** activities + bookings (manuāli) + staff-aktivētā sesija + QR
+- ⏭️ **NĀKAMAIS: V1.4b** — play plūsmas pārrakste uz sesiju: welcome → dinamiskie review (review_questions) → Google → spin, viss piesaistīts session/staff_id/activity/booking; per-staff reitings
+- ⬜ V1.4c copy_strings (rediģējami LV/EN teksti) · V1.4d QR-loss recovery + Google reconciliation + ingestion adapteri · V1.5 vizuālie modeļi + skaņa
+
+DB migrācijas pielietas līdz **0008**. Viss kods uz `preview-test` branch.
+
+---
+
 ## KRITISKĀ ATZIŅA
 MVP ir 100% anonīms. Tavs admin, klienta admin, seat-billing, darbinieku ID/atribūcija un per-staff novērtējumi **prasa auth + lomas + RLS izolāciju pa venue**. Tas ir pamats. Bez tā neviens admin modulis nav uzbūvējams. Tāpēc V1.1.
 

@@ -1,0 +1,15 @@
+-- =====================================================================
+-- 0005 — V1.2 continued: client_admin lietotāja dzīves cikls.
+--         resetClientAdminPassword + deleteClientAdmin — tikai app-level
+--         (service_role caur Next.js server action, ne DB trigger).
+--         Šis fails dokumentē arhitektūras lēmumu; nav DDL izmaiņu.
+--
+-- DROŠĪBAS NOTEIKUMS: Jebkurš super_admin server action, kas lieto
+-- service_role klientu, OBLIGĀTI sākas ar assertSuperAdmin() pārbaudi.
+-- =====================================================================
+
+-- Nav DDL izmaiņu. Skatīt app/admin/venues/actions.ts:
+--   resetClientAdminPassword(userId) — admin.auth.admin.updateUserById
+--   deleteClientAdmin(userId)        — admin.auth.admin.deleteUser
+--   createClientAdmin(email, pwd)    — admin.auth.admin.createUser
+--                                      + profiles INSERT (role='client_admin', venue_id)
