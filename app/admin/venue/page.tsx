@@ -107,14 +107,20 @@ export default async function ClientAdminVenuePage({
             <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Personāls</p>
             <p className="text-sm text-gray-400 mt-1">Darbinieki un tip kartes</p>
           </Link>
-          <div className="bg-white rounded-2xl shadow p-6 opacity-50 cursor-not-allowed select-none">
-            <p className="text-lg font-bold text-gray-800">Novērtējumi</p>
-            <p className="text-sm text-gray-400 mt-1">Drīzumā — V1.3b</p>
-          </div>
-          <div className="bg-white rounded-2xl shadow p-6 opacity-50 cursor-not-allowed select-none">
-            <p className="text-lg font-bold text-gray-800">Statistika</p>
-            <p className="text-sm text-gray-400 mt-1">Drīzumā — V1.3b</p>
-          </div>
+          <Link
+            href={`/admin/venue/questions${q}`}
+            className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition-shadow group"
+          >
+            <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Novērtējumi</p>
+            <p className="text-sm text-gray-400 mt-1">Atsauksmju jautājumu konfigurācija</p>
+          </Link>
+          <Link
+            href={`/admin/venue/stats${q}`}
+            className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition-shadow group"
+          >
+            <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Statistika</p>
+            <p className="text-sm text-gray-400 mt-1">Spini, atsauksmes, tips</p>
+          </Link>
         </div>
       </div>
     </div>
