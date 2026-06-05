@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import Image from 'next/image'
+import QRCode from 'qrcode'
 import { supabase } from '@/lib/supabase'
 
 // ---- Types ----
@@ -189,6 +191,7 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
   const [rotation, setRotation] = useState(0)
   const [spinning, setSpinning] = useState(false)
   const [prizeVisible, setPrizeVisible] = useState(false)
+  const [qrDataUrl, setQrDataUrl] = useState('')
 
   // Tip state
   const [tipPhase, setTipPhase] = useState<TipPhase>('picking')
@@ -268,6 +271,14 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
     const t2 = setTimeout(() => setRotation(total), 50)
     return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [phase, spinResult, prizes])
+
+  // ---- Generate QR when reveal starts ----
+  useEffect(() => {
+    if (phase !== 'reveal' || !spinResult) return
+    const url = `${window.location.origin}/redeem/${spinResult.qr_token}`
+    QRCode.toDataURL(url, { width: 220, margin: 2, color: { dark: '#1a1a2e', light: '#ffffff' } })
+      .then(dataUrl => setQrDataUrl(dataUrl))
+  }, [phase, spinResult])
 
   // ---- Handlers ----
 
@@ -445,8 +456,28 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
                 <p className="text-2xl font-extrabold text-purple-700 mt-1">
                   {spinResult?.prize_name}
                 </p>
-                <p className="mt-2 text-xs font-mono text-gray-300 break-all">
-                  QR: {spinResult?.qr_token}
+                {qrDataUrl ? (
+                  <Image
+                    src={qrDataUrl}
+                    alt="QR kods"
+                    width={220}
+                    height={220}
+                    unoptimized
+                    className="mx-auto mt-4 rounded-xl"
+                  />
+                ) : (
+                  <div className="mx-auto mt-4 w-[220px] h-[220px] bg-gray-100 rounded-xl animate-pulse" />
+                )}
+                <p className="mt-3 text-xs text-gray-400 leading-relaxed">
+                  Uzrādi šo QR pie kases
+                  {spinResult?.expires_at && (
+                    <> · Derīgs līdz{' '}
+                      {new Date(spinResult.expires_at).toLocaleString('lv-LV', {
+                        day: '2-digit', month: '2-digit', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit',
+                      })}
+                    </>
+                  )}
                 </p>
                 <button
                   onClick={goToTip}
