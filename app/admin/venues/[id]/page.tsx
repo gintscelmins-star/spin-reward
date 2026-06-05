@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getAdmin } from '@/lib/supabase/admin'
 import { updateVenue } from '../actions'
 import AssignAdminForm from './AssignAdminForm'
+import AdminActionsRow from './AdminActionsRow'
 
 export default async function VenuePage({
   params,
@@ -149,14 +150,14 @@ export default async function VenuePage({
           <h2 className="text-lg font-bold text-gray-700 mb-4">Klienta administrators</h2>
 
           {adminProfiles && adminProfiles.length > 0 && (
-            <div className="mb-4 space-y-1">
+            <div className="mb-4">
               {adminProfiles.map(p => (
-                <div key={p.id} className="flex items-center gap-2 py-2 border-b border-gray-50">
-                  <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
-                  <span className="text-sm text-gray-700 font-mono">
-                    {adminEmails[p.id] ?? p.id}
-                  </span>
-                </div>
+                <AdminActionsRow
+                  key={p.id}
+                  userId={p.id}
+                  email={adminEmails[p.id] ?? p.id}
+                  venueId={id}
+                />
               ))}
             </div>
           )}

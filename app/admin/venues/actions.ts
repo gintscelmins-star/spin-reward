@@ -117,3 +117,38 @@ export async function assignClientAdmin(
   revalidatePath(`/admin/venues/${venueId}`)
   return { tempPassword }
 }
+
+// ---- resetClientAdminPassword ----
+interface ResetPasswordState {
+  tempPassword?: string
+  error?: string
+}
+
+export async function resetClientAdminPassword(
+  _prevState: ResetPasswordState | null,
+  formData: FormData
+): Promise<ResetPasswordState> {
+  await assertSuperAdmin()
+
+  const userId = formData.get('userId') as string
+  const tempPassword = crypto.randomUUID().slice(0, 8) + 'Aa1!'
+
+  const { error } = await getAdmin().auth.admin.updateUserById(userId, {
+    password: tempPassword,
+  })
+
+  if (error) return { error: error.message }
+  return { tempPassword }
+}
+
+// ---- deleteClientAdmin ----
+export async function deleteClientAdmin(formData: FormData): Promise<void> {
+  await assertSuperAdmin()
+
+  const userId = formData.get('userId') as string
+  const venueId = formData.get('venueId') as string
+
+  await getAdmin().auth.admin.deleteUser(userId)
+
+  revalidatePath(`/admin/venues/${venueId}`)
+}
