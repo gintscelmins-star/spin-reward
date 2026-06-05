@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import StaffClient from './StaffClient'
+import VenuePicker from '../_components/VenuePicker'
 
 export default async function StaffPage({
   searchParams,
@@ -28,7 +29,7 @@ export default async function StaffPage({
   const venueId =
     profile.role === 'super_admin' ? (params.venueId ?? null) : profile.venue_id
 
-  if (!venueId) redirect('/admin')
+  if (!venueId) return <VenuePicker basePath="/admin/venue/staff" />
 
   const [{ data: staff }, { data: venue }, { count: activeCount }] = await Promise.all([
     supabase.from('staff').select('*').eq('venue_id', venueId).order('name'),

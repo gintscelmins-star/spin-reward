@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import QuestionsClient from './QuestionsClient'
+import VenuePicker from '../_components/VenuePicker'
 
 export default async function QuestionsPage({
   searchParams,
@@ -28,7 +29,7 @@ export default async function QuestionsPage({
   const venueId =
     profile.role === 'super_admin' ? (params.venueId ?? null) : profile.venue_id
 
-  if (!venueId) redirect('/admin')
+  if (!venueId) return <VenuePicker basePath="/admin/venue/questions" />
 
   const { data: questions } = await supabase
     .from('review_questions')

@@ -94,16 +94,24 @@ export default async function VenuesPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <form action={toggleVenueActive}>
-                        <input type="hidden" name="id" value={v.id} />
-                        <input type="hidden" name="active" value={(!v.active).toString()} />
-                        <button
-                          type="submit"
-                          className="text-xs text-gray-400 hover:text-gray-700 underline"
+                      <div className="flex items-center gap-3">
+                        <Link
+                          href={`/admin/venue/prizes?venueId=${v.id}`}
+                          className="text-xs text-purple-600 hover:underline whitespace-nowrap"
                         >
-                          {v.active ? 'Atslēgt' : 'Ieslēgt'}
-                        </button>
-                      </form>
+                          Rediģēt config
+                        </Link>
+                        <form action={toggleVenueActive}>
+                          <input type="hidden" name="id" value={v.id} />
+                          <input type="hidden" name="active" value={(!v.active).toString()} />
+                          <button
+                            type="submit"
+                            className="text-xs text-gray-400 hover:text-gray-700 underline"
+                          >
+                            {v.active ? 'Atslēgt' : 'Ieslēgt'}
+                          </button>
+                        </form>
+                      </div>
                     </td>
                   </tr>
                 )

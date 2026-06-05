@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import VenuePicker from '../_components/VenuePicker'
 
 type Period = '7d' | '30d' | 'all'
 
@@ -50,7 +51,7 @@ export default async function StatsPage({
   const venueId =
     profile.role === 'super_admin' ? (params.venueId ?? null) : profile.venue_id
 
-  if (!venueId) redirect('/admin')
+  if (!venueId) return <VenuePicker basePath="/admin/venue/stats" />
 
   const period: Period = (params.period as Period) === '7d' || (params.period as Period) === '30d'
     ? (params.period as Period)
