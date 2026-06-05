@@ -108,6 +108,27 @@ export default async function ClientAdminVenuePage({
             <p className="text-sm text-gray-400 mt-1">Darbinieki un tip kartes</p>
           </Link>
           <Link
+            href={`/admin/venue/activities${q}`}
+            className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition-shadow group"
+          >
+            <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Spēles</p>
+            <p className="text-sm text-gray-400 mt-1">Aktivitāšu veidi un sesiju plūsma</p>
+          </Link>
+          <Link
+            href={`/admin/venue/bookings${q}`}
+            className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition-shadow group"
+          >
+            <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Rezervācijas</p>
+            <p className="text-sm text-gray-400 mt-1">Šodienas un nākamo dienu saraksts</p>
+          </Link>
+          <Link
+            href={profile.role === 'super_admin' ? `/admin/session?venueId=${venueId}` : '/admin/session'}
+            className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition-shadow group"
+          >
+            <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Sesija</p>
+            <p className="text-sm text-gray-400 mt-1">Aktivizēt spin un parādīt QR klientam</p>
+          </Link>
+          <Link
             href={`/admin/venue/questions${q}`}
             className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition-shadow group"
           >
@@ -116,7 +137,7 @@ export default async function ClientAdminVenuePage({
           </Link>
           <Link
             href={`/admin/venue/stats${q}`}
-            className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition-shadow group"
+            className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition-shadow group col-span-2"
           >
             <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Statistika</p>
             <p className="text-sm text-gray-400 mt-1">Spini, atsauksmes, tips</p>
