@@ -60,6 +60,7 @@ export async function updateVenue(id: string, formData: FormData) {
   if (error) throw new Error(error.message)
   revalidatePath(`/admin/venues/${id}`)
   revalidatePath('/admin/venues')
+  redirect(`/admin/venues/${id}`)
 }
 
 // ---- toggleVenueActive ----
