@@ -20,6 +20,7 @@ interface Venue {
   id: string
   name: string
   google_place_id: string | null
+  default_locale: string | null
 }
 
 interface Staff {
@@ -32,6 +33,23 @@ interface SpinResult {
   prize_name: string
   qr_token: string
   expires_at: string
+}
+
+// ---- Copy fallbacks (LV) ----
+const DEFAULTS: Record<string, string> = {
+  welcome_title:    'Paldies par apmeklējumu',
+  welcome_subtitle: 'Novērtējiet mūs un grieziet laimes ratu ar balvām!',
+  welcome_button:   'Sākt',
+  review_intro:     'Kā bija?',
+  review_button:    'Atklāt balvu',
+  google_prompt:    'Atstāt atsauksmi Google',
+  spin_button:      'Griezt!',
+  prize_title:      'Tu ieguvi:',
+  prize_valid:      'Derīgs līdz',
+  prize_show:       'Uzrādi šo QR pie kases',
+  tip_prompt:       'Izvēlies dzeramnaudu',
+  tip_skip:         'Izlaist',
+  end_title:        'Uz tikšanos!',
 }
 
 // ---- Constants ----
@@ -180,6 +198,14 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
   const [venue, setVenue] = useState<Venue | null>(null)
   const [staff, setStaff] = useState<Staff[]>([])
 
+  // i18n
+  const [locale, setLocale] = useState<string>('lv')
+  const [copy, setCopy] = useState<Record<string, string>>({})
+
+  function t(key: string): string {
+    return copy[key] ?? DEFAULTS[key] ?? key
+  }
+
   // Spin result + review
   const [spinResult, setSpinResult] = useState<SpinResult | null>(null)
   const [reviewId, setReviewId] = useState<string | null>(null)
@@ -207,14 +233,14 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
   const fetchData = useCallback(async () => {
     const { data: v } = await supabase
       .from('venues')
-      .select('id, name, google_place_id')
+      .select('id, name, google_place_id, default_locale')
       .eq('slug', venueSlug)
       .single()
 
     if (!v) {
       // Dev fallback — no Supabase venue found
       return {
-        venue: { id: 'dev', name: venueSlug, google_place_id: 'ChIJdev' } as Venue,
+        venue: { id: 'dev', name: venueSlug, google_place_id: 'ChIJdev', default_locale: 'lv' } as Venue,
         prizes: [
           { id: '1', name: 'Kafija',   color: '#FF6B6B' },
           { id: '2', name: 'Tēja',     color: '#4ECDC4' },
@@ -247,9 +273,23 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
       setVenue(result.venue)
       setPrizes(result.prizes)
       setStaff(result.staff)
+      setLocale(result.venue.default_locale ?? 'lv')
       setLoading(false)
     })
   }, [fetchData])
+
+  // Load copy strings when venue or locale changes
+  useEffect(() => {
+    if (!venue) return
+    supabase.rpc('get_copy', { p_venue_id: venue.id, p_locale: locale })
+      .then(({ data }) => {
+        const map: Record<string, string> = {}
+        for (const row of (data ?? []) as { key: string; value: string }[]) {
+          map[row.key] = row.value
+        }
+        setCopy(map)
+      })
+  }, [venue, locale])
 
   // ---- Trigger reveal animation when entering reveal state ----
   // All setState calls deferred to callbacks so they are not synchronous in effect body
@@ -381,25 +421,36 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white flex flex-col items-center">
-      <div className="w-full max-w-sm px-4 pt-10 pb-8 flex flex-col items-center gap-6">
+
+      {/* Locale toggle */}
+      <div className="w-full max-w-sm px-4 pt-4 flex justify-end gap-1">
+        {['lv', 'en'].map(loc => (
+          <button
+            key={loc}
+            onClick={() => setLocale(loc)}
+            className={`px-2 py-0.5 text-xs font-bold rounded transition-colors ${
+              locale === loc ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            {loc.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
+      <div className="w-full max-w-sm px-4 pt-6 pb-8 flex flex-col items-center gap-6">
 
         {/* ========== IDLE ========== */}
         {phase === 'idle' && (
           <>
             <h1 className="text-2xl font-bold text-gray-800 text-center">
-              {venue?.name ?? 'Griez un laimē!'}
+              {venue?.name ?? t('welcome_title')}
             </h1>
-            <WheelSvg
-              prizes={prizes}
-              rotation={rotation}
-              spinning={false}
-              onSpinEnd={() => {}}
-            />
+            <WheelSvg prizes={prizes} rotation={rotation} spinning={false} onSpinEnd={() => {}} />
             <button
               onClick={handleSpin}
               className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white text-xl font-extrabold rounded-2xl shadow-lg active:scale-95 transition-all"
             >
-              GRIEZT
+              {t('spin_button')}
             </button>
           </>
         )}
@@ -408,25 +459,18 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
         {phase === 'review' && (
           <div className="w-full flex flex-col items-center">
             <div style={{ filter: 'brightness(0.3)', transition: 'filter 0.3s' }}>
-              <WheelSvg
-                prizes={prizes}
-                rotation={rotation}
-                spinning={false}
-                onSpinEnd={() => {}}
-              />
+              <WheelSvg prizes={prizes} rotation={rotation} spinning={false} onSpinEnd={() => {}} />
             </div>
             <div className="w-full bg-white rounded-3xl shadow-2xl p-6 -mt-10 z-10">
-              <h2 className="text-xl font-bold text-center text-gray-800">
-                Novērtē vizīti
-              </h2>
+              <h2 className="text-xl font-bold text-center text-gray-800">{t('review_intro')}</h2>
               <p className="text-sm text-center text-gray-400 mt-1 mb-5">
-                lai atklātu savu balvu
+                {locale === 'en' ? 'to reveal your prize' : 'lai atklātu savu balvu'}
               </p>
               <Stars value={rating} onChange={setRating} />
               <textarea
                 value={comment}
                 onChange={e => setComment(e.target.value)}
-                placeholder="Komentārs (nav obligāti)"
+                placeholder={locale === 'en' ? 'Comment (optional)' : 'Komentārs (nav obligāti)'}
                 rows={3}
                 className="w-full mt-4 px-3 py-2 text-sm border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-300"
               />
@@ -435,7 +479,7 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
                 disabled={!rating || saving}
                 className="mt-4 w-full py-3 bg-purple-600 text-white font-bold rounded-xl disabled:opacity-40 active:scale-95 transition-all"
               >
-                {saving ? 'Saglabā...' : 'Atklāt balvu'}
+                {saving ? (locale === 'en' ? 'Saving...' : 'Saglabā...') : t('review_button')}
               </button>
             </div>
           </div>
@@ -444,38 +488,29 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
         {/* ========== REVEAL ========== */}
         {phase === 'reveal' && (
           <>
-            <WheelSvg
-              prizes={prizes}
-              rotation={rotation}
-              spinning={spinning}
-              onSpinEnd={handleSpinEnd}
-            />
+            <WheelSvg prizes={prizes} rotation={rotation} spinning={spinning} onSpinEnd={handleSpinEnd} />
             {prizeVisible && (
               <div className="w-full bg-white rounded-3xl shadow-xl p-6 text-center">
-                <p className="text-sm text-gray-400">Tu ieguvi:</p>
+                <p className="text-sm text-gray-400">{t('prize_title')}</p>
                 <p className="text-2xl font-extrabold text-purple-700 mt-1">
                   {spinResult?.prize_name}
                 </p>
                 {qrDataUrl ? (
                   <Image
-                    src={qrDataUrl}
-                    alt="QR kods"
-                    width={220}
-                    height={220}
-                    unoptimized
-                    className="mx-auto mt-4 rounded-xl"
+                    src={qrDataUrl} alt="QR kods" width={220} height={220}
+                    unoptimized className="mx-auto mt-4 rounded-xl"
                   />
                 ) : (
                   <div className="mx-auto mt-4 w-[220px] h-[220px] bg-gray-100 rounded-xl animate-pulse" />
                 )}
                 <p className="mt-3 text-xs text-gray-400 leading-relaxed">
-                  Uzrādi šo QR pie kases
+                  {t('prize_show')}
                   {spinResult?.expires_at && (
-                    <> · Derīgs līdz{' '}
-                      {new Date(spinResult.expires_at).toLocaleString('lv-LV', {
-                        day: '2-digit', month: '2-digit', year: 'numeric',
-                        hour: '2-digit', minute: '2-digit',
-                      })}
+                    <> · {t('prize_valid')}{' '}
+                      {new Date(spinResult.expires_at).toLocaleString(
+                        locale === 'en' ? 'en-GB' : 'lv-LV',
+                        { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }
+                      )}
                     </>
                   )}
                 </p>
@@ -483,7 +518,7 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
                   onClick={goToTip}
                   className="mt-5 w-full py-3 bg-purple-600 text-white font-bold rounded-xl active:scale-95 transition-all"
                 >
-                  Tālāk
+                  {locale === 'en' ? 'Next' : 'Tālāk'}
                 </button>
               </div>
             )}
@@ -493,13 +528,14 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
         {/* ========== TIP ========== */}
         {phase === 'tip' && (
           <>
-            {/* Tip picking */}
             {tipPhase === 'picking' && (
               <div className="w-full bg-white rounded-3xl shadow-xl p-6 text-center">
                 <p className="text-xl font-bold text-gray-800">
-                  Vēlies pateikties {staff[0]?.name}?
+                  {locale === 'en'
+                    ? `Thank ${staff[0]?.name}?`
+                    : `Vēlies pateikties ${staff[0]?.name}?`}
                 </p>
-                <p className="text-sm text-gray-400 mt-1 mb-6">Izvēlies dzeramnaudu</p>
+                <p className="text-sm text-gray-400 mt-1 mb-6">{t('tip_prompt')}</p>
 
                 {!showCustom ? (
                   <div className="grid grid-cols-2 gap-3">
@@ -516,7 +552,7 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
                       onClick={() => setShowCustom(true)}
                       className="py-4 text-lg font-bold border-2 border-gray-200 rounded-xl hover:bg-gray-50 active:scale-95 transition-all"
                     >
-                      Cita
+                      {locale === 'en' ? 'Other' : 'Cita'}
                     </button>
                   </div>
                 ) : (
@@ -524,9 +560,7 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
                     <div className="flex items-center border-2 border-purple-200 rounded-xl px-4 py-2">
                       <span className="text-gray-400 font-bold mr-1">€</span>
                       <input
-                        type="number"
-                        min="0.5"
-                        step="0.5"
+                        type="number" min="0.5" step="0.5"
                         value={customAmt}
                         onChange={e => setCustomAmt(e.target.value)}
                         placeholder="0.00"
@@ -542,13 +576,10 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
                       disabled={!customAmt || parseFloat(customAmt) <= 0}
                       className="py-3 bg-purple-600 text-white font-bold rounded-xl disabled:opacity-40 active:scale-95 transition-all"
                     >
-                      Apstiprināt
+                      {locale === 'en' ? 'Confirm' : 'Apstiprināt'}
                     </button>
-                    <button
-                      onClick={() => setShowCustom(false)}
-                      className="py-2 text-sm text-gray-400"
-                    >
-                      Atpakaļ
+                    <button onClick={() => setShowCustom(false)} className="py-2 text-sm text-gray-400">
+                      {locale === 'en' ? 'Back' : 'Atpakaļ'}
                     </button>
                   </div>
                 )}
@@ -557,38 +588,42 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
                   onClick={afterTip}
                   className="mt-4 w-full py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  Izlaist
+                  {t('tip_skip')}
                 </button>
               </div>
             )}
 
-            {/* Google review prompt */}
             {tipPhase === 'post' && !finished && showGoogle && (
               <div className="w-full bg-white rounded-3xl shadow-xl p-6 text-center">
-                <p className="text-xl font-bold text-gray-800">Paldies!</p>
+                <p className="text-xl font-bold text-gray-800">
+                  {locale === 'en' ? 'Thank you!' : 'Paldies!'}
+                </p>
                 <p className="text-sm text-gray-400 mt-1 mb-6">
-                  Tavs viedoklis palīdz citiem atrast labākās vietas
+                  {locale === 'en'
+                    ? 'Your review helps others find the best places'
+                    : 'Tavs viedoklis palīdz citiem atrast labākās vietas'}
                 </p>
                 <button
                   onClick={handleGoogleReview}
                   className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl active:scale-95 transition-all"
                 >
-                  Atstāj atsauksmi Google
+                  {t('google_prompt')}
                 </button>
                 <button
                   onClick={() => setFinished(true)}
                   className="mt-3 w-full py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  Izlaist
+                  {t('tip_skip')}
                 </button>
               </div>
             )}
 
-            {/* End screen */}
             {(finished || (tipPhase === 'post' && !showGoogle)) && (
               <div className="w-full bg-white rounded-3xl shadow-xl p-10 text-center">
-                <p className="text-3xl font-extrabold text-gray-800">Uz tikšanos!</p>
-                <p className="text-gray-400 mt-2 text-sm">Paldies par apmeklējumu</p>
+                <p className="text-3xl font-extrabold text-gray-800">{t('end_title')}</p>
+                <p className="text-gray-400 mt-2 text-sm">
+                  {locale === 'en' ? 'Thank you for your visit' : 'Paldies par apmeklējumu'}
+                </p>
               </div>
             )}
           </>

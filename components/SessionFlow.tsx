@@ -5,32 +5,20 @@ import Image from 'next/image'
 import QRCode from 'qrcode'
 import { supabase } from '@/lib/supabase'
 
-// Copy strings (LV) — rediģējamie; EN nāk V1.4c
-const T = {
-  loading:      'Ielādē...',
-  invalid:      'Šī sesija jau izmantota vai nederīga',
-  welcome_sub:  'Novērtējiet mūs un grieziet laimes ratu ar balvām!',
-  start:        'Sākt',
-  review_title: 'Kā bija?',
-  submit:       'Atklāt balvu',
-  saving:       'Saglabā...',
-  google_title: 'Paldies!',
-  google_sub:   'Tavs viedoklis palīdz citiem atrast labākās vietas',
-  google_cta:   'Atstāt atsauksmi Google',
-  skip:         'Izlaist',
-  you_won:      'Tu ieguvi:',
-  valid_until:  'Derīgs līdz',
-  show_qr:      'Uzrādi šo QR pie kases',
-  next:         'Tālāk',
-  tip_sub:      'Izvēlies dzeramnaudu',
-  custom:       'Cita',
-  confirm:      'Apstiprināt',
-  back:         'Atpakaļ',
-  bye:          'Uz tikšanos!',
-  bye_sub:      'Paldies par apmeklējumu',
-  greeting:     (name: string | null) =>
-    `Paldies par apmeklējumu${name ? `, ${name}` : ''}!`,
-  tip_title:    (name: string) => `Pateikties ${name}?`,
+// ---- Copy fallbacks (LV) shown before get_copy loads ----
+const DEFAULTS: Record<string, string> = {
+  welcome_title:    'Paldies par apmeklējumu',
+  welcome_subtitle: 'Novērtējiet mūs un grieziet laimes ratu ar balvām!',
+  welcome_button:   'Sākt',
+  review_intro:     'Kā bija?',
+  review_button:    'Atklāt balvu',
+  google_prompt:    'Atstāt atsauksmi Google',
+  prize_title:      'Tu ieguvi:',
+  prize_valid:      'Derīgs līdz',
+  prize_show:       'Uzrādi šo QR pie kases',
+  tip_prompt:       'Izvēlies dzeramnaudu',
+  tip_skip:         'Izlaist',
+  end_title:        'Uz tikšanos!',
 }
 
 type Phase = 'idle' | 'welcome' | 'review' | 'google' | 'spin' | 'reveal' | 'tip'
@@ -46,6 +34,7 @@ interface SessionCtx {
   staff_id: string | null
   activity_id: string | null
   revolut_link: string | null
+  default_locale: string | null
 }
 
 interface ReviewQuestion {
@@ -163,11 +152,7 @@ function Stars({ value, onChange }: { value: number; onChange(n: number): void }
   return (
     <div className="flex justify-center gap-2">
       {[1, 2, 3, 4, 5].map(n => (
-        <button
-          key={n}
-          onClick={() => onChange(n)}
-          className="text-4xl leading-none focus:outline-none"
-        >
+        <button key={n} onClick={() => onChange(n)} className="text-4xl leading-none focus:outline-none">
           <span className={n <= value ? 'text-yellow-400' : 'text-gray-200'}>★</span>
         </button>
       ))}
@@ -218,15 +203,24 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
   const [showCustom, setShowCustom] = useState(false)
   const [customAmt, setCustomAmt] = useState('')
 
+  // ---- i18n ----
+  const [locale, setLocale] = useState<string>('lv')
+  const [copy, setCopy] = useState<Record<string, string>>({})
+
+  function t(key: string): string {
+    return copy[key] ?? DEFAULTS[key] ?? key
+  }
+
   const spinCalled = useRef(false)
 
-  // Mount: load session context, questions, prizes
+  // ---- Mount: load session context, questions, prizes ----
   useEffect(() => {
     async function init() {
       const { data } = await supabase.rpc('get_session_context', { p_session_id: sessionId })
       const c = (data as SessionCtx[] | null)?.[0]
       if (!c) { setInvalid(true); return }
       setCtx(c)
+      setLocale(c.default_locale ?? 'lv')
 
       const [{ data: qs }, { data: ps }] = await Promise.all([
         supabase
@@ -245,7 +239,20 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
     init()
   }, [sessionId])
 
-  // Enter spin: call RPC once (ref guards StrictMode double-invoke)
+  // ---- Load copy strings when ctx or locale changes ----
+  useEffect(() => {
+    if (!ctx) return
+    supabase.rpc('get_copy', { p_venue_id: ctx.venue_id, p_locale: locale })
+      .then(({ data }) => {
+        const map: Record<string, string> = {}
+        for (const row of (data ?? []) as { key: string; value: string }[]) {
+          map[row.key] = row.value
+        }
+        setCopy(map)
+      })
+  }, [ctx, locale])
+
+  // ---- Enter spin: call RPC once (ref guards StrictMode double-invoke) ----
   useEffect(() => {
     if (phase !== 'spin' || spinCalled.current) return
     spinCalled.current = true
@@ -259,7 +266,7 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
     })
   }, [phase, sessionId, prizes])
 
-  // Start wheel animation once result arrives
+  // ---- Start wheel animation once result arrives ----
   useEffect(() => {
     if (phase !== 'spin' || !spinResult || !prizes.length) return
     const idx = Math.max(0, prizes.findIndex(p => p.name === spinResult.prize_name))
@@ -272,7 +279,7 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
     return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [phase, spinResult, prizes])
 
-  // Generate QR as soon as token is known
+  // ---- Generate QR as soon as token is known ----
   useEffect(() => {
     if (!spinResult) return
     QRCode.toDataURL(
@@ -343,38 +350,53 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
   const allAnswered = questions.length > 0 && questions.every(q => answers[q.id] != null)
 
   // ---- Invalid session ----
-
   if (invalid) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-8">
-        <p className="text-center text-gray-500 text-lg">{T.invalid}</p>
+        <p className="text-center text-gray-500 text-lg">Šī sesija jau izmantota vai nederīga</p>
       </div>
     )
   }
 
-  // ---- Loading (idle = context fetch in progress) ----
-
+  // ---- Loading ----
   if (phase === 'idle') {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400 text-lg animate-pulse">{T.loading}</p>
+        <p className="text-gray-400 text-lg animate-pulse">Ielādē...</p>
       </div>
     )
   }
 
   // ---- Main render ----
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white flex flex-col items-center">
-      <div className="w-full max-w-sm px-4 pt-10 pb-8 flex flex-col items-center gap-6">
+
+      {/* Locale toggle */}
+      <div className="w-full max-w-sm px-4 pt-4 flex justify-end gap-1">
+        {['lv', 'en'].map(loc => (
+          <button
+            key={loc}
+            onClick={() => setLocale(loc)}
+            className={`px-2 py-0.5 text-xs font-bold rounded transition-colors ${
+              locale === loc
+                ? 'bg-purple-600 text-white'
+                : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            {loc.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
+      <div className="w-full max-w-sm px-4 pt-6 pb-8 flex flex-col items-center gap-6">
 
         {/* ===== WELCOME ===== */}
         {phase === 'welcome' && (
           <div className="w-full bg-white rounded-3xl shadow-xl p-8 text-center flex flex-col gap-4">
             <h1 className="text-2xl font-bold text-gray-800">
-              {T.greeting(ctx?.customer_name ?? null)}
+              {t('welcome_title')}{ctx?.customer_name ? `, ${ctx.customer_name}` : ''}!
             </h1>
-            <p className="text-gray-500 text-sm">{T.welcome_sub}</p>
+            <p className="text-gray-500 text-sm">{t('welcome_subtitle')}</p>
             {ctx?.activity_name && (
               <p className="text-purple-600 font-semibold text-sm">{ctx.activity_name}</p>
             )}
@@ -382,7 +404,7 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
               onClick={() => setPhase(questions.length ? 'review' : 'spin')}
               className="mt-2 w-full py-4 bg-purple-600 hover:bg-purple-700 text-white text-xl font-extrabold rounded-2xl shadow-lg active:scale-95 transition-all"
             >
-              {T.start}
+              {t('welcome_button')}
             </button>
           </div>
         )}
@@ -390,20 +412,14 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
         {/* ===== REVIEW ===== */}
         {phase === 'review' && (
           <div className="w-full bg-white rounded-3xl shadow-2xl p-6 flex flex-col gap-5">
-            <h2 className="text-xl font-bold text-center text-gray-800">{T.review_title}</h2>
+            <h2 className="text-xl font-bold text-center text-gray-800">{t('review_intro')}</h2>
             {questions.map(q => (
               <div key={q.id} className="flex flex-col gap-2">
                 <p className="text-sm font-medium text-gray-600 text-center">{q.question_text}</p>
                 {q.type === 'stars' ? (
-                  <Stars
-                    value={answers[q.id] ?? 0}
-                    onChange={v => setAnswers(a => ({ ...a, [q.id]: v }))}
-                  />
+                  <Stars value={answers[q.id] ?? 0} onChange={v => setAnswers(a => ({ ...a, [q.id]: v }))} />
                 ) : (
-                  <Thumbs
-                    value={answers[q.id] ?? null}
-                    onChange={v => setAnswers(a => ({ ...a, [q.id]: v }))}
-                  />
+                  <Thumbs value={answers[q.id] ?? null} onChange={v => setAnswers(a => ({ ...a, [q.id]: v }))} />
                 )}
               </div>
             ))}
@@ -412,7 +428,7 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
               disabled={!allAnswered || saving}
               className="mt-2 w-full py-3 bg-purple-600 text-white font-bold rounded-xl disabled:opacity-40 active:scale-95 transition-all"
             >
-              {saving ? T.saving : T.submit}
+              {saving ? (locale === 'en' ? 'Saving...' : 'Saglabā...') : t('review_button')}
             </button>
           </div>
         )}
@@ -420,19 +436,25 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
         {/* ===== GOOGLE ===== */}
         {phase === 'google' && (
           <div className="w-full bg-white rounded-3xl shadow-xl p-8 text-center flex flex-col gap-4">
-            <p className="text-xl font-bold text-gray-800">{T.google_title}</p>
-            <p className="text-sm text-gray-400">{T.google_sub}</p>
+            <p className="text-xl font-bold text-gray-800">
+              {locale === 'en' ? 'Thank you!' : 'Paldies!'}
+            </p>
+            <p className="text-sm text-gray-400">
+              {locale === 'en'
+                ? 'Your review helps others find the best places'
+                : 'Tavs viedoklis palīdz citiem atrast labākās vietas'}
+            </p>
             <button
               onClick={handleGoogleReview}
               className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl active:scale-95 transition-all"
             >
-              {T.google_cta}
+              {t('google_prompt')}
             </button>
             <button
               onClick={() => setPhase('spin')}
               className="py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
             >
-              {T.skip}
+              {t('tip_skip')}
             </button>
           </div>
         )}
@@ -440,51 +462,34 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
         {/* ===== SPIN ===== */}
         {phase === 'spin' && (
           <>
-            <WheelSvg
-              prizes={prizes}
-              rotation={rotation}
-              spinning={spinning}
-              onSpinEnd={handleSpinEnd}
-            />
-            {!spinResult && (
-              <p className="text-gray-400 animate-pulse">{T.loading}</p>
-            )}
+            <WheelSvg prizes={prizes} rotation={rotation} spinning={spinning} onSpinEnd={handleSpinEnd} />
+            {!spinResult && <p className="text-gray-400 animate-pulse">Ielādē...</p>}
           </>
         )}
 
         {/* ===== REVEAL ===== */}
         {phase === 'reveal' && spinResult && (
           <>
-            <WheelSvg
-              prizes={prizes}
-              rotation={rotation}
-              spinning={false}
-              onSpinEnd={() => {}}
-            />
+            <WheelSvg prizes={prizes} rotation={rotation} spinning={false} onSpinEnd={() => {}} />
             <div className="w-full bg-white rounded-3xl shadow-xl p-6 text-center">
-              <p className="text-sm text-gray-400">{T.you_won}</p>
+              <p className="text-sm text-gray-400">{t('prize_title')}</p>
               <p className="text-2xl font-extrabold text-purple-700 mt-1">{spinResult.prize_name}</p>
               {qrDataUrl ? (
                 <Image
-                  src={qrDataUrl}
-                  alt="QR kods"
-                  width={220}
-                  height={220}
-                  unoptimized
-                  className="mx-auto mt-4 rounded-xl"
+                  src={qrDataUrl} alt="QR kods" width={220} height={220}
+                  unoptimized className="mx-auto mt-4 rounded-xl"
                 />
               ) : (
                 <div className="mx-auto mt-4 w-[220px] h-[220px] bg-gray-100 rounded-xl animate-pulse" />
               )}
               <p className="mt-3 text-xs text-gray-400 leading-relaxed">
-                {T.show_qr}
+                {t('prize_show')}
                 {spinResult.expires_at && (
-                  <>
-                    {' '}· {T.valid_until}{' '}
-                    {new Date(spinResult.expires_at).toLocaleString('lv-LV', {
-                      day: '2-digit', month: '2-digit', year: 'numeric',
-                      hour: '2-digit', minute: '2-digit',
-                    })}
+                  <> · {t('prize_valid')}{' '}
+                    {new Date(spinResult.expires_at).toLocaleString(
+                      locale === 'en' ? 'en-GB' : 'lv-LV',
+                      { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }
+                    )}
                   </>
                 )}
               </p>
@@ -492,7 +497,7 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
                 onClick={() => setPhase('tip')}
                 className="mt-5 w-full py-3 bg-purple-600 text-white font-bold rounded-xl active:scale-95 transition-all"
               >
-                {T.next}
+                {locale === 'en' ? 'Next' : 'Tālāk'}
               </button>
             </div>
           </>
@@ -503,8 +508,12 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
           <>
             {ctx?.staff_name && !tipDone ? (
               <div className="w-full bg-white rounded-3xl shadow-xl p-6 text-center flex flex-col gap-4">
-                <p className="text-xl font-bold text-gray-800">{T.tip_title(ctx.staff_name)}</p>
-                <p className="text-sm text-gray-400">{T.tip_sub}</p>
+                <p className="text-xl font-bold text-gray-800">
+                  {locale === 'en'
+                    ? `Thank ${ctx.staff_name}?`
+                    : `Pateikties ${ctx.staff_name}?`}
+                </p>
+                <p className="text-sm text-gray-400">{t('tip_prompt')}</p>
 
                 {!showCustom ? (
                   <div className="grid grid-cols-2 gap-3">
@@ -521,7 +530,7 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
                       onClick={() => setShowCustom(true)}
                       className="py-4 text-lg font-bold border-2 border-gray-200 rounded-xl hover:bg-gray-50 active:scale-95 transition-all"
                     >
-                      {T.custom}
+                      {locale === 'en' ? 'Other' : 'Cita'}
                     </button>
                   </div>
                 ) : (
@@ -529,9 +538,7 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
                     <div className="flex items-center border-2 border-purple-200 rounded-xl px-4 py-2">
                       <span className="text-gray-400 font-bold mr-1">€</span>
                       <input
-                        type="number"
-                        min="0.5"
-                        step="0.5"
+                        type="number" min="0.5" step="0.5"
                         value={customAmt}
                         onChange={e => setCustomAmt(e.target.value)}
                         placeholder="0.00"
@@ -547,13 +554,10 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
                       disabled={!customAmt || parseFloat(customAmt) <= 0}
                       className="py-3 bg-purple-600 text-white font-bold rounded-xl disabled:opacity-40 active:scale-95 transition-all"
                     >
-                      {T.confirm}
+                      {locale === 'en' ? 'Confirm' : 'Apstiprināt'}
                     </button>
-                    <button
-                      onClick={() => setShowCustom(false)}
-                      className="py-2 text-sm text-gray-400"
-                    >
-                      {T.back}
+                    <button onClick={() => setShowCustom(false)} className="py-2 text-sm text-gray-400">
+                      {locale === 'en' ? 'Back' : 'Atpakaļ'}
                     </button>
                   </div>
                 )}
@@ -562,13 +566,15 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
                   onClick={() => setTipDone(true)}
                   className="py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  {T.skip}
+                  {t('tip_skip')}
                 </button>
               </div>
             ) : (
               <div className="w-full bg-white rounded-3xl shadow-xl p-10 text-center">
-                <p className="text-3xl font-extrabold text-gray-800">{T.bye}</p>
-                <p className="text-gray-400 mt-2 text-sm">{T.bye_sub}</p>
+                <p className="text-3xl font-extrabold text-gray-800">{t('end_title')}</p>
+                <p className="text-gray-400 mt-2 text-sm">
+                  {locale === 'en' ? 'Thank you for your visit' : 'Paldies par apmeklējumu'}
+                </p>
               </div>
             )}
           </>
