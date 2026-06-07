@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import QRCode from 'qrcode'
 import { supabase } from '@/lib/supabase'
+import { sendPrizeSms } from '@/app/actions'
 
 // ---- Copy fallbacks (LV) shown before get_copy loads ----
 const DEFAULTS: Record<string, string> = {
@@ -29,6 +30,7 @@ interface SessionCtx {
   venue_name: string
   google_place_id: string | null
   customer_name: string | null
+  customer_phone: string | null
   activity_name: string | null
   staff_name: string | null
   staff_id: string | null
@@ -203,6 +205,12 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
   const [showCustom, setShowCustom] = useState(false)
   const [customAmt, setCustomAmt] = useState('')
 
+  // ---- SMS state ----
+  const [smsPhone, setSmsPhone] = useState('')
+  const [smsSending, setSmsSending] = useState(false)
+  const [smsStatus, setSmsStatus] = useState<'idle' | 'sent' | 'error'>('idle')
+  const [smsError, setSmsError] = useState('')
+
   // ---- i18n ----
   const [locale, setLocale] = useState<string>('lv')
   const [copy, setCopy] = useState<Record<string, string>>({})
@@ -221,6 +229,7 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
       if (!c) { setInvalid(true); return }
       setCtx(c)
       setLocale(c.default_locale ?? 'lv')
+      setSmsPhone(c.customer_phone ?? '')
 
       const [{ data: qs }, { data: ps }] = await Promise.all([
         supabase
@@ -340,6 +349,21 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
       '_blank'
     )
     setPhase('spin')
+  }
+
+  async function handleSendSms() {
+    if (!spinResult || !smsPhone.trim()) return
+    setSmsSending(true)
+    const { ok, error } = await sendPrizeSms(
+      spinResult.qr_token, smsPhone.trim(), window.location.origin
+    )
+    setSmsSending(false)
+    if (ok) {
+      setSmsStatus('sent')
+    } else {
+      setSmsStatus('error')
+      setSmsError(error ?? 'SMS kļūda')
+    }
   }
 
   function handleTip(_amountCents: number) {
@@ -493,6 +517,45 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
                   </>
                 )}
               </p>
+
+              {/* Save prize section */}
+              <div className="mt-4 border-t border-gray-100 pt-4 text-left">
+                <p className="text-xs font-semibold text-gray-500 mb-2 text-center">
+                  {locale === 'en' ? 'Save your prize' : 'Saglabā savu balvu'}
+                </p>
+                <a
+                  href={`/prize/${spinResult.qr_token}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full py-2.5 text-sm font-bold text-purple-600 border-2 border-purple-200 rounded-xl hover:bg-purple-50 transition-colors text-center"
+                >
+                  {locale === 'en' ? 'Open prize page' : 'Atvērt balvas lapu'}
+                </a>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    type="tel"
+                    value={smsPhone}
+                    onChange={e => setSmsPhone(e.target.value)}
+                    placeholder="+371 2x xxx xxx"
+                    className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300"
+                  />
+                  <button
+                    onClick={handleSendSms}
+                    disabled={smsSending || !smsPhone.trim() || smsStatus === 'sent'}
+                    className="px-3 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg disabled:opacity-40 active:scale-95 transition-all whitespace-nowrap"
+                  >
+                    {smsSending
+                      ? '...'
+                      : smsStatus === 'sent'
+                        ? (locale === 'en' ? 'Sent!' : 'Nosūtīts!')
+                        : (locale === 'en' ? 'Send SMS' : 'Sūtīt SMS')}
+                  </button>
+                </div>
+                {smsStatus === 'error' && (
+                  <p className="mt-1 text-xs text-red-400">{smsError}</p>
+                )}
+              </div>
+
               <button
                 onClick={() => setPhase('tip')}
                 className="mt-5 w-full py-3 bg-purple-600 text-white font-bold rounded-xl active:scale-95 transition-all"

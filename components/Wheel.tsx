@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import Image from 'next/image'
 import QRCode from 'qrcode'
 import { supabase } from '@/lib/supabase'
+import { sendPrizeSms } from '@/app/actions'
 
 // ---- Types ----
 
@@ -206,6 +207,12 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
     return copy[key] ?? DEFAULTS[key] ?? key
   }
 
+  // SMS state
+  const [smsPhone, setSmsPhone] = useState('')
+  const [smsSending, setSmsSending] = useState(false)
+  const [smsStatus, setSmsStatus] = useState<'idle' | 'sent' | 'error'>('idle')
+  const [smsError, setSmsError] = useState('')
+
   // Spin result + review
   const [spinResult, setSpinResult] = useState<SpinResult | null>(null)
   const [reviewId, setReviewId] = useState<string | null>(null)
@@ -321,6 +328,21 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
   }, [phase, spinResult])
 
   // ---- Handlers ----
+
+  async function handleSendSms() {
+    if (!spinResult || !smsPhone.trim()) return
+    setSmsSending(true)
+    const { ok, error } = await sendPrizeSms(
+      spinResult.qr_token, smsPhone.trim(), window.location.origin
+    )
+    setSmsSending(false)
+    if (ok) {
+      setSmsStatus('sent')
+    } else {
+      setSmsStatus('error')
+      setSmsError(error ?? 'SMS kļūda')
+    }
+  }
 
   async function handleSpin() {
     if (!venue) return
@@ -514,6 +536,45 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
                     </>
                   )}
                 </p>
+
+                {/* Save prize section */}
+                <div className="mt-4 border-t border-gray-100 pt-4 text-left">
+                  <p className="text-xs font-semibold text-gray-500 mb-2 text-center">
+                    {locale === 'en' ? 'Save your prize' : 'Saglabā savu balvu'}
+                  </p>
+                  <a
+                    href={`/prize/${spinResult?.qr_token}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full py-2.5 text-sm font-bold text-purple-600 border-2 border-purple-200 rounded-xl hover:bg-purple-50 transition-colors text-center"
+                  >
+                    {locale === 'en' ? 'Open prize page' : 'Atvērt balvas lapu'}
+                  </a>
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      type="tel"
+                      value={smsPhone}
+                      onChange={e => setSmsPhone(e.target.value)}
+                      placeholder="+371 2x xxx xxx"
+                      className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300"
+                    />
+                    <button
+                      onClick={handleSendSms}
+                      disabled={smsSending || !smsPhone.trim() || smsStatus === 'sent'}
+                      className="px-3 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg disabled:opacity-40 active:scale-95 transition-all whitespace-nowrap"
+                    >
+                      {smsSending
+                        ? '...'
+                        : smsStatus === 'sent'
+                          ? (locale === 'en' ? 'Sent!' : 'Nosūtīts!')
+                          : (locale === 'en' ? 'Send SMS' : 'Sūtīt SMS')}
+                    </button>
+                  </div>
+                  {smsStatus === 'error' && (
+                    <p className="mt-1 text-xs text-red-400">{smsError}</p>
+                  )}
+                </div>
+
                 <button
                   onClick={goToTip}
                   className="mt-5 w-full py-3 bg-purple-600 text-white font-bold rounded-xl active:scale-95 transition-all"
