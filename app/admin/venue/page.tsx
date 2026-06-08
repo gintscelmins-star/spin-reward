@@ -2,22 +2,35 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 export default function VenueDashboard() {
-  const [ready, setReady] = useState(false)
+  const [ready,  setReady]  = useState(false)
   const [allowed, setAllowed] = useState(false)
+  const [role,   setRole]   = useState<string | null>(null)
+  const [email,  setEmail]  = useState<string | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { setReady(true); return }
+      setEmail(user.email ?? null)
       supabase.from('profiles').select('role').eq('id', user.id).single()
         .then(({ data }) => {
-          if (data && ['client_admin', 'super_admin'].includes(data.role)) setAllowed(true)
+          if (data && ['client_admin', 'super_admin'].includes(data.role)) {
+            setAllowed(true)
+            setRole(data.role)
+          }
           setReady(true)
         })
     })
   }, [])
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
   if (!ready) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -26,15 +39,31 @@ export default function VenueDashboard() {
   )
 
   if (!allowed) return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center flex-col gap-4">
       <p className="text-red-500">Nav piekļuves tiesību</p>
+      <Link href="/login" className="text-purple-600 underline text-sm">Pieslēgties</Link>
     </div>
   )
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">Venue pārvaldnieks</h1>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">Venue pārvaldnieks</h1>
+            {email && (
+              <p className="text-xs text-gray-400 mt-0.5">
+                {email} · <span className="font-medium">{role}</span>
+              </p>
+            )}
+          </div>
+          <button
+            onClick={handleLogout}
+            className="text-sm text-gray-500 hover:text-red-500 transition-colors"
+          >
+            Iziet
+          </button>
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <Link
             href="/admin/venue/texts"
