@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
 const COPY_KEYS = [
@@ -185,9 +186,9 @@ export default function TextsEditor({ venueId: paramVenueId }: Props) {
       <div className="max-w-3xl mx-auto p-6">
 
         <div className="flex items-center gap-3 mb-6">
-          <a href="/admin/venue" className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+          <Link href="/admin/venue" className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
             ← Atpakaļ
-          </a>
+          </Link>
           <h1 className="text-xl font-bold text-gray-800">
             {isGlobal ? 'Globālie noklusējumi' : 'Tekstu pielāgojumi'}
           </h1>

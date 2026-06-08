@@ -22,7 +22,6 @@ export default function PrizePage({
   const [status, setStatus] = useState<PageStatus>('loading')
   const [prizeName, setPrizeName] = useState('')
   const [expiresAt, setExpiresAt] = useState('')
-  const [token, setToken] = useState('')
   const [qrDataUrl, setQrDataUrl] = useState('')
   const called = useRef(false)
 
@@ -31,7 +30,6 @@ export default function PrizePage({
     called.current = true
 
     params.then(({ token: t }) => {
-      setToken(t)
       supabase.rpc('check_spin', { p_qr_token: t }).then(({ data }) => {
         const row = (data as CheckRow[] | null)?.[0]
         if (!row) { setStatus('not_found'); return }

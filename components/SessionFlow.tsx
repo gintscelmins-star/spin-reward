@@ -366,7 +366,7 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
     }
   }
 
-  function handleTip(_amountCents: number) {
+  function handleTip() {
     if (ctx?.revolut_link) window.open(ctx.revolut_link, '_blank')
     setTipDone(true)
   }
@@ -583,7 +583,7 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
                     {[100, 200, 500].map(cents => (
                       <button
                         key={cents}
-                        onClick={() => handleTip(cents)}
+                        onClick={() => handleTip()}
                         className="py-4 text-lg font-bold border-2 border-purple-200 rounded-xl hover:bg-purple-50 hover:border-purple-500 active:scale-95 transition-all"
                       >
                         €{cents / 100}
@@ -612,7 +612,7 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
                     <button
                       onClick={() => {
                         const cents = Math.round(parseFloat(customAmt) * 100)
-                        if (cents > 0) handleTip(cents)
+                        if (cents > 0) handleTip()
                       }}
                       disabled={!customAmt || parseFloat(customAmt) <= 0}
                       className="py-3 bg-purple-600 text-white font-bold rounded-xl disabled:opacity-40 active:scale-95 transition-all"
