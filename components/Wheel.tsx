@@ -192,10 +192,12 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
   async function handleReviewSubmit() {
     if (!rating || !venue) return
     setSaving(true)
-    const { data } = await supabase.from('reviews')
-      .insert({ venue_id: venue.id, session_id: sessionId.current, rating, comment: comment.trim() || null, google_redirected: false })
-      .select('id').single()
-    if (data) setReviewId(data.id)
+    const rid = crypto.randomUUID()
+    await supabase.from('reviews').insert({
+      id: rid, venue_id: venue.id, session_id: sessionId.current,
+      rating, comment: comment.trim() || null, google_redirected: false,
+    })
+    setReviewId(rid)
     setSaving(false)
     setPhase('reveal')
   }

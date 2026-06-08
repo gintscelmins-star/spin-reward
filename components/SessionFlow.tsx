@@ -32,7 +32,6 @@ interface SessionCtx {
   venue_name: string
   google_place_id: string | null
   customer_name: string | null
-  customer_phone: string | null
   activity_name: string | null
   staff_name: string | null
   staff_id: string | null
@@ -43,7 +42,7 @@ interface SessionCtx {
 
 interface ReviewQuestion {
   id: string
-  question_text: string
+  label: string
   type: 'stars' | 'thumbs'
   sort_order: number
 }
@@ -123,11 +122,10 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
       if (!c) { setInvalid(true); return }
       setCtx(c)
       setLocale(c.default_locale ?? 'lv')
-      setSmsPhone(c.customer_phone ?? '')
 
       const [{ data: qs }, { data: ps }] = await Promise.all([
         supabase.from('review_questions')
-          .select('id, question_text, type, sort_order')
+          .select('id, label, type, sort_order')
           .eq('venue_id', c.venue_id).eq('active', true).order('sort_order'),
         supabase.rpc('get_wheel_prizes', { p_venue_slug: c.venue_slug }),
       ])
@@ -191,17 +189,15 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
     if (!answered.length) return
     setSaving(true)
     const avg = answered.reduce((s, q) => s + answers[q.id], 0) / answered.length
-    const { data: rv } = await supabase.from('reviews').insert({
-      venue_id: ctx.venue_id, session_id: sessionId, rating: avg,
+    const rid = crypto.randomUUID()
+    await supabase.from('reviews').insert({
+      id: rid, venue_id: ctx.venue_id, session_id: sessionId, rating: avg,
       staff_id: ctx.staff_id, activity_id: ctx.activity_id, google_redirected: false,
-    }).select('id').single()
-    const rid = (rv as { id: string } | null)?.id ?? null
-    if (rid) {
-      setReviewId(rid)
-      await supabase.from('review_answers').insert(
-        answered.map(q => ({ review_id: rid, question_id: q.id, venue_id: ctx.venue_id, rating: answers[q.id] }))
-      )
-    }
+    })
+    setReviewId(rid)
+    await supabase.from('review_answers').insert(
+      answered.map(q => ({ review_id: rid, question_id: q.id, venue_id: ctx.venue_id, rating: answers[q.id] }))
+    )
     setSaving(false)
     setPhase(avg >= 4 && ctx.google_place_id ? 'google' : 'spin')
   }
@@ -287,7 +283,7 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
             <h2 className="text-xl font-black text-center text-gray-800">{t('review_intro')}</h2>
             {questions.map(q => (
               <div key={q.id} className="flex flex-col gap-2">
-                <p className="text-sm font-medium text-gray-600 text-center">{q.question_text}</p>
+                <p className="text-sm font-medium text-gray-600 text-center">{q.label}</p>
                 {q.type === 'stars'
                   ? <Stars value={answers[q.id] ?? 0} onChange={v => setAnswers(a => ({ ...a, [q.id]: v }))} />
                   : <Thumbs value={answers[q.id] ?? null} onChange={v => setAnswers(a => ({ ...a, [q.id]: v }))} />}
