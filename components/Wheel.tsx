@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Image from 'next/image'
 import QRCode from 'qrcode'
+import confetti from 'canvas-confetti'
 import { supabase } from '@/lib/supabase'
 import { sendPrizeSms } from '@/app/actions'
+import PrizeWheel, { type WheelSegment } from '@/components/PrizeWheel'
 
 // ---- Types ----
 
@@ -36,7 +38,6 @@ interface SpinResult {
   expires_at: string
 }
 
-// ---- Copy fallbacks (LV) ----
 const DEFAULTS: Record<string, string> = {
   welcome_title:    'Paldies par apmeklējumu',
   welcome_subtitle: 'Novērtējiet mūs un grieziet laimes ratu ar balvām!',
@@ -53,304 +54,132 @@ const DEFAULTS: Record<string, string> = {
   end_title:        'Uz tikšanos!',
 }
 
-// ---- Constants ----
-
-const PALETTE = [
-  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4',
-  '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F',
-]
-
-// ---- Helpers ----
-
 function getSessionId(): string {
   const KEY = 'sr_sid'
   let id = localStorage.getItem(KEY)
-  if (!id) {
-    id = crypto.randomUUID()
-    localStorage.setItem(KEY, id)
-  }
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem(KEY, id) }
   return id
 }
 
-// ---- WheelSvg sub-component ----
-
-interface WheelSvgProps {
-  prizes: Prize[]
-  rotation: number
-  spinning: boolean
-  onSpinEnd(): void
-}
-
-function WheelSvg({ prizes, rotation, spinning, onSpinEnd }: WheelSvgProps) {
-  const wrapRef = useRef<HTMLDivElement>(null)
-  const n = prizes.length || 8
-  const C = 150, R = 135, r = 28
-  const step = (2 * Math.PI) / n
-
-  const segments = Array.from({ length: n }, (_, i) => {
-    const a1 = i * step - Math.PI / 2
-    const a2 = a1 + step
-    const cos1 = Math.cos(a1), sin1 = Math.sin(a1)
-    const cos2 = Math.cos(a2), sin2 = Math.sin(a2)
-    const large = step > Math.PI ? 1 : 0
-    const d = [
-      `M${C + r * cos1},${C + r * sin1}`,
-      `L${C + R * cos1},${C + R * sin1}`,
-      `A${R},${R},0,${large},1,${C + R * cos2},${C + R * sin2}`,
-      `L${C + r * cos2},${C + r * sin2}`,
-      `A${r},${r},0,${large},0,${C + r * cos1},${C + r * sin1}Z`,
-    ].join('')
-    const am = a1 + step / 2
-    const tr = (R + r) / 2
-    const raw = prizes[i]?.name ?? `#${i + 1}`
-    return {
-      d,
-      fill: prizes[i]?.color ?? PALETTE[i % PALETTE.length],
-      tx: C + tr * Math.cos(am),
-      ty: C + tr * Math.sin(am),
-      tdeg: am * (180 / Math.PI) + 90,
-      label: raw.length > 9 ? raw.slice(0, 9) + '…' : raw,
-    }
-  })
-
-  useEffect(() => {
-    const el = wrapRef.current
-    if (!el || !spinning) return
-    el.addEventListener('transitionend', onSpinEnd, { once: true })
-    return () => el.removeEventListener('transitionend', onSpinEnd)
-  }, [spinning, onSpinEnd])
-
-  return (
-    <div className="relative flex justify-center select-none">
-      {/* Pointer */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10 -translate-y-0.5">
-        <svg width="20" height="24" viewBox="0 0 20 24">
-          <polygon points="0,0 20,0 10,24" fill="#1a1a2e" />
-        </svg>
-      </div>
-      {/* Rotating wheel */}
-      <div
-        ref={wrapRef}
-        style={{
-          transform: `rotate(${rotation}deg)`,
-          transition: spinning ? 'transform 4s cubic-bezier(0.17,0.67,0.12,0.99)' : 'none',
-          transformOrigin: 'center',
-          willChange: spinning ? 'transform' : 'auto',
-        }}
-      >
-        <svg
-          width="300"
-          height="300"
-          viewBox="0 0 300 300"
-          className="drop-shadow-xl"
-        >
-          {segments.map((s, i) => (
-            <g key={i}>
-              <path d={s.d} fill={s.fill} stroke="white" strokeWidth="1.5" />
-              <text
-                x={s.tx}
-                y={s.ty}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize="9"
-                fontWeight="700"
-                fill="white"
-                transform={`rotate(${s.tdeg},${s.tx},${s.ty})`}
-                style={{ pointerEvents: 'none' }}
-              >
-                {s.label}
-              </text>
-            </g>
-          ))}
-          <circle cx={C} cy={C} r={r} fill="white" stroke="#e2e8f0" strokeWidth="2" />
-          <circle cx={C} cy={C} r="10" fill="#1a1a2e" />
-        </svg>
-      </div>
-    </div>
-  )
-}
-
-// ---- Stars sub-component ----
-
 function Stars({ value, onChange }: { value: number; onChange(n: number): void }) {
   return (
-    <div className="flex justify-center gap-2">
+    <div className="flex justify-center gap-3">
       {[1, 2, 3, 4, 5].map(n => (
-        <button
-          key={n}
-          onClick={() => onChange(n)}
-          className="text-4xl leading-none focus:outline-none"
-        >
-          <span className={n <= value ? 'text-yellow-400' : 'text-gray-200'}>★</span>
+        <button key={n} onClick={() => onChange(n)} className="focus:outline-none">
+          <span className={`text-4xl transition-transform ${n <= value ? 'text-yellow-400 scale-110' : 'text-gray-200'}`}>★</span>
         </button>
       ))}
     </div>
   )
 }
 
-// ---- Main component ----
-
 export default function Wheel({ venueSlug }: { venueSlug: string }) {
-  const [phase, setPhase] = useState<Phase>('idle')
-  const [loading, setLoading] = useState(true)
-
-  // Data
-  const [prizes, setPrizes] = useState<Prize[]>([])
-  const [venue, setVenue] = useState<Venue | null>(null)
-  const [staff, setStaff] = useState<Staff[]>([])
-
-  // i18n
-  const [locale, setLocale] = useState<string>('lv')
-  const [copy, setCopy] = useState<Record<string, string>>({})
-
-  function t(key: string): string {
-    return copy[key] ?? DEFAULTS[key] ?? key
-  }
-
-  // SMS state
-  const [smsPhone, setSmsPhone] = useState('')
-  const [smsSending, setSmsSending] = useState(false)
-  const [smsStatus, setSmsStatus] = useState<'idle' | 'sent' | 'error'>('idle')
-  const [smsError, setSmsError] = useState('')
-
-  // Spin result + review
-  const [spinResult, setSpinResult] = useState<SpinResult | null>(null)
-  const [reviewId, setReviewId] = useState<string | null>(null)
-  const [rating, setRating] = useState(0)
-  const [comment, setComment] = useState('')
-  const [saving, setSaving] = useState(false)
-
-  // Wheel animation
-  const [rotation, setRotation] = useState(0)
-  const [spinning, setSpinning] = useState(false)
+  const [phase,        setPhase]        = useState<Phase>('idle')
+  const [loading,      setLoading]      = useState(true)
+  const [prizes,       setPrizes]       = useState<Prize[]>([])
+  const [venue,        setVenue]        = useState<Venue | null>(null)
+  const [staff,        setStaff]        = useState<Staff[]>([])
+  const [locale,       setLocale]       = useState('lv')
+  const [copy,         setCopy]         = useState<Record<string, string>>({})
+  const [smsPhone,     setSmsPhone]     = useState('')
+  const [smsSending,   setSmsSending]   = useState(false)
+  const [smsStatus,    setSmsStatus]    = useState<'idle' | 'sent' | 'error'>('idle')
+  const [smsError,     setSmsError]     = useState('')
+  const [spinResult,   setSpinResult]   = useState<SpinResult | null>(null)
+  const [reviewId,     setReviewId]     = useState<string | null>(null)
+  const [rating,       setRating]       = useState(0)
+  const [comment,      setComment]      = useState('')
+  const [saving,       setSaving]       = useState(false)
   const [prizeVisible, setPrizeVisible] = useState(false)
-  const [qrDataUrl, setQrDataUrl] = useState('')
+  const [qrDataUrl,    setQrDataUrl]    = useState('')
+  const [tipPhase,     setTipPhase]     = useState<TipPhase>('picking')
+  const [showCustom,   setShowCustom]   = useState(false)
+  const [customAmt,    setCustomAmt]    = useState('')
+  const [showGoogle,   setShowGoogle]   = useState(false)
+  const [finished,     setFinished]     = useState(false)
 
-  // Tip state
-  const [tipPhase, setTipPhase] = useState<TipPhase>('picking')
-  const [showCustom, setShowCustom] = useState(false)
-  const [customAmt, setCustomAmt] = useState('')
-  const [showGoogle, setShowGoogle] = useState(false)
-  const [finished, setFinished] = useState(false)
+  // Wheel animation state (passed to PrizeWheel)
+  const [targetIndex,   setTargetIndex]   = useState(-1)
+  const [wheelSpinning, setWheelSpinning] = useState(false)
 
   const sessionId = useRef('')
 
-  // ---- Mount: load venue, prizes, staff ----
-  // Pure async fetch — no setState; all state updates happen in the .then() callback
-  const fetchData = useCallback(async () => {
-    const { data: v } = await supabase
-      .from('venues')
-      .select('id, name, google_place_id, default_locale')
-      .eq('slug', venueSlug)
-      .single()
+  function t(key: string) { return copy[key] ?? DEFAULTS[key] ?? key }
 
-    if (!v) {
-      // Dev fallback — no Supabase venue found
-      return {
-        venue: { id: 'dev', name: venueSlug, google_place_id: 'ChIJdev', default_locale: 'lv' } as Venue,
-        prizes: [
-          { id: '1', name: 'Kafija',   color: '#FF6B6B' },
-          { id: '2', name: 'Tēja',     color: '#4ECDC4' },
-          { id: '3', name: '-10%',     color: '#45B7D1' },
-          { id: '4', name: 'Deserts',  color: '#96CEB4' },
-          { id: '5', name: 'Kokteiļi', color: '#FFEAA7' },
-          { id: '6', name: 'Brokastis',color: '#DDA0DD' },
-          { id: '7', name: 'Vēlreiz!', color: '#98D8C8' },
-          { id: '8', name: '-50%',     color: '#F7DC6F' },
-        ] as Prize[],
-        staff: [{ id: '1', name: 'Anna', stripe_tip_link: '#' }] as Staff[],
+  // ---- Data loading ----
+  useEffect(() => {
+    sessionId.current = getSessionId()
+
+    async function load() {
+      const { data: v } = await supabase
+        .from('venues').select('id, name, google_place_id, default_locale')
+        .eq('slug', venueSlug).single()
+
+      const devVenue: Venue = { id: 'dev', name: venueSlug, google_place_id: 'ChIJdev', default_locale: 'lv' }
+      const devPrizes: Prize[] = [
+        { id:'1', name:'Kafija',    color:'#B91C1C' },
+        { id:'2', name:'Tēja',      color:'#FFF8E7' },
+        { id:'3', name:'-10%',      color:'#B91C1C' },
+        { id:'4', name:'Deserts',   color:'#FFF8E7' },
+        { id:'5', name:'Kokteiļi',  color:'#B91C1C' },
+        { id:'6', name:'Brokastis', color:'#FFF8E7' },
+        { id:'7', name:'Vēlreiz!',  color:'#B91C1C' },
+        { id:'8', name:'-50%',      color:'#FFF8E7' },
+      ]
+
+      if (!v) {
+        setVenue(devVenue); setPrizes(devPrizes)
+        setStaff([{ id:'1', name:'Anna', stripe_tip_link:'#' }])
+        setLoading(false); return
       }
+
+      const [{ data: p }, { data: s }] = await Promise.all([
+        supabase.rpc('get_wheel_prizes', { p_venue_slug: venueSlug }),
+        supabase.from('staff').select('id, name, stripe_tip_link')
+          .eq('venue_id', v.id).eq('active', true),
+      ])
+      setVenue(v as Venue)
+      setPrizes((p ?? devPrizes) as Prize[])
+      setStaff((s ?? []) as Staff[])
+      setLocale(v.default_locale ?? 'lv')
+      setLoading(false)
     }
-
-    const [{ data: p }, { data: s }] = await Promise.all([
-      supabase.rpc('get_wheel_prizes', { p_venue_slug: venueSlug }),
-      supabase
-        .from('staff')
-        .select('id, name, stripe_tip_link')
-        .eq('venue_id', v.id)
-        .eq('active', true),
-    ])
-
-    return { venue: v as Venue, prizes: (p ?? []) as Prize[], staff: (s ?? []) as Staff[] }
+    load()
   }, [venueSlug])
 
   useEffect(() => {
-    sessionId.current = getSessionId()
-    fetchData().then(result => {
-      setVenue(result.venue)
-      setPrizes(result.prizes)
-      setStaff(result.staff)
-      setLocale(result.venue.default_locale ?? 'lv')
-      setLoading(false)
-    })
-  }, [fetchData])
-
-  // Load copy strings when venue or locale changes
-  useEffect(() => {
     if (!venue) return
-    supabase.rpc('get_copy', { p_venue_id: venue.id, p_locale: locale })
-      .then(({ data }) => {
-        const map: Record<string, string> = {}
-        for (const row of (data ?? []) as { key: string; value: string }[]) {
-          map[row.key] = row.value
-        }
-        setCopy(map)
-      })
+    supabase.rpc('get_copy', { p_venue_id: venue.id, p_locale: locale }).then(({ data }) => {
+      const map: Record<string, string> = {}
+      for (const row of (data ?? []) as { key: string; value: string }[]) map[row.key] = row.value
+      setCopy(map)
+    })
   }, [venue, locale])
 
-  // ---- Trigger reveal animation when entering reveal state ----
-  // All setState calls deferred to callbacks so they are not synchronous in effect body
+  // Trigger wheel animation when entering reveal phase
   useEffect(() => {
-    if (phase !== 'reveal' || !spinResult) return
-
-    if (!prizes.length) {
-      const t = setTimeout(() => setPrizeVisible(true), 0)
-      return () => clearTimeout(t)
-    }
-
+    if (phase !== 'reveal' || !spinResult || !prizes.length) return
     const idx = Math.max(0, prizes.findIndex(p => p.name === spinResult.prize_name))
-    const n = prizes.length
-    const segCenter = idx * (360 / n) + 360 / (2 * n)
-    const landing = (360 - segCenter + 360) % 360
-    const total = 5 * 360 + landing
-
-    const t1 = setTimeout(() => setSpinning(true), 0)
-    const t2 = setTimeout(() => setRotation(total), 50)
+    const t1 = setTimeout(() => setTargetIndex(idx), 0)
+    const t2 = setTimeout(() => setWheelSpinning(true), 80)
     return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [phase, spinResult, prizes])
 
-  // ---- Generate QR when reveal starts ----
+  // Generate QR when reveal starts
   useEffect(() => {
     if (phase !== 'reveal' || !spinResult) return
-    const url = `${window.location.origin}/redeem/${spinResult.qr_token}`
-    QRCode.toDataURL(url, { width: 220, margin: 2, color: { dark: '#1a1a2e', light: '#ffffff' } })
-      .then(dataUrl => setQrDataUrl(dataUrl))
+    QRCode.toDataURL(`${window.location.origin}/redeem/${spinResult.qr_token}`,
+      { width: 220, margin: 2, color: { dark: '#1a1a2e', light: '#ffffff' } })
+      .then(d => setQrDataUrl(d))
   }, [phase, spinResult])
 
   // ---- Handlers ----
 
-  async function handleSendSms() {
-    if (!spinResult || !smsPhone.trim()) return
-    setSmsSending(true)
-    const { ok, error } = await sendPrizeSms(
-      spinResult.qr_token, smsPhone.trim(), window.location.origin
-    )
-    setSmsSending(false)
-    if (ok) {
-      setSmsStatus('sent')
-    } else {
-      setSmsStatus('error')
-      setSmsError(error ?? 'SMS kļūda')
-    }
-  }
-
   async function handleSpin() {
     if (!venue) return
     const { data } = await supabase.rpc('spin_wheel', {
-      p_venue_slug: venueSlug,
-      p_session_id: sessionId.current,
+      p_venue_slug: venueSlug, p_session_id: sessionId.current,
     })
-    // Dev fallback — RPC not available yet, pick random local prize
     const result: SpinResult = data?.[0] ?? {
       prize_name: prizes[Math.floor(Math.random() * prizes.length)]?.name ?? 'Balva',
       qr_token: crypto.randomUUID().slice(0, 8).toUpperCase(),
@@ -363,33 +192,33 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
   async function handleReviewSubmit() {
     if (!rating || !venue) return
     setSaving(true)
-    const { data } = await supabase
-      .from('reviews')
-      .insert({
-        venue_id: venue.id,
-        session_id: sessionId.current,
-        rating,
-        comment: comment.trim() || null,
-        google_redirected: false,
-      })
-      .select('id')
-      .single()
+    const { data } = await supabase.from('reviews')
+      .insert({ venue_id: venue.id, session_id: sessionId.current, rating, comment: comment.trim() || null, google_redirected: false })
+      .select('id').single()
     if (data) setReviewId(data.id)
     setSaving(false)
     setPhase('reveal')
   }
 
   const handleSpinEnd = useCallback(() => {
-    setSpinning(false)
+    setWheelSpinning(false)
     setPrizeVisible(true)
+    confetti({ particleCount: 120, spread: 80, origin: { y: 0.55 }, colors: ['#D4AF37','#B91C1C','#FFF8E7','#7C3AED'] })
   }, [])
+
+  async function handleSendSms() {
+    if (!spinResult || !smsPhone.trim()) return
+    setSmsSending(true)
+    const { ok, error } = await sendPrizeSms(spinResult.qr_token, smsPhone.trim(), window.location.origin)
+    setSmsSending(false)
+    if (ok) setSmsStatus('sent')
+    else { setSmsStatus('error'); setSmsError(error ?? 'SMS kļūda') }
+  }
 
   function goToTip() {
     if (!staff.length) {
-      // No staff — skip tip UI, go straight to post-tip flow
       const eligible = rating >= 4 && !!venue?.google_place_id
-      setTipPhase('post')
-      setShowGoogle(eligible)
+      setTipPhase('post'); setShowGoogle(eligible)
       if (!eligible) setFinished(true)
     }
     setPhase('tip')
@@ -398,11 +227,8 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
   async function handleTip(amountCents: number) {
     if (!venue || !staff[0]) return
     await supabase.from('tips').insert({
-      venue_id: venue.id,
-      staff_id: staff[0].id,
-      amount_cents: amountCents,
-      currency: 'EUR',
-      status: 'pending',
+      venue_id: venue.id, staff_id: staff[0].id,
+      amount_cents: amountCents, currency: 'EUR', status: 'pending',
     })
     window.open(staff[0].stripe_tip_link, '_blank')
     afterTip()
@@ -410,81 +236,67 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
 
   function afterTip() {
     const eligible = rating >= 4 && !!venue?.google_place_id
-    setTipPhase('post')
-    setShowGoogle(eligible)
+    setTipPhase('post'); setShowGoogle(eligible)
     if (!eligible) setFinished(true)
   }
 
   async function handleGoogleReview() {
-    if (reviewId) {
-      await supabase
-        .from('reviews')
-        .update({ google_redirected: true })
-        .eq('id', reviewId)
-    }
-    window.open(
-      `https://search.google.com/local/writereview?placeid=${venue!.google_place_id}`,
-      '_blank'
-    )
+    if (reviewId) await supabase.from('reviews').update({ google_redirected: true }).eq('id', reviewId)
+    window.open(`https://search.google.com/local/writereview?placeid=${venue!.google_place_id}`, '_blank')
     setFinished(true)
   }
 
-  // ---- Loading ----
+  // ---- Derived ----
+  const segments: WheelSegment[] = prizes.map(p => ({ label: p.name, color: p.color }))
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400 text-lg animate-pulse">Ielādē...</p>
-      </div>
-    )
-  }
-
-  // ---- Render ----
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-900 to-purple-950">
+      <p className="text-purple-300 text-lg animate-pulse">Ielādē...</p>
+    </div>
+  )
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white flex flex-col items-center">
+    <div className="min-h-screen bg-gradient-to-b from-[#1a0533] to-[#0d0d1a] flex flex-col items-center">
 
       {/* Locale toggle */}
       <div className="w-full max-w-sm px-4 pt-4 flex justify-end gap-1">
         {['lv', 'en'].map(loc => (
-          <button
-            key={loc}
-            onClick={() => setLocale(loc)}
-            className={`px-2 py-0.5 text-xs font-bold rounded transition-colors ${
-              locale === loc ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-gray-600'
-            }`}
-          >
+          <button key={loc} onClick={() => setLocale(loc)}
+            className={`px-2.5 py-0.5 text-xs font-bold rounded-md transition-colors ${
+              locale === loc ? 'bg-purple-500 text-white' : 'text-purple-400 hover:text-purple-200'
+            }`}>
             {loc.toUpperCase()}
           </button>
         ))}
       </div>
 
-      <div className="w-full max-w-sm px-4 pt-6 pb-8 flex flex-col items-center gap-6">
+      <div className="w-full max-w-sm px-4 pt-4 pb-10 flex flex-col items-center gap-5">
 
-        {/* ========== IDLE ========== */}
+        {/* ===== IDLE ===== */}
         {phase === 'idle' && (
-          <>
-            <h1 className="text-2xl font-bold text-gray-800 text-center">
-              {venue?.name ?? t('welcome_title')}
-            </h1>
-            <WheelSvg prizes={prizes} rotation={rotation} spinning={false} onSpinEnd={() => {}} />
+          <div className="animate-fade-up w-full flex flex-col items-center gap-5">
+            <div className="text-center">
+              <h1 className="text-2xl font-black text-white tracking-tight">{venue?.name ?? t('welcome_title')}</h1>
+              <p className="text-purple-300 text-sm mt-1">{t('welcome_subtitle')}</p>
+            </div>
+            <PrizeWheel segments={segments} targetIndex={-1} spinning={false} onSpinEnd={() => {}} />
             <button
               onClick={handleSpin}
-              className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white text-xl font-extrabold rounded-2xl shadow-lg active:scale-95 transition-all"
+              className="w-full py-4 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white text-xl font-black rounded-2xl shadow-lg shadow-purple-900/50 active:scale-95 transition-all"
             >
               {t('spin_button')}
             </button>
-          </>
+          </div>
         )}
 
-        {/* ========== REVIEW ========== */}
+        {/* ===== REVIEW ===== */}
         {phase === 'review' && (
-          <div className="w-full flex flex-col items-center">
-            <div style={{ filter: 'brightness(0.3)', transition: 'filter 0.3s' }}>
-              <WheelSvg prizes={prizes} rotation={rotation} spinning={false} onSpinEnd={() => {}} />
+          <div className="animate-fade-up w-full flex flex-col items-center">
+            <div style={{ filter: 'brightness(0.25)' }}>
+              <PrizeWheel segments={segments} targetIndex={-1} spinning={false} onSpinEnd={() => {}} />
             </div>
             <div className="w-full bg-white rounded-3xl shadow-2xl p-6 -mt-10 z-10">
-              <h2 className="text-xl font-bold text-center text-gray-800">{t('review_intro')}</h2>
+              <h2 className="text-xl font-black text-center text-gray-800">{t('review_intro')}</h2>
               <p className="text-sm text-center text-gray-400 mt-1 mb-5">
                 {locale === 'en' ? 'to reveal your prize' : 'lai atklātu savu balvu'}
               </p>
@@ -499,7 +311,7 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
               <button
                 onClick={handleReviewSubmit}
                 disabled={!rating || saving}
-                className="mt-4 w-full py-3 bg-purple-600 text-white font-bold rounded-xl disabled:opacity-40 active:scale-95 transition-all"
+                className="mt-4 w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl disabled:opacity-40 active:scale-95 transition-all"
               >
                 {saving ? (locale === 'en' ? 'Saving...' : 'Saglabā...') : t('review_button')}
               </button>
@@ -507,23 +319,24 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
           </div>
         )}
 
-        {/* ========== REVEAL ========== */}
+        {/* ===== REVEAL ===== */}
         {phase === 'reveal' && (
           <>
-            <WheelSvg prizes={prizes} rotation={rotation} spinning={spinning} onSpinEnd={handleSpinEnd} />
+            <PrizeWheel
+              segments={segments}
+              targetIndex={targetIndex}
+              spinning={wheelSpinning}
+              onSpinEnd={handleSpinEnd}
+            />
             {prizeVisible && (
-              <div className="w-full bg-white rounded-3xl shadow-xl p-6 text-center">
-                <p className="text-sm text-gray-400">{t('prize_title')}</p>
-                <p className="text-2xl font-extrabold text-purple-700 mt-1">
-                  {spinResult?.prize_name}
-                </p>
+              <div className="animate-pop-in w-full bg-white rounded-3xl shadow-2xl p-6 text-center">
+                <p className="text-xs font-bold tracking-widest text-purple-400 uppercase">{t('prize_title')}</p>
+                <p className="text-3xl font-black text-purple-700 mt-2 leading-tight">{spinResult?.prize_name}</p>
                 {qrDataUrl ? (
-                  <Image
-                    src={qrDataUrl} alt="QR kods" width={220} height={220}
-                    unoptimized className="mx-auto mt-4 rounded-xl"
-                  />
+                  <Image src={qrDataUrl} alt="QR kods" width={220} height={220} unoptimized
+                    className="mx-auto mt-4 rounded-2xl shadow-md" />
                 ) : (
-                  <div className="mx-auto mt-4 w-[220px] h-[220px] bg-gray-100 rounded-xl animate-pulse" />
+                  <div className="mx-auto mt-4 w-[220px] h-[220px] bg-gray-100 rounded-2xl animate-pulse" />
                 )}
                 <p className="mt-3 text-xs text-gray-400 leading-relaxed">
                   {t('prize_show')}
@@ -531,54 +344,35 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
                     <> · {t('prize_valid')}{' '}
                       {new Date(spinResult.expires_at).toLocaleString(
                         locale === 'en' ? 'en-GB' : 'lv-LV',
-                        { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }
+                        { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }
                       )}
                     </>
                   )}
                 </p>
-
-                {/* Save prize section */}
                 <div className="mt-4 border-t border-gray-100 pt-4 text-left">
                   <p className="text-xs font-semibold text-gray-500 mb-2 text-center">
                     {locale === 'en' ? 'Save your prize' : 'Saglabā savu balvu'}
                   </p>
-                  <a
-                    href={`/prize/${spinResult?.qr_token}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full py-2.5 text-sm font-bold text-purple-600 border-2 border-purple-200 rounded-xl hover:bg-purple-50 transition-colors text-center"
-                  >
+                  <a href={`/prize/${spinResult?.qr_token}`} target="_blank" rel="noopener noreferrer"
+                    className="block w-full py-2.5 text-sm font-bold text-purple-600 border-2 border-purple-200 rounded-xl hover:bg-purple-50 transition-colors text-center">
                     {locale === 'en' ? 'Open prize page' : 'Atvērt balvas lapu'}
                   </a>
                   <div className="mt-2 flex gap-2">
-                    <input
-                      type="tel"
-                      value={smsPhone}
-                      onChange={e => setSmsPhone(e.target.value)}
+                    <input type="tel" value={smsPhone} onChange={e => setSmsPhone(e.target.value)}
                       placeholder="+371 2x xxx xxx"
-                      className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300"
-                    />
-                    <button
-                      onClick={handleSendSms}
+                      className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" />
+                    <button onClick={handleSendSms}
                       disabled={smsSending || !smsPhone.trim() || smsStatus === 'sent'}
-                      className="px-3 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg disabled:opacity-40 active:scale-95 transition-all whitespace-nowrap"
-                    >
-                      {smsSending
-                        ? '...'
-                        : smsStatus === 'sent'
-                          ? (locale === 'en' ? 'Sent!' : 'Nosūtīts!')
-                          : (locale === 'en' ? 'Send SMS' : 'Sūtīt SMS')}
+                      className="px-3 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg disabled:opacity-40 active:scale-95 transition-all whitespace-nowrap">
+                      {smsSending ? '...' : smsStatus === 'sent'
+                        ? (locale === 'en' ? 'Sent!' : 'Nosūtīts!')
+                        : (locale === 'en' ? 'Send SMS' : 'Sūtīt SMS')}
                     </button>
                   </div>
-                  {smsStatus === 'error' && (
-                    <p className="mt-1 text-xs text-red-400">{smsError}</p>
-                  )}
+                  {smsStatus === 'error' && <p className="mt-1 text-xs text-red-400">{smsError}</p>}
                 </div>
-
-                <button
-                  onClick={goToTip}
-                  className="mt-5 w-full py-3 bg-purple-600 text-white font-bold rounded-xl active:scale-95 transition-all"
-                >
+                <button onClick={goToTip}
+                  className="mt-5 w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl active:scale-95 transition-all">
                   {locale === 'en' ? 'Next' : 'Tālāk'}
                 </button>
               </div>
@@ -586,33 +380,25 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
           </>
         )}
 
-        {/* ========== TIP ========== */}
+        {/* ===== TIP ===== */}
         {phase === 'tip' && (
           <>
             {tipPhase === 'picking' && (
-              <div className="w-full bg-white rounded-3xl shadow-xl p-6 text-center">
-                <p className="text-xl font-bold text-gray-800">
-                  {locale === 'en'
-                    ? `Thank ${staff[0]?.name}?`
-                    : `Vēlies pateikties ${staff[0]?.name}?`}
+              <div className="animate-fade-up w-full bg-white rounded-3xl shadow-xl p-6 text-center">
+                <p className="text-xl font-black text-gray-800">
+                  {locale === 'en' ? `Thank ${staff[0]?.name}?` : `Vēlies pateikties ${staff[0]?.name}?`}
                 </p>
                 <p className="text-sm text-gray-400 mt-1 mb-6">{t('tip_prompt')}</p>
-
                 {!showCustom ? (
                   <div className="grid grid-cols-2 gap-3">
                     {[100, 200, 500].map(cents => (
-                      <button
-                        key={cents}
-                        onClick={() => handleTip(cents)}
-                        className="py-4 text-lg font-bold border-2 border-purple-200 rounded-xl hover:bg-purple-50 hover:border-purple-500 active:scale-95 transition-all"
-                      >
+                      <button key={cents} onClick={() => handleTip(cents)}
+                        className="py-4 text-lg font-bold border-2 border-purple-200 rounded-xl hover:bg-purple-50 hover:border-purple-500 active:scale-95 transition-all">
                         €{cents / 100}
                       </button>
                     ))}
-                    <button
-                      onClick={() => setShowCustom(true)}
-                      className="py-4 text-lg font-bold border-2 border-gray-200 rounded-xl hover:bg-gray-50 active:scale-95 transition-all"
-                    >
+                    <button onClick={() => setShowCustom(true)}
+                      className="py-4 text-lg font-bold border-2 border-gray-200 rounded-xl hover:bg-gray-50 active:scale-95 transition-all">
                       {locale === 'en' ? 'Other' : 'Cita'}
                     </button>
                   </div>
@@ -620,23 +406,13 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center border-2 border-purple-200 rounded-xl px-4 py-2">
                       <span className="text-gray-400 font-bold mr-1">€</span>
-                      <input
-                        type="number" min="0.5" step="0.5"
-                        value={customAmt}
-                        onChange={e => setCustomAmt(e.target.value)}
-                        placeholder="0.00"
-                        autoFocus
-                        className="flex-1 text-xl font-bold focus:outline-none"
-                      />
+                      <input type="number" min="0.5" step="0.5" value={customAmt}
+                        onChange={e => setCustomAmt(e.target.value)} placeholder="0.00" autoFocus
+                        className="flex-1 text-xl font-bold focus:outline-none" />
                     </div>
-                    <button
-                      onClick={() => {
-                        const cents = Math.round(parseFloat(customAmt) * 100)
-                        if (cents > 0) handleTip(cents)
-                      }}
+                    <button onClick={() => { const c = Math.round(parseFloat(customAmt)*100); if (c>0) handleTip(c) }}
                       disabled={!customAmt || parseFloat(customAmt) <= 0}
-                      className="py-3 bg-purple-600 text-white font-bold rounded-xl disabled:opacity-40 active:scale-95 transition-all"
-                    >
+                      className="py-3 bg-purple-600 text-white font-bold rounded-xl disabled:opacity-40 active:scale-95 transition-all">
                       {locale === 'en' ? 'Confirm' : 'Apstiprināt'}
                     </button>
                     <button onClick={() => setShowCustom(false)} className="py-2 text-sm text-gray-400">
@@ -644,44 +420,34 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
                     </button>
                   </div>
                 )}
-
-                <button
-                  onClick={afterTip}
-                  className="mt-4 w-full py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
-                >
+                <button onClick={afterTip}
+                  className="mt-4 w-full py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors">
                   {t('tip_skip')}
                 </button>
               </div>
             )}
 
             {tipPhase === 'post' && !finished && showGoogle && (
-              <div className="w-full bg-white rounded-3xl shadow-xl p-6 text-center">
-                <p className="text-xl font-bold text-gray-800">
-                  {locale === 'en' ? 'Thank you!' : 'Paldies!'}
-                </p>
+              <div className="animate-fade-up w-full bg-white rounded-3xl shadow-xl p-6 text-center">
+                <p className="text-xl font-black text-gray-800">{locale === 'en' ? 'Thank you!' : 'Paldies!'}</p>
                 <p className="text-sm text-gray-400 mt-1 mb-6">
-                  {locale === 'en'
-                    ? 'Your review helps others find the best places'
-                    : 'Tavs viedoklis palīdz citiem atrast labākās vietas'}
+                  {locale === 'en' ? 'Your review helps others find the best places' : 'Tavs viedoklis palīdz citiem atrast labākās vietas'}
                 </p>
-                <button
-                  onClick={handleGoogleReview}
-                  className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl active:scale-95 transition-all"
-                >
+                <button onClick={handleGoogleReview}
+                  className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl active:scale-95 transition-all">
                   {t('google_prompt')}
                 </button>
-                <button
-                  onClick={() => setFinished(true)}
-                  className="mt-3 w-full py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
-                >
+                <button onClick={() => setFinished(true)}
+                  className="mt-3 w-full py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors">
                   {t('tip_skip')}
                 </button>
               </div>
             )}
 
             {(finished || (tipPhase === 'post' && !showGoogle)) && (
-              <div className="w-full bg-white rounded-3xl shadow-xl p-10 text-center">
-                <p className="text-3xl font-extrabold text-gray-800">{t('end_title')}</p>
+              <div className="animate-pop-in w-full bg-white rounded-3xl shadow-xl p-10 text-center">
+                <p className="text-4xl mb-2">🎉</p>
+                <p className="text-3xl font-black text-gray-800">{t('end_title')}</p>
                 <p className="text-gray-400 mt-2 text-sm">
                   {locale === 'en' ? 'Thank you for your visit' : 'Paldies par apmeklējumu'}
                 </p>
@@ -689,7 +455,6 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
             )}
           </>
         )}
-
       </div>
     </div>
   )
