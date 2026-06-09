@@ -38,6 +38,7 @@ interface SessionCtx {
   activity_id: string | null
   revolut_link: string | null
   default_locale: string | null
+  status: string
 }
 
 interface ReviewQuestion {
@@ -89,6 +90,7 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
   const [phase,    setPhase]    = useState<Phase>('idle')
   const [ctx,      setCtx]      = useState<SessionCtx | null>(null)
   const [invalid,  setInvalid]  = useState(false)
+  const [usedSession, setUsedSession] = useState(false)
   const [questions, setQuestions] = useState<ReviewQuestion[]>([])
   const [answers,  setAnswers]  = useState<Record<string, number>>({})
   const [saving,   setSaving]   = useState(false)
@@ -120,6 +122,7 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
       const { data } = await supabase.rpc('get_session_context', { p_session_id: sessionId })
       const c = (data as SessionCtx[] | null)?.[0]
       if (!c) { setInvalid(true); return }
+      if (c.status !== 'active') { setUsedSession(true); return }
       setCtx(c)
       setLocale(c.default_locale ?? 'lv')
 
@@ -225,10 +228,20 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
   const allAnswered = questions.length > 0 && questions.every(q => answers[q.id] != null)
   const segments: WheelSegment[] = prizes.map(p => ({ label: p.name, color: p.color }))
 
+  // ---- Used session ----
+  if (usedSession) return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#1a0533] to-[#0d0d1a] px-8">
+      <div className="text-center">
+        <p className="text-white text-xl font-bold mb-3">Šī sesija jau izmantota</p>
+        <p className="text-purple-300 text-sm">Lūdzu, prasi jaunu QR pie darbinieka</p>
+      </div>
+    </div>
+  )
+
   // ---- Invalid ----
   if (invalid) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-8">
-      <p className="text-center text-gray-500 text-lg">Šī sesija jau izmantota vai nederīga</p>
+      <p className="text-center text-gray-500 text-lg">Sesija nav atrasta vai nederīga</p>
     </div>
   )
 

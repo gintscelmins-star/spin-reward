@@ -29,10 +29,9 @@ export default async function SessionPage({
 
   if (!venueId) return <VenuePicker basePath="/admin/session" />
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
+  const startOfToday = new Date()
+  startOfToday.setUTCHours(0, 0, 0, 0)
+  const in7Days = new Date(startOfToday.getTime() + 7 * 24 * 60 * 60 * 1000)
 
   const [{ data: staffList }, { data: activities }, { data: bookings }] = await Promise.all([
     supabase
@@ -51,8 +50,8 @@ export default async function SessionPage({
       .from('bookings')
       .select('id, customer_name, starts_at')
       .eq('venue_id', venueId)
-      .gte('starts_at', today.toISOString())
-      .lt('starts_at', tomorrow.toISOString())
+      .gte('starts_at', startOfToday.toISOString())
+      .lt('starts_at', in7Days.toISOString())
       .order('starts_at'),
   ])
 
