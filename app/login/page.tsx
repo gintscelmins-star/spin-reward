@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const [email,    setEmail]    = useState('')
@@ -15,6 +15,7 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
+    const supabase = createClient()
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
     if (authError) {
       setError('Nepareizs e-pasts vai parole')
@@ -22,7 +23,7 @@ export default function LoginPage() {
       return
     }
     router.refresh()
-    router.push('/admin')
+    window.location.assign('/admin')
   }
 
   return (
