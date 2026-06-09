@@ -1,0 +1,81 @@
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+import SessionClient from './SessionClient'
+import VenuePicker from '../venue/_components/VenuePicker'
+
+export default async function SessionPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ venueId?: string }>
+}) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, venue_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.role || !['client_admin', 'super_admin', 'staff'].includes(profile.role)) {
+    redirect('/admin')
+  }
+
+  const params = await searchParams
+  const venueId =
+    profile.role === 'super_admin' ? (params.venueId ?? null) : profile.venue_id
+
+  if (!venueId) return <VenuePicker basePath="/admin/session" />
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+
+  const [{ data: staffList }, { data: activities }, { data: bookings }] = await Promise.all([
+    supabase
+      .from('staff')
+      .select('id, name')
+      .eq('venue_id', venueId)
+      .eq('active', true)
+      .order('name'),
+    supabase
+      .from('activities')
+      .select('id, name')
+      .eq('venue_id', venueId)
+      .eq('active', true)
+      .order('name'),
+    supabase
+      .from('bookings')
+      .select('id, customer_name, starts_at')
+      .eq('venue_id', venueId)
+      .gte('starts_at', today.toISOString())
+      .lt('starts_at', tomorrow.toISOString())
+      .order('starts_at'),
+  ])
+
+  const backHref =
+    profile.role === 'staff'
+      ? '/admin'
+      : profile.role === 'super_admin'
+      ? `/admin/venue?venueId=${venueId}`
+      : '/admin/venue'
+
+  return (
+    <div className="relative">
+      <div className="absolute top-4 left-4">
+        <Link href={backHref} className="text-gray-400 hover:text-gray-600 text-sm">
+          ← {profile.role === 'staff' ? 'Admin' : 'Venue'}
+        </Link>
+      </div>
+      <SessionClient
+        staffList={staffList ?? []}
+        activities={activities ?? []}
+        bookings={bookings ?? []}
+        venueId={venueId}
+      />
+    </div>
+  )
+}

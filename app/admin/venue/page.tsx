@@ -1,79 +1,146 @@
-'use client'
-
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
+import LogoutButton from '@/components/LogoutButton'
 
-export default function VenueDashboard() {
-  const [ready,  setReady]  = useState(false)
-  const [allowed, setAllowed] = useState(false)
-  const [role,   setRole]   = useState<string | null>(null)
-  const [email,  setEmail]  = useState<string | null>(null)
-  const router = useRouter()
+export default async function ClientAdminVenuePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ venueId?: string }>
+}) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { setReady(true); return }
-      setEmail(user.email ?? null)
-      supabase.from('profiles').select('role, venue_id').eq('id', user.id).single()
-        .then(({ data }) => {
-          if (!data?.role) { setReady(true); return }
-          // super_admin has no venue_id — send to venue list
-          if (data.role === 'super_admin') { router.replace('/admin/venues'); return }
-          if (data.role === 'client_admin') {
-            setAllowed(true)
-            setRole(data.role)
-          }
-          setReady(true)
-        })
-    })
-  }, [router])
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, venue_id')
+    .eq('id', user.id)
+    .single()
 
-  async function handleLogout() {
-    await supabase.auth.signOut()
-    router.push('/login')
+  if (!profile?.role || !['client_admin', 'super_admin'].includes(profile.role)) {
+    redirect('/admin')
   }
 
-  if (!ready) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p className="text-gray-400 animate-pulse">Ielādē...</p>
-    </div>
-  )
+  const params = await searchParams
+  const venueId =
+    profile.role === 'super_admin' ? (params.venueId ?? null) : profile.venue_id
 
-  if (!allowed) return (
-    <div className="min-h-screen flex items-center justify-center flex-col gap-4">
-      <p className="text-red-500">Nav piekļuves tiesību</p>
-      <Link href="/login" className="text-purple-600 underline text-sm">Pieslēgties</Link>
-    </div>
-  )
+  if (!venueId) redirect('/admin')
+
+  const [{ data: venue }, { count: activeStaff }] = await Promise.all([
+    supabase.from('venues').select('*').eq('id', venueId).single(),
+    supabase
+      .from('staff')
+      .select('*', { count: 'exact', head: true })
+      .eq('venue_id', venueId)
+      .eq('active', true),
+  ])
+
+  if (!venue) redirect('/admin')
+
+  const q = profile.role === 'super_admin' ? `?venueId=${venueId}` : ''
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Venue pārvaldnieks</h1>
-            {email && (
-              <p className="text-xs text-gray-400 mt-0.5">
-                {email} · <span className="font-medium">{role}</span>
-              </p>
+            {profile.role === 'super_admin' && (
+              <Link
+                href="/admin/venues"
+                className="text-gray-400 hover:text-gray-600 text-sm block mb-1"
+              >
+                ← Venues
+              </Link>
             )}
+            <h1 className="text-2xl font-bold text-gray-800">{venue.name}</h1>
+            <p className="text-sm text-gray-400 font-mono">{venue.slug}</p>
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-sm text-gray-500 hover:text-red-500 transition-colors"
-          >
-            Iziet
-          </button>
+          <LogoutButton />
         </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-white rounded-2xl shadow p-5">
+            <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Plāns</p>
+            <p className="text-xl font-bold text-purple-600 capitalize">{venue.plan}</p>
+          </div>
+          <div className="bg-white rounded-2xl shadow p-5">
+            <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Darbinieki</p>
+            <p
+              className={`text-xl font-bold ${
+                (activeStaff ?? 0) > venue.seats ? 'text-red-600' : 'text-gray-800'
+              }`}
+            >
+              {activeStaff ?? 0}
+              <span className="text-gray-400 text-base font-normal">/{venue.seats}</span>
+            </p>
+          </div>
+          <div className="bg-white rounded-2xl shadow p-5">
+            <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Norēķini</p>
+            <span
+              className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                venue.billing_status === 'active'
+                  ? 'bg-green-100 text-green-700'
+                  : venue.billing_status === 'trial'
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-red-100 text-red-700'
+              }`}
+            >
+              {venue.billing_status}
+            </span>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <Link
-            href="/admin/venue/texts"
-            className="bg-white rounded-2xl shadow p-6 flex flex-col gap-2 hover:shadow-md transition-shadow"
+            href={`/admin/venue/prizes${q}`}
+            className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition-shadow group"
           >
-            <p className="font-bold text-gray-800">Teksti</p>
-            <p className="text-sm text-gray-400">Lokalizētas copy virknes LV / EN</p>
+            <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Balvas</p>
+            <p className="text-sm text-gray-400 mt-1">Pārvaldīt ruletē esošās balvas</p>
+          </Link>
+          <Link
+            href={`/admin/venue/staff${q}`}
+            className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition-shadow group"
+          >
+            <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Personāls</p>
+            <p className="text-sm text-gray-400 mt-1">Darbinieki un tip kartes</p>
+          </Link>
+          <Link
+            href={`/admin/venue/activities${q}`}
+            className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition-shadow group"
+          >
+            <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Spēles</p>
+            <p className="text-sm text-gray-400 mt-1">Aktivitāšu veidi un sesiju plūsma</p>
+          </Link>
+          <Link
+            href={`/admin/venue/bookings${q}`}
+            className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition-shadow group"
+          >
+            <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Rezervācijas</p>
+            <p className="text-sm text-gray-400 mt-1">Šodienas un nākamo dienu saraksts</p>
+          </Link>
+          <Link
+            href={profile.role === 'super_admin' ? `/admin/session?venueId=${venueId}` : '/admin/session'}
+            className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition-shadow group"
+          >
+            <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Sesija</p>
+            <p className="text-sm text-gray-400 mt-1">Aktivizēt spin un parādīt QR klientam</p>
+          </Link>
+          <Link
+            href={`/admin/venue/questions${q}`}
+            className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition-shadow group"
+          >
+            <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Novērtējumi</p>
+            <p className="text-sm text-gray-400 mt-1">Atsauksmju jautājumu konfigurācija</p>
+          </Link>
+          <Link
+            href={`/admin/venue/stats${q}`}
+            className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition-shadow group col-span-2"
+          >
+            <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Statistika</p>
+            <p className="text-sm text-gray-400 mt-1">Spini, atsauksmes, tips</p>
           </Link>
         </div>
       </div>

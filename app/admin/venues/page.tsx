@@ -1,89 +1,48 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { getAdmin } from '@/lib/supabase/admin'
+import { toggleVenueActive } from './actions'
 
-interface Venue {
-  id: string
-  name: string
-  slug: string
-  plan: string | null
-  billing_status: string | null
-  seats: number
-  active: boolean
-  uses_sessions: boolean
-  created_at: string
-}
+export default async function VenuesPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
-export default function VenuesPage() {
-  const [venues,  setVenues]  = useState<Venue[]>([])
-  const [loading, setLoading] = useState(true)
-  const [email,   setEmail]   = useState<string | null>(null)
-  const router = useRouter()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
 
-  useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.replace('/login'); return }
-      setEmail(user.email ?? null)
+  if (profile?.role !== 'super_admin') redirect('/admin')
 
-      const { data: profile } = await supabase
-        .from('profiles').select('role').eq('id', user.id).single()
-      if (profile?.role !== 'super_admin') { router.replace('/admin'); return }
+  const [{ data: venues }, { data: staffRows }] = await Promise.all([
+    getAdmin().from('venues').select('*').order('name'),
+    getAdmin().from('staff').select('venue_id').eq('active', true),
+  ])
 
-      const { data } = await supabase
-        .from('venues').select('*').order('name')
-      setVenues((data ?? []) as Venue[])
-      setLoading(false)
-    }
-    load()
-  }, [router])
-
-  async function toggleActive(id: string, current: boolean) {
-    await supabase.from('venues').update({ active: !current }).eq('id', id)
-    setVenues(vs => vs.map(v => v.id === id ? { ...v, active: !current } : v))
-  }
-
-  async function handleLogout() {
-    await supabase.auth.signOut()
-    router.push('/login')
-  }
-
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p className="text-gray-400 animate-pulse">Ielādē...</p>
-    </div>
-  )
+  const staffCount = (staffRows ?? []).reduce<Record<string, number>>((acc, s) => {
+    acc[s.venue_id] = (acc[s.venue_id] ?? 0) + 1
+    return acc
+  }, {})
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-5xl mx-auto">
-
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <div>
+          <div className="flex items-center gap-4">
+            <Link href="/admin" className="text-gray-400 hover:text-gray-600 text-sm">← Admin</Link>
             <h1 className="text-2xl font-bold text-gray-800">Venues</h1>
-            {email && <p className="text-xs text-gray-400 mt-0.5">{email} · super_admin</p>}
           </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin/venues/new"
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-sm transition-colors"
-            >
-              + Pievienot venue
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="text-sm text-gray-400 hover:text-red-500 transition-colors"
-            >
-              Iziet
-            </button>
-          </div>
+          <Link
+            href="/admin/venues/new"
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-sm transition-colors"
+          >
+            + Pievienot venue
+          </Link>
         </div>
 
-        {/* Table */}
         <div className="bg-white rounded-2xl shadow overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
@@ -98,62 +57,75 @@ export default function VenuesPage() {
               </tr>
             </thead>
             <tbody>
-              {venues.length === 0 && (
+              {(venues ?? []).map(v => {
+                const used = staffCount[v.id] ?? 0
+                const overage = used > v.seats
+                return (
+                  <tr key={v.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/admin/venues/${v.id}`}
+                        className="font-medium text-purple-700 hover:underline"
+                      >
+                        {v.name}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-gray-500 text-xs">{v.slug}</td>
+                    <td className="px-4 py-3 text-gray-600">{v.plan}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        v.billing_status === 'active'    ? 'bg-green-100 text-green-700' :
+                        v.billing_status === 'trial'     ? 'bg-blue-100 text-blue-700'  :
+                                                           'bg-red-100 text-red-700'
+                      }`}>
+                        {v.billing_status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`font-mono ${overage ? 'text-red-600 font-bold' : 'text-gray-600'}`}>
+                        {used}/{v.seats}{overage ? ' ⚠' : ''}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        v.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {v.active ? 'aktīvs' : 'neaktīvs'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <Link
+                          href={`/admin/venue/prizes?venueId=${v.id}`}
+                          className="text-xs text-purple-600 hover:underline whitespace-nowrap"
+                        >
+                          Rediģēt config
+                        </Link>
+                        <form action={toggleVenueActive}>
+                          <input type="hidden" name="id" value={v.id} />
+                          <input type="hidden" name="active" value={(!v.active).toString()} />
+                          <button
+                            type="submit"
+                            className="text-xs text-gray-400 hover:text-gray-700 underline"
+                          >
+                            {v.active ? 'Atslēgt' : 'Ieslēgt'}
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+              {!venues?.length && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
-                    Nav neviena venue
+                  <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
+                    Nav neviena venue — <Link href="/admin/venues/new" className="underline text-purple-600">pievienot pirmo</Link>
                   </td>
                 </tr>
               )}
-              {venues.map(v => (
-                <tr key={v.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/venues/${v.id}`}
-                      className="font-medium text-purple-700 hover:underline"
-                    >
-                      {v.name}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-gray-500 text-xs">{v.slug}</td>
-                  <td className="px-4 py-3 text-gray-600">{v.plan ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                      v.billing_status === 'active' ? 'bg-green-100 text-green-700' :
-                      v.billing_status === 'trial'  ? 'bg-blue-100 text-blue-700'  :
-                                                      'bg-red-100 text-red-700'
-                    }`}>
-                      {v.billing_status ?? '—'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{v.seats}</td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => toggleActive(v.id, v.active)}
-                      className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
-                        v.active
-                          ? 'bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-700'
-                          : 'bg-gray-100 text-gray-500 hover:bg-green-100 hover:text-green-700'
-                      }`}
-                    >
-                      {v.active ? 'Aktīvs' : 'Neaktīvs'}
-                    </button>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/admin/venues/${v.id}`}
-                      className="text-xs text-purple-500 hover:underline"
-                    >
-                      Rediģēt →
-                    </Link>
-                  </td>
-                </tr>
-              ))}
             </tbody>
           </table>
         </div>
-
-        <p className="mt-3 text-xs text-gray-400 text-right">{venues.length} venue kopā</p>
       </div>
     </div>
   )

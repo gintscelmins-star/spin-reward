@@ -1,55 +1,76 @@
-'use client'
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+import LogoutButton from '@/components/LogoutButton'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+interface Profile {
+  role: string | null
+  venue_id: string | null
+}
 
-type Status = 'loading' | 'unconfigured' | 'no_session'
+const ROLE_LABELS: Record<string, string> = {
+  super_admin: 'Super Admin',
+  client_admin: 'Klienta Admin',
+  staff: 'Darbinieks',
+}
 
-export default function AdminPage() {
-  const [status, setStatus] = useState<Status>('loading')
-  const router = useRouter()
+export default async function AdminPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
-  useEffect(() => {
-    async function route() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setStatus('no_session'); return }
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, venue_id')
+    .eq('id', user.id)
+    .single<Profile>()
 
-      const { data: profile } = await supabase
-        .from('profiles').select('role').eq('id', user.id).single()
+  if (profile?.role === 'super_admin') redirect('/admin/venues')
+  if (profile?.role === 'client_admin') redirect('/admin/venue')
+  if (profile?.role === 'staff') redirect('/admin/session')
 
-      if (!profile?.role) { setStatus('unconfigured'); return }
-
-      if      (profile.role === 'super_admin')  router.replace('/admin/venues')
-      else if (profile.role === 'client_admin') router.replace('/admin/venue')
-      else if (profile.role === 'staff')        router.replace('/admin/session')
-      else    setStatus('unconfigured')
-    }
-    route()
-  }, [router])
-
-  if (status === 'loading') return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p className="text-gray-400 animate-pulse">Ielādē...</p>
-    </div>
-  )
-
-  if (status === 'no_session') {
-    router.replace('/login')
-    return null
+  if (!profile?.role) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg p-8 text-center">
+          <p className="text-gray-500 text-lg">Konts nav konfigurēts, sazinies ar admin</p>
+          <LogoutButton />
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg p-8 text-center">
-        <p className="text-gray-500 text-lg">Konts nav konfigurēts</p>
-        <p className="text-gray-400 text-sm mt-2">Sazinies ar administratoru</p>
-        <button
-          onClick={() => supabase.auth.signOut().then(() => router.push('/login'))}
-          className="mt-6 w-full py-2 text-sm text-gray-400 hover:text-gray-600 border border-gray-200 rounded-xl transition-colors"
-        >
-          Iziet
-        </button>
+        <p className="text-sm text-gray-400 uppercase tracking-widest">Pieslēdzies kā</p>
+        <p className="text-3xl font-extrabold text-gray-800 mt-2">
+          {ROLE_LABELS[profile.role] ?? profile.role}
+        </p>
+
+        {profile.role === 'super_admin' && (
+          <Link
+            href="/admin/venues"
+            className="mt-6 block w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-colors"
+          >
+            Venue saraksts →
+          </Link>
+        )}
+
+        {profile.role === 'client_admin' && (
+          <Link
+            href="/admin/venue"
+            className="mt-6 block w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-colors"
+          >
+            Mans venue →
+          </Link>
+        )}
+
+        {profile.role === 'staff' && (
+          <p className="mt-6 text-gray-400 text-sm">Darbinieka panelis — drīzumā</p>
+        )}
+
+        <LogoutButton />
       </div>
     </div>
   )
