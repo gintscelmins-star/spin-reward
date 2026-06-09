@@ -311,18 +311,18 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
 
         {/* ===== GOOGLE ===== */}
         {phase === 'google' && (
-          <div className="animate-fade-up w-full bg-white rounded-3xl shadow-xl p-8 text-center flex flex-col gap-4">
+          <div className="animate-fade-up w-full bg-white rounded-3xl shadow-xl p-8 text-center flex flex-col gap-5">
             <p className="text-xl font-black text-gray-800">{locale === 'en' ? 'Thank you!' : 'Paldies!'}</p>
             <p className="text-sm text-gray-400">
               {locale === 'en' ? 'Your review helps others find the best places' : 'Tavs viedoklis palīdz citiem atrast labākās vietas'}
             </p>
             <button onClick={handleGoogleReview}
-              className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl active:scale-95 transition-all">
+              className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white text-lg font-black rounded-2xl shadow-md active:scale-95 transition-all">
               {t('google_prompt')}
             </button>
             <button onClick={() => setPhase('spin')}
-              className="py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors">
-              {t('tip_skip')}
+              className="w-full py-2.5 text-sm font-semibold text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+              {locale === 'en' ? 'Continue to wheel' : 'Turpināt uz ratu'}
             </button>
           </div>
         )}

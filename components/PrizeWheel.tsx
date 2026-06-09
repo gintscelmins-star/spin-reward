@@ -78,11 +78,38 @@ function tickSchedule(): number[] {
   return out
 }
 
-function splitLabel(raw: string): string[] {
-  if (raw.length <= 9) return [raw]
-  const sp = raw.indexOf(' ')
-  if (sp > 0 && sp <= 9) return [raw.slice(0, sp), raw.slice(sp + 1)]
-  return [raw.slice(0, 8) + '…']
+function computeLabel(raw: string, n: number): { lines: string[]; fontSize: number } {
+  const arcPx = Math.PI * (R + r) / n  // full tangential arc at mid-radius
+  // Scale font up for fewer segments, floor at 11px
+  const fontSize = Math.max(11, Math.min(18, Math.round(88 / n)))
+  const maxC = Math.max(5, Math.floor(arcPx / (fontSize * 0.58)))
+
+  const words = raw.split(' ')
+  const lines: string[] = []
+  let cur = ''
+  let complete = true
+
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i]
+    if (lines.length >= 2) { complete = false; break }
+    const next = cur ? `${cur} ${word}` : word
+    if (next.length <= maxC) {
+      cur = next
+    } else {
+      if (cur) { lines.push(cur); cur = word.length <= maxC ? word : word.slice(0, maxC - 1) + '…' }
+      else { cur = word.slice(0, maxC - 1) + '…'; complete = false }
+    }
+  }
+  if (cur && lines.length < 2) lines.push(cur)
+  if (lines.length === 0) lines.push(raw.slice(0, maxC - 1) + '…')
+
+  // Mark last line with ellipsis if content was cut off
+  if (!complete && !lines[lines.length - 1].endsWith('…')) {
+    const last = lines[lines.length - 1]
+    lines[lines.length - 1] = last.length < maxC ? last + '…' : last.slice(0, maxC - 1) + '…'
+  }
+
+  return { lines, fontSize }
 }
 
 // SVG geometry constants
@@ -184,6 +211,7 @@ export default function PrizeWheel({
     const col = src?.color
       ? { fill: src.color, text: '#FFFFFF' }
       : PALETTE[i % 2]
+    const { lines, fontSize } = computeLabel(src?.label ?? `#${i + 1}`, n)
     return {
       d,
       fill:      col.fill,
@@ -191,7 +219,8 @@ export default function PrizeWheel({
       tx:    C + tr * Math.cos(am),
       ty:    C + tr * Math.sin(am),
       tdeg:  am * (180 / Math.PI) + 90,
-      lines: splitLabel(src?.label ?? `#${i + 1}`),
+      lines,
+      fontSize,
     }
   })
 
@@ -241,10 +270,10 @@ export default function PrizeWheel({
                   <text
                     key={li}
                     x={s.tx}
-                    y={s.ty + (li - (s.lines.length - 1) / 2) * 11}
+                    y={s.ty + (li - (s.lines.length - 1) / 2) * (s.fontSize + 3)}
                     textAnchor="middle"
                     dominantBaseline="middle"
-                    fontSize="9.5"
+                    fontSize={s.fontSize}
                     fontWeight="800"
                     letterSpacing="0.3"
                     fill={s.textColor}

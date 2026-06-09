@@ -10,7 +10,7 @@ import PrizeWheel, { type WheelSegment } from '@/components/PrizeWheel'
 
 // ---- Types ----
 
-type Phase = 'idle' | 'review' | 'reveal' | 'tip'
+type Phase = 'idle' | 'review' | 'google' | 'spin' | 'reveal' | 'tip'
 type TipPhase = 'picking' | 'post'
 
 interface Prize {
@@ -90,13 +90,11 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
   const [rating,       setRating]       = useState(0)
   const [comment,      setComment]      = useState('')
   const [saving,       setSaving]       = useState(false)
-  const [prizeVisible, setPrizeVisible] = useState(false)
   const [qrDataUrl,    setQrDataUrl]    = useState('')
   const [tipPhase,     setTipPhase]     = useState<TipPhase>('picking')
   const [showCustom,   setShowCustom]   = useState(false)
   const [customAmt,    setCustomAmt]    = useState('')
-  const [showGoogle,   setShowGoogle]   = useState(false)
-  const [finished,     setFinished]     = useState(false)
+  const [spinLoading,  setSpinLoading]  = useState(false)
 
   // Wheel animation state (passed to PrizeWheel)
   const [targetIndex,   setTargetIndex]   = useState(-1)
@@ -156,15 +154,6 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
     })
   }, [venue, locale])
 
-  // Trigger wheel animation when entering reveal phase
-  useEffect(() => {
-    if (phase !== 'reveal' || !spinResult || !prizes.length) return
-    const idx = Math.max(0, prizes.findIndex(p => p.name === spinResult.prize_name))
-    const t1 = setTimeout(() => setTargetIndex(idx), 0)
-    const t2 = setTimeout(() => setWheelSpinning(true), 80)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
-  }, [phase, spinResult, prizes])
-
   // Generate QR when reveal starts
   useEffect(() => {
     if (phase !== 'reveal' || !spinResult) return
@@ -176,7 +165,8 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
   // ---- Handlers ----
 
   async function handleSpin() {
-    if (!venue) return
+    if (!venue || wheelSpinning || spinLoading) return
+    setSpinLoading(true)
     const { data } = await supabase.rpc('spin_wheel', {
       p_venue_slug: venueSlug, p_session_id: sessionId.current,
     })
@@ -186,7 +176,10 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
       expires_at: new Date(Date.now() + 86_400_000).toISOString(),
     }
     setSpinResult(result)
-    setPhase('review')
+    const idx = Math.max(0, prizes.findIndex(p => p.name === result.prize_name))
+    setSpinLoading(false)
+    setTimeout(() => setTargetIndex(idx), 0)
+    setTimeout(() => setWheelSpinning(true), 80)
   }
 
   async function handleReviewSubmit() {
@@ -199,12 +192,12 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
     })
     setReviewId(rid)
     setSaving(false)
-    setPhase('reveal')
+    setPhase(rating >= 4 && venue.google_place_id ? 'google' : 'spin')
   }
 
   const handleSpinEnd = useCallback(() => {
     setWheelSpinning(false)
-    setPrizeVisible(true)
+    setPhase('reveal')
     confetti({ particleCount: 120, spread: 80, origin: { y: 0.55 }, colors: ['#D4AF37','#B91C1C','#FFF8E7','#7C3AED'] })
   }, [])
 
@@ -218,11 +211,7 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
   }
 
   function goToTip() {
-    if (!staff.length) {
-      const eligible = rating >= 4 && !!venue?.google_place_id
-      setTipPhase('post'); setShowGoogle(eligible)
-      if (!eligible) setFinished(true)
-    }
+    if (!staff.length) setTipPhase('post')
     setPhase('tip')
   }
 
@@ -236,16 +225,12 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
     afterTip()
   }
 
-  function afterTip() {
-    const eligible = rating >= 4 && !!venue?.google_place_id
-    setTipPhase('post'); setShowGoogle(eligible)
-    if (!eligible) setFinished(true)
-  }
+  function afterTip() { setTipPhase('post') }
 
   async function handleGoogleReview() {
     if (reviewId) await supabase.from('reviews').update({ google_redirected: true }).eq('id', reviewId)
     window.open(`https://search.google.com/local/writereview?placeid=${venue!.google_place_id}`, '_blank')
-    setFinished(true)
+    setPhase('spin')
   }
 
   // ---- Derived ----
@@ -283,10 +268,10 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
             </div>
             <PrizeWheel segments={segments} targetIndex={-1} spinning={false} onSpinEnd={() => {}} />
             <button
-              onClick={handleSpin}
+              onClick={() => setPhase('review')}
               className="w-full py-4 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white text-xl font-black rounded-2xl shadow-lg shadow-purple-900/50 active:scale-95 transition-all"
             >
-              {t('spin_button')}
+              {t('welcome_button')}
             </button>
           </div>
         )}
@@ -321,17 +306,53 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
           </div>
         )}
 
-        {/* ===== REVEAL ===== */}
-        {phase === 'reveal' && (
-          <>
+        {/* ===== GOOGLE ===== */}
+        {phase === 'google' && (
+          <div className="animate-fade-up w-full bg-white rounded-3xl shadow-xl p-8 text-center flex flex-col gap-5">
+            <p className="text-xl font-black text-gray-800">{locale === 'en' ? 'Thank you!' : 'Paldies!'}</p>
+            <p className="text-sm text-gray-400">
+              {locale === 'en' ? 'Your review helps others find the best places' : 'Tavs viedoklis palīdz citiem atrast labākās vietas'}
+            </p>
+            <button onClick={handleGoogleReview}
+              className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white text-lg font-black rounded-2xl shadow-md active:scale-95 transition-all">
+              {t('google_prompt')}
+            </button>
+            <button onClick={() => setPhase('spin')}
+              className="w-full py-2.5 text-sm font-semibold text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+              {locale === 'en' ? 'Continue to wheel' : 'Turpināt uz ratu'}
+            </button>
+          </div>
+        )}
+
+        {/* ===== SPIN ===== */}
+        {phase === 'spin' && (
+          <div className="animate-fade-up w-full flex flex-col items-center gap-5">
             <PrizeWheel
               segments={segments}
               targetIndex={targetIndex}
               spinning={wheelSpinning}
               onSpinEnd={handleSpinEnd}
             />
-            {prizeVisible && (
-              <div className="animate-pop-in w-full bg-white rounded-3xl shadow-2xl p-6 text-center">
+            <button
+              onClick={handleSpin}
+              disabled={wheelSpinning || spinLoading}
+              className="w-full py-4 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white text-xl font-black rounded-2xl shadow-lg shadow-purple-900/50 active:scale-95 transition-all disabled:opacity-60"
+            >
+              {spinLoading ? (locale === 'en' ? 'Loading...' : 'Gatavojas...') : t('spin_button')}
+            </button>
+          </div>
+        )}
+
+        {/* ===== REVEAL ===== */}
+        {phase === 'reveal' && (
+          <>
+            <PrizeWheel
+              segments={segments}
+              targetIndex={targetIndex}
+              spinning={false}
+              onSpinEnd={() => {}}
+            />
+            <div className="animate-pop-in w-full bg-white rounded-3xl shadow-2xl p-6 text-center">
                 <p className="text-xs font-bold tracking-widest text-purple-400 uppercase">{t('prize_title')}</p>
                 <p className="text-3xl font-black text-purple-700 mt-2 leading-tight">{spinResult?.prize_name}</p>
                 {qrDataUrl ? (
@@ -378,14 +399,13 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
                   {locale === 'en' ? 'Next' : 'Tālāk'}
                 </button>
               </div>
-            )}
           </>
         )}
 
         {/* ===== TIP ===== */}
         {phase === 'tip' && (
           <>
-            {tipPhase === 'picking' && (
+            {tipPhase === 'picking' && staff.length > 0 && (
               <div className="animate-fade-up w-full bg-white rounded-3xl shadow-xl p-6 text-center">
                 <p className="text-xl font-black text-gray-800">
                   {locale === 'en' ? `Thank ${staff[0]?.name}?` : `Vēlies pateikties ${staff[0]?.name}?`}
@@ -429,24 +449,7 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
               </div>
             )}
 
-            {tipPhase === 'post' && !finished && showGoogle && (
-              <div className="animate-fade-up w-full bg-white rounded-3xl shadow-xl p-6 text-center">
-                <p className="text-xl font-black text-gray-800">{locale === 'en' ? 'Thank you!' : 'Paldies!'}</p>
-                <p className="text-sm text-gray-400 mt-1 mb-6">
-                  {locale === 'en' ? 'Your review helps others find the best places' : 'Tavs viedoklis palīdz citiem atrast labākās vietas'}
-                </p>
-                <button onClick={handleGoogleReview}
-                  className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl active:scale-95 transition-all">
-                  {t('google_prompt')}
-                </button>
-                <button onClick={() => setFinished(true)}
-                  className="mt-3 w-full py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors">
-                  {t('tip_skip')}
-                </button>
-              </div>
-            )}
-
-            {(finished || (tipPhase === 'post' && !showGoogle)) && (
+            {tipPhase === 'post' && (
               <div className="animate-pop-in w-full bg-white rounded-3xl shadow-xl p-10 text-center">
                 <p className="text-4xl mb-2">🎉</p>
                 <p className="text-3xl font-black text-gray-800">{t('end_title')}</p>
