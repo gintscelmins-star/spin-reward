@@ -10,11 +10,9 @@ export async function createSession(
   formData: FormData
 ): Promise<SessionState> {
   const venueId = formData.get('venueId') as string
-  const staff_id = formData.get('staff_id') as string
   const activity_id = (formData.get('activity_id') as string) || null
   const booking_id = (formData.get('booking_id') as string) || null
-
-  if (!staff_id) return { error: 'Instruktors ir obligāts' }
+  let staff_id = (formData.get('staff_id') as string) || null
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -26,11 +24,17 @@ export async function createSession(
   if (profile.role !== 'super_admin' && profile.venue_id !== venueId) return { error: '403' }
   if (!['client_admin', 'super_admin', 'staff'].includes(profile.role)) return { error: '403' }
 
+  // Auto-resolve staff from activity if not provided
+  if (!staff_id && activity_id) {
+    const { data: act } = await supabase
+      .from('activities').select('default_staff_id').eq('id', activity_id).single()
+    staff_id = act?.default_staff_id ?? null
+  }
+
   // Dienas limita pārbaude
   const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
+  today.setUTCHours(0, 0, 0, 0)
+  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000)
 
   const [{ count: todayCount }, { data: staffRow }] = await Promise.all([
     supabase

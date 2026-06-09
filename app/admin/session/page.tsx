@@ -42,7 +42,7 @@ export default async function SessionPage({
       .order('name'),
     supabase
       .from('activities')
-      .select('id, name')
+      .select('id, name, default_staff_id')
       .eq('venue_id', venueId)
       .eq('active', true)
       .order('name'),

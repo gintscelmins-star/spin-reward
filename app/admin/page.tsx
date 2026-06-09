@@ -26,7 +26,7 @@ export default async function AdminPage() {
     .single<Profile>()
 
   if (profile?.role === 'super_admin') redirect('/admin/venues')
-  if (profile?.role === 'client_admin') redirect('/admin/venue')
+  if (profile?.role === 'client_admin') redirect('/admin/today')
   if (profile?.role === 'staff') redirect('/admin/session')
 
   if (!profile?.role) {
@@ -59,10 +59,10 @@ export default async function AdminPage() {
 
         {profile.role === 'client_admin' && (
           <Link
-            href="/admin/venue"
+            href="/admin/today"
             className="mt-6 block w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-colors"
           >
-            Mans venue →
+            Šodienas sesijas →
           </Link>
         )}
 

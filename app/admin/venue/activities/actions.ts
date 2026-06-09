@@ -28,12 +28,14 @@ export async function upsertActivity(
   const name = (formData.get('name') as string).trim()
   const active = formData.get('active') !== 'false'
 
+  const default_staff_id = (formData.get('default_staff_id') as string) || null
+
   if (id) {
-    const { error } = await supabase.from('activities').update({ name, active }).eq('id', id)
+    const { error } = await supabase.from('activities').update({ name, active, default_staff_id }).eq('id', id)
     if (error) return { error: error.message }
   } else {
     const { error } = await supabase
-      .from('activities').insert({ venue_id: venueId, name, active: true })
+      .from('activities').insert({ venue_id: venueId, name, active: true, default_staff_id })
     if (error) return { error: error.message }
   }
   revalidatePath('/admin/venue/activities')

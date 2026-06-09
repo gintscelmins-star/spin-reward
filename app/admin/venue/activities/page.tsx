@@ -29,12 +29,18 @@ export default async function ActivitiesPage({
 
   if (!venueId) return <VenuePicker basePath="/admin/venue/activities" />
 
-  const [{ data: venue }, { data: activities }] = await Promise.all([
+  const [{ data: venue }, { data: activities }, { data: staffList }] = await Promise.all([
     supabase.from('venues').select('uses_sessions').eq('id', venueId).single(),
     supabase
       .from('activities')
-      .select('id, name, active')
+      .select('id, name, active, default_staff_id')
       .eq('venue_id', venueId)
+      .order('name'),
+    supabase
+      .from('staff')
+      .select('id, name')
+      .eq('venue_id', venueId)
+      .eq('active', true)
       .order('name'),
   ])
 
@@ -52,6 +58,7 @@ export default async function ActivitiesPage({
         </div>
         <ActivitiesClient
           activities={activities ?? []}
+          staffList={staffList ?? []}
           venueId={venueId}
           usesSessions={venue.uses_sessions ?? false}
         />

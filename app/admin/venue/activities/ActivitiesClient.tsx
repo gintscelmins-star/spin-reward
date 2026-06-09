@@ -9,17 +9,24 @@ interface Activity {
   id: string
   name: string
   active: boolean
+  default_staff_id: string | null
+}
+
+interface StaffMember {
+  id: string
+  name: string
 }
 
 interface Props {
   activities: Activity[]
+  staffList: StaffMember[]
   venueId: string
   usesSessions: boolean
 }
 
 const PRESETS = ['Lasertag', 'Airsoft', 'Reball', 'Kartingi', 'VR', 'Pixeli', 'Paintball']
 
-export default function ActivitiesClient({ activities, venueId, usesSessions }: Props) {
+export default function ActivitiesClient({ activities, staffList, venueId, usesSessions }: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const [editing, setEditing] = useState<Activity | null>(null)
   const [state, formAction, pending] = useActionState<ActivityState, FormData>(upsertActivity, null)
@@ -34,6 +41,9 @@ export default function ActivitiesClient({ activities, venueId, usesSessions }: 
     }
     prevPendingRef.current = pending
   }, [pending, state])
+
+  const staffById: Record<string, string> = {}
+  for (const s of staffList) staffById[s.id] = s.name
 
   const existingNames = new Set(activities.map(a => a.name.toLowerCase()))
 
@@ -102,6 +112,7 @@ export default function ActivitiesClient({ activities, venueId, usesSessions }: 
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
               <th className="text-left px-4 py-3 text-gray-500 font-medium">Nosaukums</th>
+              <th className="text-left px-4 py-3 text-gray-500 font-medium">Instruktors</th>
               <th className="text-left px-4 py-3 text-gray-500 font-medium">Statuss</th>
               <th className="px-4 py-3" />
             </tr>
@@ -110,6 +121,11 @@ export default function ActivitiesClient({ activities, venueId, usesSessions }: 
             {activities.map(a => (
               <tr key={a.id} className="border-b border-gray-50 hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium text-gray-800">{a.name}</td>
+                <td className="px-4 py-3 text-gray-500 text-xs">
+                  {a.default_staff_id ? (staffById[a.default_staff_id] ?? '—') : (
+                    <span className="text-gray-300">nav norādīts</span>
+                  )}
+                </td>
                 <td className="px-4 py-3">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                     a.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
@@ -141,7 +157,7 @@ export default function ActivitiesClient({ activities, venueId, usesSessions }: 
             ))}
             {activities.length === 0 && (
               <tr>
-                <td colSpan={3} className="px-4 py-10 text-center text-gray-400">
+                <td colSpan={4} className="px-4 py-10 text-center text-gray-400">
                   Nav aktivitāšu — pievienojiet no presetiem vai manuāli
                 </td>
               </tr>
@@ -178,6 +194,22 @@ export default function ActivitiesClient({ activities, venueId, usesSessions }: 
                   placeholder="Lasertag, Airsoft..."
                   className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Instruktors (pēc noklusējuma)
+                </label>
+                <select
+                  name="default_staff_id"
+                  defaultValue={editing?.default_staff_id ?? ''}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white"
+                >
+                  <option value="">— Nav norādīts —</option>
+                  {staffList.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
               </div>
 
               {editing && (

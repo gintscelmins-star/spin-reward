@@ -7,7 +7,7 @@ import { createSession } from './actions'
 import type { SessionState } from './actions'
 
 interface StaffMember { id: string; name: string }
-interface Activity { id: string; name: string }
+interface Activity { id: string; name: string; default_staff_id: string | null }
 interface Booking { id: string; customer_name: string | null; starts_at: string | null }
 
 interface Props {
@@ -21,7 +21,13 @@ export default function SessionClient({ staffList, activities, bookings, venueId
   const [state, formAction, pending] = useActionState<SessionState, FormData>(createSession, null)
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
+  const [selectedActivityId, setSelectedActivityId] = useState('')
   const prevPendingRef = useRef(false)
+
+  const actById: Record<string, Activity> = {}
+  for (const a of activities) actById[a.id] = a
+  const autoStaffId = selectedActivityId ? (actById[selectedActivityId]?.default_staff_id ?? null) : null
+  const autoStaffName = autoStaffId ? (staffList.find(s => s.id === autoStaffId)?.name ?? null) : null
 
   useEffect(() => {
     if (prevPendingRef.current && !pending && state?.sessionId) {
@@ -97,30 +103,8 @@ export default function SessionClient({ staffList, activities, bookings, venueId
           </div>
         )}
 
-        {staffList.length === 0 ? (
-          <div className="p-5 bg-yellow-50 border border-yellow-200 rounded-2xl text-sm text-yellow-700 text-center">
-            Nav aktīva personāla. Vispirms pievienojiet darbiniekus sadaļā{' '}
-            <Link href="/admin/venue/staff" className="underline font-medium">Personāls</Link>.
-          </div>
-        ) : (
-          <form action={formAction} className="bg-white rounded-2xl shadow p-6 flex flex-col gap-5">
+        <form action={formAction} className="bg-white rounded-2xl shadow p-6 flex flex-col gap-5">
             <input type="hidden" name="venueId" value={venueId} />
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Instruktors *
-              </label>
-              <select
-                name="staff_id"
-                required
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white text-base"
-              >
-                <option value="">— Izvēlies instruktoru —</option>
-                {staffList.map(s => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </div>
 
             {activities.length > 0 && (
               <div>
@@ -129,6 +113,8 @@ export default function SessionClient({ staffList, activities, bookings, venueId
                 </label>
                 <select
                   name="activity_id"
+                  value={selectedActivityId}
+                  onChange={e => setSelectedActivityId(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white text-base"
                 >
                   <option value="">— Izvēlies spēli —</option>
@@ -138,6 +124,31 @@ export default function SessionClient({ staffList, activities, bookings, venueId
                 </select>
               </div>
             )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Instruktors
+                {autoStaffName && (
+                  <span className="ml-2 text-purple-500 font-normal text-xs">
+                    (auto: {autoStaffName})
+                  </span>
+                )}
+              </label>
+              {autoStaffId && (
+                <input type="hidden" name="staff_id" value={autoStaffId} />
+              )}
+              <select
+                name="staff_id"
+                disabled={!!autoStaffId}
+                defaultValue=""
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white text-base disabled:opacity-50"
+              >
+                <option value="">— Bez instruktora —</option>
+                {staffList.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
 
             {bookings.length > 0 && (
               <div>
@@ -173,8 +184,7 @@ export default function SessionClient({ staffList, activities, bookings, venueId
             >
               {pending ? 'Aktivizē...' : 'AKTIVIZĒT SPIN'}
             </button>
-          </form>
-        )}
+        </form>
       </div>
     </div>
   )
