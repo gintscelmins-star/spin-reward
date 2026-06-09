@@ -57,6 +57,8 @@ const DEFAULTS: Record<string, string> = {
   tip_yes:          'Jā',
   tip_no:           'Nē',
   end_title:        'Uz tikšanos!',
+  continue_to_wheel: 'Turpināt uz ratu',
+  screenshot_hint:   'Uzņem ekrānšāviņu vai saglabā šo lapu',
 }
 
 function getSessionId(): string {
@@ -223,6 +225,8 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
 
   // ---- Derived ----
   const segments: WheelSegment[] = prizes.map(p => ({ label: p.name, color: p.color }))
+  const progressSteps: Phase[] = ['review', ...(venue?.google_place_id ? ['google' as Phase] : []), 'spin', 'reveal', 'tip']
+  const phaseProgressOrder: Phase[] = ['review', 'google', 'spin', 'reveal', 'tip']
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-900 to-purple-950">
@@ -233,23 +237,32 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1a0533] to-[#0d0d1a] flex flex-col items-center">
 
-      {/* Locale toggle */}
-      <div className="w-full max-w-sm px-4 pt-4 flex justify-end gap-1">
-        {['lv', 'en'].map(loc => (
-          <button key={loc} onClick={() => setLocale(loc)}
-            className={`px-2.5 py-0.5 text-xs font-bold rounded-md transition-colors ${
-              locale === loc ? 'bg-purple-500 text-white' : 'text-purple-400 hover:text-purple-200'
-            }`}>
-            {loc.toUpperCase()}
-          </button>
-        ))}
-      </div>
-
       <div className="w-full max-w-sm px-4 pt-4 pb-10 flex flex-col items-center gap-5">
+
+        {/* Progress dots */}
+        {phase !== 'idle' && (
+          <div className="flex justify-center gap-2 pt-1">
+            {progressSteps.map(step => (
+              <div key={step} className={`w-2 h-2 rounded-full transition-colors ${
+                phaseProgressOrder.indexOf(phase) >= phaseProgressOrder.indexOf(step) ? 'bg-purple-400' : 'bg-white/20'
+              }`} />
+            ))}
+          </div>
+        )}
 
         {/* ===== IDLE ===== */}
         {phase === 'idle' && (
           <div className="animate-fade-up w-full flex flex-col items-center gap-5">
+            <div className="flex justify-end w-full gap-1">
+              {['lv', 'en'].map(loc => (
+                <button key={loc} onClick={() => setLocale(loc)}
+                  className={`px-2.5 py-0.5 text-xs font-bold rounded-md transition-colors ${
+                    locale === loc ? 'bg-purple-500 text-white' : 'text-purple-400 hover:text-purple-200'
+                  }`}>
+                  {loc.toUpperCase()}
+                </button>
+              ))}
+            </div>
             <div className="text-center">
               <h1 className="text-2xl font-black text-white tracking-tight">{venue?.name ?? t('welcome_title')}</h1>
               <p className="text-purple-300 text-sm mt-1">{t('welcome_subtitle')}</p>
@@ -302,12 +315,12 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
               {locale === 'en' ? 'Your review helps others find the best places' : 'Tavs viedoklis palīdz citiem atrast labākās vietas'}
             </p>
             <button onClick={handleGoogleReview}
-              className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white text-lg font-black rounded-2xl shadow-md active:scale-95 transition-all">
+              className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl active:scale-95 transition-all">
               {t('google_prompt')}
             </button>
             <button onClick={() => setPhase('spin')}
-              className="w-full py-2.5 text-sm font-semibold text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-              {locale === 'en' ? 'Continue to wheel' : 'Turpināt uz ratu'}
+              className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white text-lg font-black rounded-2xl shadow-md active:scale-95 transition-all">
+              {t('continue_to_wheel')}
             </button>
           </div>
         )}
@@ -360,6 +373,7 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
                     <div className="w-[220px] h-[220px] bg-gray-100 rounded-2xl animate-pulse" />
                   )}
                   <p className="text-sm text-gray-600 font-medium text-center">{t('prize_show_admin')}</p>
+                  <p className="text-xs text-gray-400 text-center">{t('screenshot_hint')}</p>
                 </div>
               )}
 
@@ -374,7 +388,7 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
                 <div className="flex flex-col gap-2">
                   <p className="text-sm text-gray-500 text-center">{t('prize_sms_prompt')}</p>
                   <div className="flex gap-2">
-                    <input type="tel" value={smsPhone} onChange={e => setSmsPhone(e.target.value)}
+                    <input type="tel" inputMode="numeric" value={smsPhone} onChange={e => setSmsPhone(e.target.value)}
                       placeholder="+371 2x xxx xxx"
                       className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" />
                     <button onClick={handleSendSms}
@@ -401,7 +415,9 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
             {!tipDone ? (
               <div className="animate-fade-up w-full bg-white rounded-3xl shadow-xl p-8 text-center flex flex-col gap-5">
                 <p className="text-xl font-black text-gray-800">{t('tip_thanks')}</p>
-                <p className="text-sm text-gray-500">{t('tip_ask')}</p>
+                <p className="text-sm text-gray-500">
+                  {`Vai vēlaties pateikties ${staff[0]?.name ?? 'instruktoram'}?`}
+                </p>
                 <div className="flex gap-3">
                   <button
                     onClick={() => { if (staff[0]?.stripe_tip_link) window.open(staff[0].stripe_tip_link, '_blank'); setTipDone(true) }}
