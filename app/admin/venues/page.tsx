@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -23,22 +23,23 @@ export default function VenuesPage() {
   const [email,   setEmail]   = useState<string | null>(null)
   const router = useRouter()
 
-  const load = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.replace('/login'); return }
-    setEmail(user.email ?? null)
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.replace('/login'); return }
+      setEmail(user.email ?? null)
 
-    const { data: profile } = await supabase
-      .from('profiles').select('role').eq('id', user.id).single()
-    if (profile?.role !== 'super_admin') { router.replace('/admin'); return }
+      const { data: profile } = await supabase
+        .from('profiles').select('role').eq('id', user.id).single()
+      if (profile?.role !== 'super_admin') { router.replace('/admin'); return }
 
-    const { data } = await supabase
-      .from('venues').select('*').order('name')
-    setVenues((data ?? []) as Venue[])
-    setLoading(false)
+      const { data } = await supabase
+        .from('venues').select('*').order('name')
+      setVenues((data ?? []) as Venue[])
+      setLoading(false)
+    }
+    load()
   }, [router])
-
-  useEffect(() => { load() }, [load])
 
   async function toggleActive(id: string, current: boolean) {
     await supabase.from('venues').update({ active: !current }).eq('id', id)
