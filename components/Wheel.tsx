@@ -11,7 +11,6 @@ import PrizeWheel, { type WheelSegment } from '@/components/PrizeWheel'
 // ---- Types ----
 
 type Phase = 'idle' | 'review' | 'google' | 'spin' | 'reveal' | 'tip'
-type TipPhase = 'picking' | 'post'
 
 interface Prize {
   id: string
@@ -47,10 +46,16 @@ const DEFAULTS: Record<string, string> = {
   google_prompt:    'Atstāt atsauksmi Google',
   spin_button:      'Griezt!',
   prize_title:      'Tu ieguvi:',
-  prize_valid:      'Derīgs līdz',
-  prize_show:       'Uzrādi šo QR pie kases',
-  tip_prompt:       'Izvēlies dzeramnaudu',
-  tip_skip:         'Izlaist',
+  prize_claim_now:  'Saņemt balvu tūlīt',
+  prize_show_admin: 'Parādiet šo QR administratoram',
+  prize_later:      'Izmantot vēlāk vai uzdāvināt draugam',
+  prize_sms_prompt: 'Sūtīt QR saiti uz telefonu',
+  sms_send_btn:     'Sūtīt SMS',
+  next_button:      'Tālāk',
+  tip_thanks:       'Paldies, mēs priecājamies, ka Jums patika!',
+  tip_ask:          'Vai vēlaties atstāt pateicību instruktoram?',
+  tip_yes:          'Jā',
+  tip_no:           'Nē',
   end_title:        'Uz tikšanos!',
 }
 
@@ -91,9 +96,9 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
   const [comment,      setComment]      = useState('')
   const [saving,       setSaving]       = useState(false)
   const [qrDataUrl,    setQrDataUrl]    = useState('')
-  const [tipPhase,     setTipPhase]     = useState<TipPhase>('picking')
-  const [showCustom,   setShowCustom]   = useState(false)
-  const [customAmt,    setCustomAmt]    = useState('')
+  const [tipDone,      setTipDone]      = useState(false)
+  const [showQr,       setShowQr]       = useState(false)
+  const [showSms,      setShowSms]      = useState(false)
   const [spinLoading,  setSpinLoading]  = useState(false)
 
   // Wheel animation state (passed to PrizeWheel)
@@ -209,23 +214,6 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
     if (ok) setSmsStatus('sent')
     else { setSmsStatus('error'); setSmsError(error ?? 'SMS kļūda') }
   }
-
-  function goToTip() {
-    if (!staff.length) setTipPhase('post')
-    setPhase('tip')
-  }
-
-  async function handleTip(amountCents: number) {
-    if (!venue || !staff[0]) return
-    await supabase.from('tips').insert({
-      venue_id: venue.id, staff_id: staff[0].id,
-      amount_cents: amountCents, currency: 'EUR', status: 'pending',
-    })
-    window.open(staff[0].stripe_tip_link, '_blank')
-    afterTip()
-  }
-
-  function afterTip() { setTipPhase('post') }
 
   async function handleGoogleReview() {
     if (reviewId) await supabase.from('reviews').update({ google_redirected: true }).eq('id', reviewId)
@@ -352,110 +340,85 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
               spinning={false}
               onSpinEnd={() => {}}
             />
-            <div className="animate-pop-in w-full bg-white rounded-3xl shadow-2xl p-6 text-center">
-                <p className="text-xs font-bold tracking-widest text-purple-400 uppercase">{t('prize_title')}</p>
-                <p className="text-3xl font-black text-purple-700 mt-2 leading-tight">{spinResult?.prize_name}</p>
-                {qrDataUrl ? (
-                  <Image src={qrDataUrl} alt="QR kods" width={220} height={220} unoptimized
-                    className="mx-auto mt-4 rounded-2xl shadow-md" />
-                ) : (
-                  <div className="mx-auto mt-4 w-[220px] h-[220px] bg-gray-100 rounded-2xl animate-pulse" />
-                )}
-                <p className="mt-3 text-xs text-gray-400 leading-relaxed">
-                  {t('prize_show')}
-                  {spinResult?.expires_at && (
-                    <> · {t('prize_valid')}{' '}
-                      {new Date(spinResult.expires_at).toLocaleString(
-                        locale === 'en' ? 'en-GB' : 'lv-LV',
-                        { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }
-                      )}
-                    </>
+            <div className="animate-pop-in w-full bg-white rounded-3xl shadow-2xl p-6 flex flex-col gap-4">
+              <p className="text-xs font-bold tracking-widest text-purple-400 uppercase text-center">{t('prize_title')}</p>
+              <p className="text-3xl font-black text-purple-700 text-center leading-tight">{spinResult?.prize_name}</p>
+
+              {/* A: Saņemt tūlīt → QR */}
+              <button
+                onClick={() => setShowQr(v => !v)}
+                className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl active:scale-95 transition-all"
+              >
+                {t('prize_claim_now')}
+              </button>
+              {showQr && (
+                <div className="flex flex-col items-center gap-3">
+                  {qrDataUrl ? (
+                    <Image src={qrDataUrl} alt="QR kods" width={220} height={220} unoptimized
+                      className="rounded-2xl shadow-md" />
+                  ) : (
+                    <div className="w-[220px] h-[220px] bg-gray-100 rounded-2xl animate-pulse" />
                   )}
-                </p>
-                <div className="mt-4 border-t border-gray-100 pt-4 text-left">
-                  <p className="text-xs font-semibold text-gray-500 mb-2 text-center">
-                    {locale === 'en' ? 'Save your prize' : 'Saglabā savu balvu'}
-                  </p>
-                  <a href={`/prize/${spinResult?.qr_token}`} target="_blank" rel="noopener noreferrer"
-                    className="block w-full py-2.5 text-sm font-bold text-purple-600 border-2 border-purple-200 rounded-xl hover:bg-purple-50 transition-colors text-center">
-                    {locale === 'en' ? 'Open prize page' : 'Atvērt balvas lapu'}
-                  </a>
-                  <div className="mt-2 flex gap-2">
+                  <p className="text-sm text-gray-600 font-medium text-center">{t('prize_show_admin')}</p>
+                </div>
+              )}
+
+              {/* B: Izmantot vēlāk → SMS */}
+              <button
+                onClick={() => setShowSms(v => !v)}
+                className="w-full py-3 border-2 border-purple-200 text-purple-700 font-bold rounded-xl hover:bg-purple-50 active:scale-95 transition-all"
+              >
+                {t('prize_later')}
+              </button>
+              {showSms && (
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm text-gray-500 text-center">{t('prize_sms_prompt')}</p>
+                  <div className="flex gap-2">
                     <input type="tel" value={smsPhone} onChange={e => setSmsPhone(e.target.value)}
                       placeholder="+371 2x xxx xxx"
                       className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" />
                     <button onClick={handleSendSms}
                       disabled={smsSending || !smsPhone.trim() || smsStatus === 'sent'}
-                      className="px-3 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg disabled:opacity-40 active:scale-95 transition-all whitespace-nowrap">
-                      {smsSending ? '...' : smsStatus === 'sent'
-                        ? (locale === 'en' ? 'Sent!' : 'Nosūtīts!')
-                        : (locale === 'en' ? 'Send SMS' : 'Sūtīt SMS')}
+                      className="px-4 py-2 bg-purple-600 text-white text-sm font-bold rounded-lg disabled:opacity-40 active:scale-95 transition-all whitespace-nowrap">
+                      {smsSending ? '...' : smsStatus === 'sent' ? '✓' : t('sms_send_btn')}
                     </button>
                   </div>
-                  {smsStatus === 'error' && <p className="mt-1 text-xs text-red-400">{smsError}</p>}
+                  {smsStatus === 'error' && <p className="text-xs text-red-400">{smsError}</p>}
                 </div>
-                <button onClick={goToTip}
-                  className="mt-5 w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl active:scale-95 transition-all">
-                  {locale === 'en' ? 'Next' : 'Tālāk'}
-                </button>
-              </div>
+              )}
+
+              <button onClick={() => setPhase('tip')}
+                className="mt-2 w-full py-3 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-xl active:scale-95 transition-all">
+                {t('next_button')}
+              </button>
+            </div>
           </>
         )}
 
         {/* ===== TIP ===== */}
         {phase === 'tip' && (
           <>
-            {tipPhase === 'picking' && staff.length > 0 && (
-              <div className="animate-fade-up w-full bg-white rounded-3xl shadow-xl p-6 text-center">
-                <p className="text-xl font-black text-gray-800">
-                  {locale === 'en' ? `Thank ${staff[0]?.name}?` : `Vēlies pateikties ${staff[0]?.name}?`}
-                </p>
-                <p className="text-sm text-gray-400 mt-1 mb-6">{t('tip_prompt')}</p>
-                {!showCustom ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    {[100, 200, 500].map(cents => (
-                      <button key={cents} onClick={() => handleTip(cents)}
-                        className="py-4 text-lg font-bold border-2 border-purple-200 rounded-xl hover:bg-purple-50 hover:border-purple-500 active:scale-95 transition-all">
-                        €{cents / 100}
-                      </button>
-                    ))}
-                    <button onClick={() => setShowCustom(true)}
-                      className="py-4 text-lg font-bold border-2 border-gray-200 rounded-xl hover:bg-gray-50 active:scale-95 transition-all">
-                      {locale === 'en' ? 'Other' : 'Cita'}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center border-2 border-purple-200 rounded-xl px-4 py-2">
-                      <span className="text-gray-400 font-bold mr-1">€</span>
-                      <input type="number" min="0.5" step="0.5" value={customAmt}
-                        onChange={e => setCustomAmt(e.target.value)} placeholder="0.00" autoFocus
-                        className="flex-1 text-xl font-bold focus:outline-none" />
-                    </div>
-                    <button onClick={() => { const c = Math.round(parseFloat(customAmt)*100); if (c>0) handleTip(c) }}
-                      disabled={!customAmt || parseFloat(customAmt) <= 0}
-                      className="py-3 bg-purple-600 text-white font-bold rounded-xl disabled:opacity-40 active:scale-95 transition-all">
-                      {locale === 'en' ? 'Confirm' : 'Apstiprināt'}
-                    </button>
-                    <button onClick={() => setShowCustom(false)} className="py-2 text-sm text-gray-400">
-                      {locale === 'en' ? 'Back' : 'Atpakaļ'}
-                    </button>
-                  </div>
-                )}
-                <button onClick={afterTip}
-                  className="mt-4 w-full py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors">
-                  {t('tip_skip')}
-                </button>
+            {!tipDone ? (
+              <div className="animate-fade-up w-full bg-white rounded-3xl shadow-xl p-8 text-center flex flex-col gap-5">
+                <p className="text-xl font-black text-gray-800">{t('tip_thanks')}</p>
+                <p className="text-sm text-gray-500">{t('tip_ask')}</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { if (staff[0]?.stripe_tip_link) window.open(staff[0].stripe_tip_link, '_blank'); setTipDone(true) }}
+                    className="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl active:scale-95 transition-all">
+                    {t('tip_yes')}
+                  </button>
+                  <button
+                    onClick={() => setTipDone(true)}
+                    className="flex-1 py-3 border-2 border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-50 active:scale-95 transition-all">
+                    {t('tip_no')}
+                  </button>
+                </div>
               </div>
-            )}
-
-            {tipPhase === 'post' && (
+            ) : (
               <div className="animate-pop-in w-full bg-white rounded-3xl shadow-xl p-10 text-center">
                 <p className="text-4xl mb-2">🎉</p>
                 <p className="text-3xl font-black text-gray-800">{t('end_title')}</p>
-                <p className="text-gray-400 mt-2 text-sm">
-                  {locale === 'en' ? 'Thank you for your visit' : 'Paldies par apmeklējumu'}
-                </p>
               </div>
             )}
           </>
