@@ -22,7 +22,7 @@ export default function LoginPage() {
       return
     }
     router.refresh()
-    router.push('/admin/venue')
+    router.push('/admin')
   }
 
   return (

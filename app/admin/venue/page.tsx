@@ -16,16 +16,19 @@ export default function VenueDashboard() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { setReady(true); return }
       setEmail(user.email ?? null)
-      supabase.from('profiles').select('role').eq('id', user.id).single()
+      supabase.from('profiles').select('role, venue_id').eq('id', user.id).single()
         .then(({ data }) => {
-          if (data && ['client_admin', 'super_admin'].includes(data.role)) {
+          if (!data?.role) { setReady(true); return }
+          // super_admin has no venue_id — send to venue list
+          if (data.role === 'super_admin') { router.replace('/admin/venues'); return }
+          if (data.role === 'client_admin') {
             setAllowed(true)
             setRole(data.role)
           }
           setReady(true)
         })
     })
-  }, [])
+  }, [router])
 
   async function handleLogout() {
     await supabase.auth.signOut()
