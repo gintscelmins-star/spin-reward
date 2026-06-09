@@ -188,7 +188,7 @@ describe('H – Edge / Empty States', () => {
     const svc = serviceClient()
     // Deactivate all questions for venue A
     await svc.from('review_questions').update({ active: false }).eq('venue_id', f.venueA.id)
-    const { data, error } = await anonClient().rpc('get_session_context', {
+    const { error } = await anonClient().rpc('get_session_context', {
       p_session_id: f.sessionA.id,
     })
     await svc.from('review_questions').update({ active: true }).eq('venue_id', f.venueA.id)
