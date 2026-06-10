@@ -41,3 +41,32 @@ body {
 .animate-pop-in {
   animation: popIn 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards;
 }
+
+@keyframes wowBounce {
+  0%   { opacity: 0; transform: scale(0.15) rotate(-10deg); }
+  55%  { opacity: 1; transform: scale(1.2) rotate(3deg); }
+  72%  { transform: scale(0.91) rotate(-1deg); }
+  88%  { transform: scale(1.06); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+.animate-wow-bounce {
+  animation: wowBounce 0.75s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+
+@keyframes flashWhite {
+  0%   { opacity: 0; }
+  12%  { opacity: 0.55; }
+  100% { opacity: 0; }
+}
+.animate-flash {
+  animation: flashWhite 0.65s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes goldPulse {
+  0%, 100% { box-shadow: 0 0 18px rgba(212,175,55,0.35), 0 4px 24px rgba(0,0,0,0.22); }
+  50%       { box-shadow: 0 0 42px rgba(212,175,55,0.70), 0 4px 24px rgba(0,0,0,0.22); }
+}
+.animate-gold-pulse {
+  animation: goldPulse 2.2s ease-in-out infinite;
+}

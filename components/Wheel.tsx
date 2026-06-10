@@ -74,6 +74,7 @@ const DEFAULTS: Record<string, string> = {
   voucher_send_btn:    'Saņemt QR',
   screenshot_hint:     'Uztaisi ekrānšāviņu, lai nepazaudētu',
   my_prize:            'Tava balva',
+  reveal_wow:          'WOW! Apsveicam, tu laimēji!',
 }
 
 function getSessionId(): string {
@@ -143,6 +144,8 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
   const [spinLoading,   setSpinLoading]   = useState(false)
   const [targetIndex,   setTargetIndex]   = useState(-1)
   const [wheelSpinning, setWheelSpinning] = useState(false)
+  const [revealStage,   setRevealStage]   = useState<0 | 1 | 2>(0)
+  const [flashAnim,     setFlashAnim]     = useState(false)
 
   const sessionIdRef  = useRef('')
   const voucherCalled = useRef(false)
@@ -247,9 +250,19 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
   }
 
   const handleSpinEnd = useCallback(() => {
+    const COLORS = ['#D4AF37','#FFD700','#B91C1C','#FFF8E7','#7C3AED','#FFFFFF','#FF6B6B']
     setWheelSpinning(false)
+    setFlashAnim(true)
+    setTimeout(() => setFlashAnim(false), 650)
+    confetti({ particleCount: 110, spread: 75, origin: { x: 0.5, y: 0.55 }, colors: COLORS, scalar: 1.2 })
+    setTimeout(() => confetti({ particleCount: 65, spread: 55, angle: 60,  origin: { x: 0.1, y: 0.6 }, colors: COLORS }), 160)
+    setTimeout(() => confetti({ particleCount: 65, spread: 55, angle: 120, origin: { x: 0.9, y: 0.6 }, colors: COLORS }), 280)
+    setTimeout(() => confetti({ particleCount: 90, spread: 100, origin: { x: 0.5, y: 0.35 }, gravity: 0.7, colors: COLORS }), 450)
+    setTimeout(() => confetti({ particleCount: 45, spread: 70, origin: { x: 0.2, y: 0.4 }, colors: COLORS }), 850)
+    setTimeout(() => confetti({ particleCount: 45, spread: 70, origin: { x: 0.8, y: 0.4 }, colors: COLORS }), 1050)
     setPhase('reveal')
-    confetti({ particleCount: 120, spread: 80, origin: { y: 0.55 }, colors: ['#D4AF37','#B91C1C','#FFF8E7','#7C3AED'] })
+    setRevealStage(1)
+    setTimeout(() => setRevealStage(2), 700)
   }, [])
 
   async function handleSendSms() {
@@ -281,6 +294,7 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
     setCouponLoading(false)
   }
 
+  const dateLocale   = locale === 'en' ? 'en-GB' : locale === 'ru' ? 'ru-RU' : 'lv-LV'
   const segments: WheelSegment[] = prizes.map(p => ({ label: p.name, color: p.color }))
   const showPrizePill = !!spinResult && phase === 'done'
   const progressPhases: Phase[] = ['review', 'spin', 'reveal']
@@ -295,6 +309,7 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1a0533] to-[#0d0d1a] flex flex-col items-center">
       {showPrizePill && <PrizePill token={spinResult!.qr_token} label={t('my_prize')} />}
+      {flashAnim && <div className="fixed inset-0 bg-white animate-flash z-[200]" />}
 
       <div className="w-full max-w-sm px-4 pt-4 pb-24 flex flex-col items-center gap-5">
 
@@ -312,7 +327,7 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
         {phase === 'idle' && (
           <div className="animate-fade-up w-full flex flex-col items-center gap-5">
             <div className="flex justify-end w-full gap-1">
-              {['lv', 'en'].map(loc => (
+              {['lv', 'en', 'ru'].map(loc => (
                 <button key={loc} onClick={() => setLocale(loc)}
                   className={`px-2.5 py-0.5 text-xs font-bold rounded-md transition-colors ${locale === loc ? 'bg-purple-500 text-white' : 'text-purple-400 hover:text-purple-200'}`}>
                   {loc.toUpperCase()}
@@ -342,7 +357,7 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
             <div className="w-full bg-white rounded-3xl shadow-2xl p-6 -mt-10 z-10 flex flex-col gap-4">
               <h2 className="text-xl font-black text-center text-gray-800">{t('feedback_title')}</h2>
               <p className="text-sm text-center text-gray-400">
-                {locale === 'en' ? 'to reveal your prize' : 'lai atklātu savu balvu'}
+                {locale === 'ru' ? 'чтобы открыть приз' : locale === 'en' ? 'to reveal your prize' : 'lai atklātu savu balvu'}
               </p>
               {questions.map(q => (
                 <div key={q.id} className="flex flex-col gap-2">
@@ -365,7 +380,7 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
                 onClick={handleReviewSubmit}
                 disabled={saving || (questions.length > 0 && !questions.every(q => answers[q.id] != null))}
                 className="mt-2 w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl disabled:opacity-40 active:scale-95 transition-all">
-                {saving ? (locale === 'en' ? 'Saving...' : 'Saglabā...') : t('review_button')}
+                {saving ? (locale === 'ru' ? 'Сохраняем...' : locale === 'en' ? 'Saving...' : 'Saglabā...') : t('review_button')}
               </button>
             </div>
           </div>
@@ -377,7 +392,7 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
             <PrizeWheel segments={segments} targetIndex={targetIndex} spinning={wheelSpinning} onSpinEnd={handleSpinEnd} />
             <button onClick={handleSpin} disabled={wheelSpinning || spinLoading}
               className="w-full py-4 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white text-xl font-black rounded-2xl shadow-lg shadow-purple-900/50 active:scale-95 transition-all disabled:opacity-60">
-              {spinLoading ? (locale === 'en' ? 'Loading...' : 'Gatavojas...') : t('spin_button')}
+              {spinLoading ? (locale === 'ru' ? 'Готовимся...' : locale === 'en' ? 'Loading...' : 'Gatavojas...') : t('spin_button')}
             </button>
           </div>
         )}
@@ -386,51 +401,61 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
         {phase === 'reveal' && spinResult && (
           <>
             <PrizeWheel segments={segments} targetIndex={targetIndex} spinning={false} onSpinEnd={() => {}} />
-            <div className="animate-pop-in w-full bg-white rounded-3xl shadow-2xl p-6 flex flex-col gap-4">
-              <p className="text-xs font-bold tracking-widest text-purple-400 uppercase text-center">{t('prize_title')}</p>
-              <p className="text-3xl font-black text-purple-700 text-center leading-tight">{spinResult.prize_name}</p>
-              {spinResult.expires_at && (
-                <p className="text-xs text-gray-400 text-center">
-                  {t('prize_valid')}: {new Date(spinResult.expires_at).toLocaleString(locale === 'en' ? 'en-GB' : 'lv-LV', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            {revealStage >= 1 && (
+              <div className="animate-wow-bounce w-full text-center px-2">
+                <p className="text-3xl font-black text-yellow-400 leading-tight"
+                   style={{ textShadow: '0 0 24px rgba(212,175,55,0.9), 0 2px 8px rgba(0,0,0,0.5)' }}>
+                  {t('reveal_wow')}
                 </p>
-              )}
-              <button onClick={() => setShowQr(v => !v)}
-                className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl active:scale-95 transition-all">
-                {t('prize_claim_now')}
-              </button>
-              {showQr && (
-                <div className="flex flex-col items-center gap-3">
-                  {prizeQrUrl
-                    ? <Image src={prizeQrUrl} alt="QR kods" width={220} height={220} unoptimized className="rounded-2xl shadow-md" />
-                    : <div className="w-[220px] h-[220px] bg-gray-100 rounded-2xl animate-pulse" />}
-                  <p className="text-sm text-gray-600 font-medium text-center">{t('prize_show_admin')}</p>
-                  <p className="text-xs text-gray-400 text-center">{t('screenshot_hint')}</p>
-                </div>
-              )}
-              <button onClick={() => setShowSms(v => !v)}
-                className="w-full py-3 border-2 border-purple-200 text-purple-700 font-bold rounded-xl hover:bg-purple-50 active:scale-95 transition-all">
-                {t('prize_later')}
-              </button>
-              {showSms && (
-                <div className="flex flex-col gap-2">
-                  <p className="text-sm text-gray-500 text-center">{t('prize_sms_prompt')}</p>
-                  <div className="flex gap-2">
-                    <input type="tel" inputMode="numeric" value={smsPhone} onChange={e => setSmsPhone(e.target.value)}
-                      placeholder="+371 2x xxx xxx"
-                      className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" />
-                    <button onClick={handleSendSms} disabled={smsSending || !smsPhone.trim() || smsStatus === 'sent'}
-                      className="px-4 py-2 bg-purple-600 text-white text-sm font-bold rounded-lg disabled:opacity-40 active:scale-95 transition-all whitespace-nowrap">
-                      {smsSending ? '...' : smsStatus === 'sent' ? '✓' : t('sms_send_btn')}
-                    </button>
+              </div>
+            )}
+            {revealStage >= 2 && (
+              <div className="animate-pop-in animate-gold-pulse w-full bg-white rounded-3xl shadow-2xl p-6 flex flex-col gap-4">
+                <p className="text-xs font-bold tracking-widest text-purple-400 uppercase text-center">{t('prize_title')}</p>
+                <p className="text-3xl font-black text-purple-700 text-center leading-tight">{spinResult.prize_name}</p>
+                {spinResult.expires_at && (
+                  <p className="text-xs text-gray-400 text-center">
+                    {t('prize_valid')}: {new Date(spinResult.expires_at).toLocaleString(dateLocale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                )}
+                <button onClick={() => setShowQr(v => !v)}
+                  className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl active:scale-95 transition-all">
+                  {t('prize_claim_now')}
+                </button>
+                {showQr && (
+                  <div className="flex flex-col items-center gap-3">
+                    {prizeQrUrl
+                      ? <Image src={prizeQrUrl} alt="QR kods" width={220} height={220} unoptimized className="rounded-2xl shadow-md" />
+                      : <div className="w-[220px] h-[220px] bg-gray-100 rounded-2xl animate-pulse" />}
+                    <p className="text-sm text-gray-600 font-medium text-center">{t('prize_show_admin')}</p>
+                    <p className="text-xs text-gray-400 text-center">{t('screenshot_hint')}</p>
                   </div>
-                  {smsStatus === 'error' && <p className="text-xs text-red-400">{smsError}</p>}
-                </div>
-              )}
-              <button onClick={() => setPhase('done')}
-                className="mt-2 w-full py-3 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-xl active:scale-95 transition-all">
-                {t('next_button')}
-              </button>
-            </div>
+                )}
+                <button onClick={() => setShowSms(v => !v)}
+                  className="w-full py-3 border-2 border-purple-200 text-purple-700 font-bold rounded-xl hover:bg-purple-50 active:scale-95 transition-all">
+                  {t('prize_later')}
+                </button>
+                {showSms && (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-sm text-gray-500 text-center">{t('prize_sms_prompt')}</p>
+                    <div className="flex gap-2">
+                      <input type="tel" inputMode="numeric" value={smsPhone} onChange={e => setSmsPhone(e.target.value)}
+                        placeholder="+371 2x xxx xxx"
+                        className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" />
+                      <button onClick={handleSendSms} disabled={smsSending || !smsPhone.trim() || smsStatus === 'sent'}
+                        className="px-4 py-2 bg-purple-600 text-white text-sm font-bold rounded-lg disabled:opacity-40 active:scale-95 transition-all whitespace-nowrap">
+                        {smsSending ? '...' : smsStatus === 'sent' ? '✓' : t('sms_send_btn')}
+                      </button>
+                    </div>
+                    {smsStatus === 'error' && <p className="text-xs text-red-400">{smsError}</p>}
+                  </div>
+                )}
+                <button onClick={() => setPhase('done')}
+                  className="mt-2 w-full py-3 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-xl active:scale-95 transition-all">
+                  {t('next_button')}
+                </button>
+              </div>
+            )}
           </>
         )}
 
