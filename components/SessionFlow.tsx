@@ -12,8 +12,10 @@ const DEFAULTS: Record<string, string> = {
   welcome_title:       'Paldies par apmeklējumu!',
   welcome_subtitle:    'Novērtējiet mūs un grieziet laimes ratu ar balvām!',
   welcome_button:      'Sākt',
-  feedback_title:      'Kā tev patika?',
-  review_button:       'Tālāk',
+  feedback_title:             'Kā tev patika?',
+  review_comment_label:       'Atsauksme (neobligāti)',
+  review_comment_placeholder: 'Dalieties savā pieredzē...',
+  review_button:              'Tālāk',
   prize_title:         'Tu ieguvi:',
   prize_claim_now:     'Saņemt balvu tūlīt',
   prize_show_admin:    'Parādiet šo QR administratoram',
@@ -121,6 +123,7 @@ export default function SessionFlow({ sessionId, variant }: { sessionId: string;
   const [usedSession,   setUsedSession]   = useState(false)
   const [questions,     setQuestions]     = useState<ReviewQuestion[]>([])
   const [answers,       setAnswers]       = useState<Record<string, number>>({})
+  const [comment,       setComment]       = useState('')
   const [saving,        setSaving]        = useState(false)
   const [prizes,        setPrizes]        = useState<Prize[]>([])
   const [spinResult,    setSpinResult]    = useState<SpinResult | null>(null)
@@ -221,6 +224,7 @@ export default function SessionFlow({ sessionId, variant }: { sessionId: string;
     const rid = crypto.randomUUID()
     await supabase.from('reviews').insert({
       id: rid, venue_id: ctx.venue_id, session_id: sessionId, rating: avg,
+      comment: comment.trim() || null,
       staff_id: ctx.staff_id, activity_id: ctx.activity_id, google_redirected: false,
     })
     await supabase.from('review_answers').insert(
@@ -341,6 +345,15 @@ export default function SessionFlow({ sessionId, variant }: { sessionId: string;
                   : <Thumbs value={answers[q.id] ?? null} onChange={v => setAnswers(a => ({ ...a, [q.id]: v }))} />}
               </div>
             ))}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-gray-400">{t('review_comment_label')}</label>
+              <textarea
+                value={comment} onChange={e => setComment(e.target.value)}
+                placeholder={t('review_comment_placeholder')}
+                rows={3}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-300"
+              />
+            </div>
             <button onClick={handleReviewSubmit} disabled={!allAnswered || saving}
               className="mt-2 w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl disabled:opacity-40 active:scale-95 transition-all">
               {saving ? (locale === 'en' ? 'Saving...' : 'Saglabā...') : t('review_button')}

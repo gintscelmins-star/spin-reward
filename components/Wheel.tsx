@@ -42,12 +42,21 @@ interface VoucherResult {
   expires_at: string
 }
 
+interface ReviewQuestion {
+  id: string
+  label: string
+  type: 'stars' | 'thumbs'
+  sort_order: number
+}
+
 const DEFAULTS: Record<string, string> = {
   welcome_title:       'Paldies par apmeklējumu!',
   welcome_subtitle:    'Novērtējiet mūs un grieziet laimes ratu ar balvām!',
   welcome_button:      'Sākt',
-  feedback_title:      'Kā tev patika?',
-  review_button:       'Tālāk',
+  feedback_title:             'Kā tev patika?',
+  review_comment_label:       'Atsauksme (neobligāti)',
+  review_comment_placeholder: 'Dalieties savā pieredzē...',
+  review_button:              'Tālāk',
   spin_button:         'GRIEZT',
   prize_title:         'Tu ieguvi:',
   prize_claim_now:     'Saņemt balvu tūlīt',
@@ -86,6 +95,15 @@ function Stars({ value, onChange }: { value: number; onChange(n: number): void }
   )
 }
 
+function Thumbs({ value, onChange }: { value: number | null; onChange(n: number): void }) {
+  return (
+    <div className="flex justify-center gap-8">
+      <button onClick={() => onChange(5)} className={`text-5xl transition-transform active:scale-90 ${value === 5 ? '' : 'opacity-30'}`}>👍</button>
+      <button onClick={() => onChange(1)} className={`text-5xl transition-transform active:scale-90 ${value === 1 ? '' : 'opacity-30'}`}>👎</button>
+    </div>
+  )
+}
+
 function PrizePill({ token, label }: { token: string; label: string }) {
   return (
     <a
@@ -104,7 +122,9 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
   const [venue,         setVenue]         = useState<Venue | null>(null)
   const [locale,        setLocale]        = useState('lv')
   const [copy,          setCopy]          = useState<Record<string, string>>({})
-  const [rating,        setRating]        = useState(0)
+  const [questions,     setQuestions]     = useState<ReviewQuestion[]>([])
+  const [answers,       setAnswers]       = useState<Record<string, number>>({})
+  const [comment,       setComment]       = useState('')
   const [saving,        setSaving]        = useState(false)
   const [spinResult,    setSpinResult]    = useState<SpinResult | null>(null)
   const [prizeQrUrl,    setPrizeQrUrl]    = useState('')
@@ -161,9 +181,14 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
         setLoading(false); return
       }
 
-      const { data: p } = await supabase.rpc('get_wheel_prizes', { p_venue_slug: venueSlug })
+      const [{ data: p }, { data: qs }] = await Promise.all([
+        supabase.rpc('get_wheel_prizes', { p_venue_slug: venueSlug }),
+        supabase.from('review_questions').select('id, label, type, sort_order')
+          .eq('venue_id', v.id).eq('active', true).order('sort_order'),
+      ])
       setVenue(v as Venue)
       setPrizes((p ?? devPrizes) as Prize[])
+      setQuestions((qs ?? []) as ReviewQuestion[])
       setLocale(v.default_locale ?? 'lv')
       setLoading(false)
     }
@@ -203,13 +228,21 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
   }
 
   async function handleReviewSubmit() {
-    if (!rating || !venue) return
-    setSaving(true)
-    await supabase.from('reviews').insert({
-      id: crypto.randomUUID(), venue_id: venue.id, session_id: sessionIdRef.current,
-      rating, google_redirected: false,
-    })
-    setSaving(false)
+    const answered = questions.filter(q => answers[q.id] != null)
+    if (!venue) { setPhase('spin'); return }
+    if (answered.length) {
+      setSaving(true)
+      const avg = answered.reduce((s, q) => s + answers[q.id], 0) / answered.length
+      const rid = crypto.randomUUID()
+      await supabase.from('reviews').insert({
+        id: rid, venue_id: venue.id, session_id: sessionIdRef.current,
+        rating: avg, comment: comment.trim() || null, google_redirected: false,
+      })
+      await supabase.from('review_answers').insert(
+        answered.map(q => ({ review_id: rid, question_id: q.id, venue_id: venue.id, rating: answers[q.id] }))
+      )
+      setSaving(false)
+    }
     setPhase('spin')
   }
 
@@ -311,8 +344,26 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
               <p className="text-sm text-center text-gray-400">
                 {locale === 'en' ? 'to reveal your prize' : 'lai atklātu savu balvu'}
               </p>
-              <Stars value={rating} onChange={setRating} />
-              <button onClick={handleReviewSubmit} disabled={!rating || saving}
+              {questions.map(q => (
+                <div key={q.id} className="flex flex-col gap-2">
+                  <p className="text-sm font-medium text-gray-600 text-center">{q.label}</p>
+                  {q.type === 'stars'
+                    ? <Stars value={answers[q.id] ?? 0} onChange={v => setAnswers(a => ({ ...a, [q.id]: v }))} />
+                    : <Thumbs value={answers[q.id] ?? null} onChange={v => setAnswers(a => ({ ...a, [q.id]: v }))} />}
+                </div>
+              ))}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-400">{t('review_comment_label')}</label>
+                <textarea
+                  value={comment} onChange={e => setComment(e.target.value)}
+                  placeholder={t('review_comment_placeholder')}
+                  rows={3}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-300"
+                />
+              </div>
+              <button
+                onClick={handleReviewSubmit}
+                disabled={saving || (questions.length > 0 && !questions.every(q => answers[q.id] != null))}
                 className="mt-2 w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl disabled:opacity-40 active:scale-95 transition-all">
                 {saving ? (locale === 'en' ? 'Saving...' : 'Saglabā...') : t('review_button')}
               </button>
