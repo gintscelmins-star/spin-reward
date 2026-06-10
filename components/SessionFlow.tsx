@@ -130,13 +130,21 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
   const [smsPhone,    setSmsPhone]    = useState('')
   const [smsSending,  setSmsSending]  = useState(false)
   const [smsStatus,   setSmsStatus]   = useState<'idle' | 'sent' | 'error'>('idle')
-  const [smsError,    setSmsError]    = useState('')
-  const [locale,      setLocale]      = useState('lv')
-  const [copy,        setCopy]        = useState<Record<string, string>>({})
+  const [smsError,      setSmsError]      = useState('')
+  const [couponExpiry,  setCouponExpiry]  = useState<string | null>(null)
+  const [locale,        setLocale]        = useState('lv')
+  const [copy,          setCopy]          = useState<Record<string, string>>({})
   const [targetIndex,   setTargetIndex]   = useState(-1)
   const [wheelSpinning, setWheelSpinning] = useState(false)
 
   const spinCalled = useRef(false)
+
+  useEffect(() => {
+    if (!ctx?.fixed_discount_enabled || !ctx.fixed_discount_days) return
+    const loc = locale === 'en' ? 'en-GB' : 'lv-LV'
+    setCouponExpiry(new Date(Date.now() + ctx.fixed_discount_days * 86400000)
+      .toLocaleDateString(loc, { day: '2-digit', month: '2-digit', year: 'numeric' }))
+  }, [ctx?.fixed_discount_enabled, ctx?.fixed_discount_days, locale])
 
   function t(key: string) { return copy[key] ?? DEFAULTS[key] ?? key }
 
@@ -408,9 +416,9 @@ export default function SessionFlow({ sessionId }: { sessionId: string }) {
                 {locale === 'en' ? `Min. spend ${ctx.fixed_discount_min_spend}€` : `Min. pasūtījums ${ctx.fixed_discount_min_spend}€`}
               </p>
             )}
-            {ctx?.fixed_discount_days && (
+            {couponExpiry && (
               <p className="text-sm text-gray-400 text-center">
-                {t('coupon_valid')}: {new Date(Date.now() + ctx.fixed_discount_days * 86400000).toLocaleDateString(locale === 'en' ? 'en-GB' : 'lv-LV', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                {t('coupon_valid')}: {couponExpiry}
               </p>
             )}
             <div className="flex flex-col items-center gap-2">

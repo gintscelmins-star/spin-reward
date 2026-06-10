@@ -123,11 +123,19 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
   const [couponQrUrl,  setCouponQrUrl]  = useState('')
   const [showQr,       setShowQr]       = useState(false)
   const [showSms,      setShowSms]      = useState(false)
+  const [couponExpiry, setCouponExpiry] = useState<string | null>(null)
   const [spinLoading,  setSpinLoading]  = useState(false)
   const [targetIndex,   setTargetIndex]   = useState(-1)
   const [wheelSpinning, setWheelSpinning] = useState(false)
 
   const sessionId = useRef('')
+
+  useEffect(() => {
+    if (!venue?.fixed_discount_enabled || !venue.fixed_discount_days) return
+    const loc = locale === 'en' ? 'en-GB' : 'lv-LV'
+    setCouponExpiry(new Date(Date.now() + venue.fixed_discount_days * 86400000)
+      .toLocaleDateString(loc, { day: '2-digit', month: '2-digit', year: 'numeric' }))
+  }, [venue?.fixed_discount_enabled, venue?.fixed_discount_days, locale])
 
   function t(key: string) { return copy[key] ?? DEFAULTS[key] ?? key }
 
@@ -400,9 +408,9 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
                 {locale === 'en' ? `Min. spend ${venue.fixed_discount_min_spend}€` : `Min. pasūtījums ${venue.fixed_discount_min_spend}€`}
               </p>
             )}
-            {venue?.fixed_discount_days && (
+            {couponExpiry && (
               <p className="text-sm text-gray-400 text-center">
-                {t('coupon_valid')}: {new Date(Date.now() + venue.fixed_discount_days * 86400000).toLocaleDateString(locale === 'en' ? 'en-GB' : 'lv-LV', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                {t('coupon_valid')}: {couponExpiry}
               </p>
             )}
             <div className="flex flex-col items-center gap-2">

@@ -22,11 +22,12 @@ interface CheckRow {
 }
 
 export default function PrizePage({ params }: { params: Promise<{ token: string }> }) {
-  const [status,    setStatus]    = useState<PageStatus>('loading')
-  const [prizeName, setPrizeName] = useState('')
-  const [expiresAt, setExpiresAt] = useState('')
-  const [qrDataUrl, setQrDataUrl] = useState('')
-  const [row,       setRow]       = useState<CheckRow | null>(null)
+  const [status,       setStatus]       = useState<PageStatus>('loading')
+  const [prizeName,    setPrizeName]    = useState('')
+  const [expiresAt,    setExpiresAt]    = useState('')
+  const [qrDataUrl,    setQrDataUrl]    = useState('')
+  const [row,          setRow]          = useState<CheckRow | null>(null)
+  const [couponExpiry, setCouponExpiry] = useState<string | null>(null)
   const called = useRef(false)
 
   useEffect(() => {
@@ -41,6 +42,11 @@ export default function PrizePage({ params }: { params: Promise<{ token: string 
         if (r.expires_at) setExpiresAt(r.expires_at)
         setRow(r)
         setStatus(r.result)
+
+        if (r.fixed_discount_enabled && r.fixed_discount_days) {
+          setCouponExpiry(new Date(Date.now() + r.fixed_discount_days * 86400000)
+            .toLocaleDateString('lv-LV', { day: '2-digit', month: '2-digit', year: 'numeric' }))
+        }
 
         if (r.result === 'active') {
           QRCode.toDataURL(`${window.location.origin}/redeem/${t}`, {
@@ -59,9 +65,6 @@ export default function PrizePage({ params }: { params: Promise<{ token: string 
 
   if (status === 'active') {
     const hasCoupon = !!(row?.fixed_discount_enabled && row?.fixed_discount_eur)
-    const couponExpiry = hasCoupon && row?.fixed_discount_days
-      ? new Date(Date.now() + row.fixed_discount_days * 86400000).toLocaleDateString('lv-LV', { day: '2-digit', month: '2-digit', year: 'numeric' })
-      : null
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white flex flex-col items-center px-6 py-10 gap-6">
