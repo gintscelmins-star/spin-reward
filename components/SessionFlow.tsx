@@ -14,7 +14,6 @@ const DEFAULTS: Record<string, string> = {
   welcome_button:      'Sākt',
   feedback_title:      'Kā tev patika?',
   review_button:       'Tālāk',
-  neg_feedback_prompt: 'Kas nogāja greizi?',
   prize_title:         'Tu ieguvi:',
   prize_claim_now:     'Saņemt balvu tūlīt',
   prize_show_admin:    'Parādiet šo QR administratoram',
@@ -23,11 +22,6 @@ const DEFAULTS: Record<string, string> = {
   prize_valid:         'Derīgs līdz',
   sms_send_btn:        'Sūtīt SMS',
   next_button:         'Tālāk',
-  tip_thanks:          'Paldies, mēs priecājamies, ka Jums patika!',
-  tip_prompt:          'Vēlies pateikties',
-  tip_yes:             'Jā',
-  tip_no:              'Nē',
-  tip_skip:            'Izlaist',
   thanks_visit:        'Paldies par apmeklējumu!',
   google_prompt:       'Neaizmirsti atstāt mums atsauksmi Google!',
   google_optional:     'Neobligāti — tava balva jau ir tava',
@@ -39,7 +33,7 @@ const DEFAULTS: Record<string, string> = {
   my_prize:            'Tava balva',
 }
 
-type Phase = 'idle' | 'welcome' | 'review' | 'spin' | 'reveal' | 'tip' | 'done'
+type Phase = 'idle' | 'welcome' | 'review' | 'spin' | 'reveal' | 'done'
 
 interface SessionCtx {
   venue_id: string
@@ -127,7 +121,6 @@ export default function SessionFlow({ sessionId, variant }: { sessionId: string;
   const [usedSession,   setUsedSession]   = useState(false)
   const [questions,     setQuestions]     = useState<ReviewQuestion[]>([])
   const [answers,       setAnswers]       = useState<Record<string, number>>({})
-  const [negFeedback,   setNegFeedback]   = useState('')
   const [saving,        setSaving]        = useState(false)
   const [prizes,        setPrizes]        = useState<Prize[]>([])
   const [spinResult,    setSpinResult]    = useState<SpinResult | null>(null)
@@ -155,7 +148,6 @@ export default function SessionFlow({ sessionId, variant }: { sessionId: string;
   function t(key: string) { return copy[key] ?? DEFAULTS[key] ?? key }
 
   const hasCoupon = variant === 'B' ? true : variant === 'A' ? false : !!(ctx?.fixed_discount_enabled)
-  const hasLowRating = Object.values(answers).some(v => v <= 3)
 
   useEffect(() => {
     async function init() {
@@ -229,7 +221,6 @@ export default function SessionFlow({ sessionId, variant }: { sessionId: string;
     const rid = crypto.randomUUID()
     await supabase.from('reviews').insert({
       id: rid, venue_id: ctx.venue_id, session_id: sessionId, rating: avg,
-      comment: negFeedback.trim() || null,
       staff_id: ctx.staff_id, activity_id: ctx.activity_id, google_redirected: false,
     })
     await supabase.from('review_answers').insert(
@@ -270,9 +261,9 @@ export default function SessionFlow({ sessionId, variant }: { sessionId: string;
 
   const allAnswered  = questions.length > 0 && questions.every(q => answers[q.id] != null)
   const segments: WheelSegment[] = prizes.map(p => ({ label: p.name, color: p.color }))
-  const showPrizePill = !!spinResult && ['tip', 'done'].includes(phase)
-  const progressPhases: Phase[] = ['review', 'spin', 'reveal', 'tip']
-  const phaseOrder:    Phase[]  = ['review', 'spin', 'reveal', 'tip', 'done']
+  const showPrizePill = !!spinResult && phase === 'done'
+  const progressPhases: Phase[] = ['review', 'spin', 'reveal']
+  const phaseOrder:    Phase[]  = ['review', 'spin', 'reveal', 'done']
 
   if (usedSession) return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#1a0533] to-[#0d0d1a] px-8">
@@ -338,7 +329,7 @@ export default function SessionFlow({ sessionId, variant }: { sessionId: string;
           </div>
         )}
 
-        {/* ===== REVIEW — iekšējs, privāts; negatīvs teksta lauks ===== */}
+        {/* ===== REVIEW ===== */}
         {phase === 'review' && (
           <div className="animate-fade-up w-full bg-white rounded-3xl shadow-2xl p-6 flex flex-col gap-5">
             <h2 className="text-xl font-black text-center text-gray-800">{t('feedback_title')}</h2>
@@ -350,14 +341,6 @@ export default function SessionFlow({ sessionId, variant }: { sessionId: string;
                   : <Thumbs value={answers[q.id] ?? null} onChange={v => setAnswers(a => ({ ...a, [q.id]: v }))} />}
               </div>
             ))}
-            {hasLowRating && (
-              <textarea
-                value={negFeedback} onChange={e => setNegFeedback(e.target.value)}
-                placeholder={t('neg_feedback_prompt')}
-                rows={3}
-                className="w-full px-3 py-2 text-sm border border-orange-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-orange-300 bg-orange-50"
-              />
-            )}
             <button onClick={handleReviewSubmit} disabled={!allAnswered || saving}
               className="mt-2 w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl disabled:opacity-40 active:scale-95 transition-all">
               {saving ? (locale === 'en' ? 'Saving...' : 'Saglabā...') : t('review_button')}
@@ -421,33 +404,12 @@ export default function SessionFlow({ sessionId, variant }: { sessionId: string;
                   {smsStatus === 'error' && <p className="text-xs text-red-400">{smsError}</p>}
                 </div>
               )}
-              <button onClick={() => setPhase('tip')}
+              <button onClick={() => setPhase('done')}
                 className="mt-2 w-full py-3 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-xl active:scale-95 transition-all">
                 {t('next_button')}
               </button>
             </div>
           </>
-        )}
-
-        {/* ===== TIP ===== */}
-        {phase === 'tip' && (
-          <div className="animate-fade-up w-full bg-white rounded-3xl shadow-xl p-8 text-center flex flex-col gap-5">
-            <p className="text-xl font-black text-gray-800">{t('tip_thanks')}</p>
-            <p className="text-sm text-gray-500">
-              {t('tip_prompt')}{ctx?.staff_name ? ` ${ctx.staff_name}` : ''}?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => { if (ctx?.revolut_link) window.open(ctx.revolut_link, '_blank'); setPhase('done') }}
-                className="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl active:scale-95 transition-all">
-                {t('tip_yes')}
-              </button>
-              <button onClick={() => setPhase('done')}
-                className="flex-1 py-3 border-2 border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-50 active:scale-95 transition-all">
-                {t('tip_no')}
-              </button>
-            </div>
-          </div>
         )}
 
         {/* ===== DONE — pateicība + Google teksts + kupons (B) ===== */}

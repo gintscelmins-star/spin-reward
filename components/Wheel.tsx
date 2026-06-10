@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase'
 import { sendPrizeSms, sendVoucherSms } from '@/app/actions'
 import PrizeWheel, { type WheelSegment } from '@/components/PrizeWheel'
 
-type Phase = 'idle' | 'review' | 'spin' | 'reveal' | 'tip' | 'done'
+type Phase = 'idle' | 'review' | 'spin' | 'reveal' | 'done'
 
 interface Prize {
   id: string
@@ -27,12 +27,6 @@ interface Venue {
   fixed_discount_eur: number | null
   fixed_discount_min_spend: number | null
   fixed_discount_days: number | null
-}
-
-interface Staff {
-  id: string
-  name: string
-  stripe_tip_link: string
 }
 
 interface SpinResult {
@@ -54,7 +48,6 @@ const DEFAULTS: Record<string, string> = {
   welcome_button:      'Sākt',
   feedback_title:      'Kā tev patika?',
   review_button:       'Tālāk',
-  neg_feedback_prompt: 'Kas nogāja greizi?',
   spin_button:         'GRIEZT',
   prize_title:         'Tu ieguvi:',
   prize_claim_now:     'Saņemt balvu tūlīt',
@@ -64,10 +57,6 @@ const DEFAULTS: Record<string, string> = {
   prize_valid:         'Derīgs līdz',
   sms_send_btn:        'Sūtīt SMS',
   next_button:         'Tālāk',
-  tip_thanks:          'Paldies, mēs priecājamies, ka Jums patika!',
-  tip_prompt:          'Vēlies pateikties',
-  tip_yes:             'Jā',
-  tip_no:              'Nē',
   thanks_visit:        'Paldies par apmeklējumu!',
   google_prompt:       'Neaizmirsti atstāt mums atsauksmi Google!',
   google_optional:     'Neobligāti — tava balva jau ir tava',
@@ -113,11 +102,9 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
   const [loading,       setLoading]       = useState(true)
   const [prizes,        setPrizes]        = useState<Prize[]>([])
   const [venue,         setVenue]         = useState<Venue | null>(null)
-  const [staff,         setStaff]         = useState<Staff[]>([])
   const [locale,        setLocale]        = useState('lv')
   const [copy,          setCopy]          = useState<Record<string, string>>({})
   const [rating,        setRating]        = useState(0)
-  const [negFeedback,   setNegFeedback]   = useState('')
   const [saving,        setSaving]        = useState(false)
   const [spinResult,    setSpinResult]    = useState<SpinResult | null>(null)
   const [prizeQrUrl,    setPrizeQrUrl]    = useState('')
@@ -143,7 +130,6 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
   function t(key: string) { return copy[key] ?? DEFAULTS[key] ?? key }
 
   const hasCoupon = variant === 'B' ? true : variant === 'A' ? false : !!(venue?.fixed_discount_enabled)
-  const hasLowRating = rating > 0 && rating <= 3
 
   useEffect(() => {
     sessionIdRef.current = getSessionId()
@@ -172,17 +158,12 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
 
       if (!v) {
         setVenue(devVenue); setPrizes(devPrizes)
-        setStaff([{ id:'1', name:'Anna', stripe_tip_link:'#' }])
         setLoading(false); return
       }
 
-      const [{ data: p }, { data: s }] = await Promise.all([
-        supabase.rpc('get_wheel_prizes', { p_venue_slug: venueSlug }),
-        supabase.from('staff').select('id, name, stripe_tip_link').eq('venue_id', v.id).eq('active', true),
-      ])
+      const { data: p } = await supabase.rpc('get_wheel_prizes', { p_venue_slug: venueSlug })
       setVenue(v as Venue)
       setPrizes((p ?? devPrizes) as Prize[])
-      setStaff((s ?? []) as Staff[])
       setLocale(v.default_locale ?? 'lv')
       setLoading(false)
     }
@@ -226,7 +207,7 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
     setSaving(true)
     await supabase.from('reviews').insert({
       id: crypto.randomUUID(), venue_id: venue.id, session_id: sessionIdRef.current,
-      rating, comment: negFeedback.trim() || null, google_redirected: false,
+      rating, google_redirected: false,
     })
     setSaving(false)
     setPhase('spin')
@@ -268,9 +249,9 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
   }
 
   const segments: WheelSegment[] = prizes.map(p => ({ label: p.name, color: p.color }))
-  const showPrizePill = !!spinResult && ['tip', 'done'].includes(phase)
-  const progressPhases: Phase[] = ['review', 'spin', 'reveal', 'tip']
-  const phaseOrder:     Phase[] = ['review', 'spin', 'reveal', 'tip', 'done']
+  const showPrizePill = !!spinResult && phase === 'done'
+  const progressPhases: Phase[] = ['review', 'spin', 'reveal']
+  const phaseOrder:     Phase[] = ['review', 'spin', 'reveal', 'done']
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-900 to-purple-950">
@@ -319,7 +300,7 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
           </div>
         )}
 
-        {/* ===== REVIEW — iekšējs, privāts; negatīvs teksta lauks ===== */}
+        {/* ===== REVIEW ===== */}
         {phase === 'review' && (
           <div className="animate-fade-up w-full flex flex-col items-center">
             <div style={{ filter: 'brightness(0.25)' }}>
@@ -331,14 +312,6 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
                 {locale === 'en' ? 'to reveal your prize' : 'lai atklātu savu balvu'}
               </p>
               <Stars value={rating} onChange={setRating} />
-              {hasLowRating && (
-                <textarea
-                  value={negFeedback} onChange={e => setNegFeedback(e.target.value)}
-                  placeholder={t('neg_feedback_prompt')}
-                  rows={3}
-                  className="w-full px-3 py-2 text-sm border border-orange-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-orange-300 bg-orange-50"
-                />
-              )}
               <button onClick={handleReviewSubmit} disabled={!rating || saving}
                 className="mt-2 w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl disabled:opacity-40 active:scale-95 transition-all">
                 {saving ? (locale === 'en' ? 'Saving...' : 'Saglabā...') : t('review_button')}
@@ -402,33 +375,12 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
                   {smsStatus === 'error' && <p className="text-xs text-red-400">{smsError}</p>}
                 </div>
               )}
-              <button onClick={() => setPhase('tip')}
+              <button onClick={() => setPhase('done')}
                 className="mt-2 w-full py-3 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-xl active:scale-95 transition-all">
                 {t('next_button')}
               </button>
             </div>
           </>
-        )}
-
-        {/* ===== TIP ===== */}
-        {phase === 'tip' && (
-          <div className="animate-fade-up w-full bg-white rounded-3xl shadow-xl p-8 text-center flex flex-col gap-5">
-            <p className="text-xl font-black text-gray-800">{t('tip_thanks')}</p>
-            <p className="text-sm text-gray-500">
-              {t('tip_prompt')}{staff[0]?.name ? ` ${staff[0].name}` : ''}?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => { if (staff[0]?.stripe_tip_link) window.open(staff[0].stripe_tip_link, '_blank'); setPhase('done') }}
-                className="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl active:scale-95 transition-all">
-                {t('tip_yes')}
-              </button>
-              <button onClick={() => setPhase('done')}
-                className="flex-1 py-3 border-2 border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-50 active:scale-95 transition-all">
-                {t('tip_no')}
-              </button>
-            </div>
-          </div>
         )}
 
         {/* ===== DONE — pateicība + Google teksts + kupons (B) ===== */}
