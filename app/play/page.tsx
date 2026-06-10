@@ -4,12 +4,12 @@ import SessionFlow from '@/components/SessionFlow'
 export default async function PlayPage({
   searchParams,
 }: {
-  searchParams: Promise<{ session?: string; venue?: string }>
+  searchParams: Promise<{ session?: string; venue?: string; variant?: string }>
 }) {
-  const { session, venue } = await searchParams
+  const { session, venue, variant } = await searchParams
 
-  if (session) return <SessionFlow sessionId={session} />
-  if (venue) return <Wheel venueSlug={venue} />
+  if (session) return <SessionFlow sessionId={session} variant={variant} />
+  if (venue) return <Wheel venueSlug={venue} variant={variant} />
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
