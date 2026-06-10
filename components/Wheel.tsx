@@ -5,10 +5,10 @@ import Image from 'next/image'
 import QRCode from 'qrcode'
 import confetti from 'canvas-confetti'
 import { supabase } from '@/lib/supabase'
-import { sendPrizeSms } from '@/app/actions'
+import { sendPrizeSms, sendVoucherSms } from '@/app/actions'
 import PrizeWheel, { type WheelSegment } from '@/components/PrizeWheel'
 
-type Phase = 'idle' | 'review' | 'spin' | 'reveal' | 'coupon' | 'tip' | 'google' | 'done'
+type Phase = 'idle' | 'review' | 'spin' | 'reveal' | 'tip' | 'done'
 
 interface Prize {
   id: string
@@ -41,35 +41,41 @@ interface SpinResult {
   expires_at: string
 }
 
+interface VoucherResult {
+  qr_token: string
+  discount_eur: number
+  min_spend: number | null
+  expires_at: string
+}
+
 const DEFAULTS: Record<string, string> = {
-  welcome_title:    'Paldies par apmeklējumu!',
-  welcome_subtitle: 'Novērtējiet mūs un grieziet laimes ratu ar balvām!',
-  welcome_button:   'Sākt',
-  feedback_title:   'Kā tev patika?',
-  review_button:    'Tālāk',
-  spin_button:      'GRIEZT',
-  prize_title:      'Tu ieguvi:',
-  prize_claim_now:  'Saņemt balvu tūlīt',
-  prize_show_admin: 'Parādiet šo QR administratoram',
-  prize_show:       'Uzrādi šo QR pie kases',
-  prize_later:      'Izmantot vēlāk vai uzdāvināt draugam',
-  prize_sms_prompt: 'Ievadi telefonu — saņem SMS ar linku',
-  prize_valid:      'Derīgs līdz',
-  sms_send_btn:     'Sūtīt SMS',
-  next_button:      'Tālāk',
-  coupon_title:     'Tava atlaide nākamajai spēlei',
-  coupon_valid:     'Derīgs līdz',
-  tip_thanks:       'Paldies, mēs priecājamies, ka Jums patika!',
-  tip_prompt:       'Vēlies pateikties',
-  tip_yes:          'Jā',
-  tip_no:           'Nē',
-  tip_skip:         'Izlaist',
-  end_title:        'Uz tikšanos!',
-  google_prompt:    'Patika pie mums? Padalieties pieredzē Google',
-  google_optional:  'Neobligāti — tava balva un kupons jau ir tavi',
-  google_cta:       'Atvērt Google',
-  screenshot_hint:  'Uztaisi ekrānšāviņu, lai nepazaudētu',
-  my_prize:         'Tava balva',
+  welcome_title:       'Paldies par apmeklējumu!',
+  welcome_subtitle:    'Novērtējiet mūs un grieziet laimes ratu ar balvām!',
+  welcome_button:      'Sākt',
+  feedback_title:      'Kā tev patika?',
+  review_button:       'Tālāk',
+  neg_feedback_prompt: 'Kas nogāja greizi?',
+  spin_button:         'GRIEZT',
+  prize_title:         'Tu ieguvi:',
+  prize_claim_now:     'Saņemt balvu tūlīt',
+  prize_show_admin:    'Parādiet šo QR administratoram',
+  prize_later:         'Izmantot vēlāk vai uzdāvināt draugam',
+  prize_sms_prompt:    'Ievadi telefonu — saņem SMS ar linku',
+  prize_valid:         'Derīgs līdz',
+  sms_send_btn:        'Sūtīt SMS',
+  next_button:         'Tālāk',
+  tip_thanks:          'Paldies, mēs priecājamies, ka Jums patika!',
+  tip_prompt:          'Vēlies pateikties',
+  tip_yes:             'Jā',
+  tip_no:              'Nē',
+  thanks_visit:        'Paldies par apmeklējumu!',
+  google_prompt:       'Neaizmirsti atstāt mums atsauksmi Google!',
+  google_optional:     'Neobligāti — tava balva jau ir tava',
+  coupon_phone_prompt: 'Ievadi savu numuru un saņem QR ar atlaidi nākamajam apmeklējumam',
+  coupon_title:        'Tava atlaide nākamajai spēlei',
+  voucher_send_btn:    'Saņemt QR',
+  screenshot_hint:     'Uztaisi ekrānšāviņu, lai nepazaudētu',
+  my_prize:            'Tava balva',
 }
 
 function getSessionId(): string {
@@ -102,48 +108,45 @@ function PrizePill({ token, label }: { token: string; label: string }) {
   )
 }
 
-export default function Wheel({ venueSlug }: { venueSlug: string }) {
-  const [phase,        setPhase]        = useState<Phase>('idle')
-  const [loading,      setLoading]      = useState(true)
-  const [prizes,       setPrizes]       = useState<Prize[]>([])
-  const [venue,        setVenue]        = useState<Venue | null>(null)
-  const [staff,        setStaff]        = useState<Staff[]>([])
-  const [locale,       setLocale]       = useState('lv')
-  const [copy,         setCopy]         = useState<Record<string, string>>({})
-  const [smsPhone,     setSmsPhone]     = useState('')
-  const [smsSending,   setSmsSending]   = useState(false)
-  const [smsStatus,    setSmsStatus]    = useState<'idle' | 'sent' | 'error'>('idle')
-  const [smsError,     setSmsError]     = useState('')
-  const [spinResult,   setSpinResult]   = useState<SpinResult | null>(null)
-  const [reviewId,     setReviewId]     = useState<string | null>(null)
-  const [rating,       setRating]       = useState(0)
-  const [comment,      setComment]      = useState('')
-  const [saving,       setSaving]       = useState(false)
-  const [prizeQrUrl,   setPrizeQrUrl]   = useState('')
-  const [couponQrUrl,  setCouponQrUrl]  = useState('')
-  const [showQr,       setShowQr]       = useState(false)
-  const [showSms,      setShowSms]      = useState(false)
-  const [couponExpiry, setCouponExpiry] = useState<string | null>(null)
-  const [spinLoading,  setSpinLoading]  = useState(false)
+export default function Wheel({ venueSlug, variant }: { venueSlug: string; variant?: string }) {
+  const [phase,         setPhase]         = useState<Phase>('idle')
+  const [loading,       setLoading]       = useState(true)
+  const [prizes,        setPrizes]        = useState<Prize[]>([])
+  const [venue,         setVenue]         = useState<Venue | null>(null)
+  const [staff,         setStaff]         = useState<Staff[]>([])
+  const [locale,        setLocale]        = useState('lv')
+  const [copy,          setCopy]          = useState<Record<string, string>>({})
+  const [rating,        setRating]        = useState(0)
+  const [negFeedback,   setNegFeedback]   = useState('')
+  const [saving,        setSaving]        = useState(false)
+  const [spinResult,    setSpinResult]    = useState<SpinResult | null>(null)
+  const [prizeQrUrl,    setPrizeQrUrl]    = useState('')
+  const [showQr,        setShowQr]        = useState(false)
+  const [showSms,       setShowSms]       = useState(false)
+  const [smsPhone,      setSmsPhone]      = useState('')
+  const [smsSending,    setSmsSending]    = useState(false)
+  const [smsStatus,     setSmsStatus]     = useState<'idle' | 'sent' | 'error'>('idle')
+  const [smsError,      setSmsError]      = useState('')
+  const [voucherResult, setVoucherResult] = useState<VoucherResult | null>(null)
+  const [voucherQrUrl,  setVoucherQrUrl]  = useState('')
+  const [couponPhone,   setCouponPhone]   = useState('')
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [couponSent,    setCouponSent]    = useState(false)
+  const [couponErr,     setCouponErr]     = useState('')
+  const [spinLoading,   setSpinLoading]   = useState(false)
   const [targetIndex,   setTargetIndex]   = useState(-1)
   const [wheelSpinning, setWheelSpinning] = useState(false)
 
-  const sessionId = useRef('')
-
-  useEffect(() => {
-    if (!venue?.fixed_discount_enabled || !venue.fixed_discount_days) return
-    const loc = locale === 'en' ? 'en-GB' : 'lv-LV'
-    setCouponExpiry(new Date(Date.now() + venue.fixed_discount_days * 86400000)
-      .toLocaleDateString(loc, { day: '2-digit', month: '2-digit', year: 'numeric' }))
-  }, [venue?.fixed_discount_enabled, venue?.fixed_discount_days, locale])
+  const sessionIdRef  = useRef('')
+  const voucherCalled = useRef(false)
 
   function t(key: string) { return copy[key] ?? DEFAULTS[key] ?? key }
 
-  const hasCoupon = !!(venue?.fixed_discount_enabled && venue?.fixed_discount_eur)
-  const hasGoogle = !!venue?.google_place_id
+  const hasCoupon = variant === 'B' ? true : variant === 'A' ? false : !!(venue?.fixed_discount_enabled)
+  const hasLowRating = rating > 0 && rating <= 3
 
   useEffect(() => {
-    sessionId.current = getSessionId()
+    sessionIdRef.current = getSessionId()
 
     async function load() {
       const { data: v } = await supabase
@@ -197,16 +200,15 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
 
   useEffect(() => {
     if (!spinResult) return
-    const origin = window.location.origin
     const opts = { width: 220, margin: 2, color: { dark: '#1a1a2e', light: '#ffffff' } }
-    QRCode.toDataURL(`${origin}/redeem/${spinResult.qr_token}`, opts).then(d => setPrizeQrUrl(d))
-    QRCode.toDataURL(`${origin}/prize/${spinResult.qr_token}`, opts).then(d => setCouponQrUrl(d))
+    QRCode.toDataURL(`${window.location.origin}/redeem/${spinResult.qr_token}`, opts)
+      .then(d => setPrizeQrUrl(d))
   }, [spinResult])
 
   async function handleSpin() {
     if (!venue || wheelSpinning || spinLoading) return
     setSpinLoading(true)
-    const { data } = await supabase.rpc('spin_wheel', { p_venue_slug: venueSlug, p_session_id: sessionId.current })
+    const { data } = await supabase.rpc('spin_wheel', { p_venue_slug: venueSlug, p_session_id: sessionIdRef.current })
     const result: SpinResult = data?.[0] ?? {
       prize_name: prizes[Math.floor(Math.random() * prizes.length)]?.name ?? 'Balva',
       qr_token: crypto.randomUUID().slice(0, 8).toUpperCase(),
@@ -222,12 +224,10 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
   async function handleReviewSubmit() {
     if (!rating || !venue) return
     setSaving(true)
-    const rid = crypto.randomUUID()
     await supabase.from('reviews').insert({
-      id: rid, venue_id: venue.id, session_id: sessionId.current,
-      rating, comment: comment.trim() || null, google_redirected: false,
+      id: crypto.randomUUID(), venue_id: venue.id, session_id: sessionIdRef.current,
+      rating, comment: negFeedback.trim() || null, google_redirected: false,
     })
-    setReviewId(rid)
     setSaving(false)
     setPhase('spin')
   }
@@ -247,10 +247,30 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
     else { setSmsStatus('error'); setSmsError(error ?? 'SMS kļūda') }
   }
 
+  async function handleIssueVoucher() {
+    if (!couponPhone.trim() || couponLoading || voucherCalled.current) return
+    voucherCalled.current = true
+    setCouponLoading(true)
+    const { data } = await supabase.rpc('issue_voucher_venue', { p_slug: venueSlug })
+    const result = (data as VoucherResult[] | null)?.[0]
+    if (result) {
+      setVoucherResult(result)
+      const origin = window.location.origin
+      const opts = { width: 200, margin: 2, color: { dark: '#1a1a2e', light: '#ffffff' } }
+      QRCode.toDataURL(`${origin}/kupons/${result.qr_token}`, opts).then(d => setVoucherQrUrl(d))
+      const { ok } = await sendVoucherSms(String(result.qr_token), couponPhone.trim(), origin)
+      if (ok) setCouponSent(true)
+    } else {
+      setCouponErr('Kupons nav pieejams')
+      voucherCalled.current = false
+    }
+    setCouponLoading(false)
+  }
+
   const segments: WheelSegment[] = prizes.map(p => ({ label: p.name, color: p.color }))
-  const showPrizePill = !!spinResult && ['coupon', 'tip', 'google', 'done'].includes(phase)
-  const progressPhases: Phase[] = ['review', 'spin', 'reveal', ...(hasCoupon ? ['coupon' as Phase] : []), 'tip', ...(hasGoogle ? ['google' as Phase] : [])]
-  const phaseOrder:    Phase[]  = ['review', 'spin', 'reveal', 'coupon', 'tip', 'google', 'done']
+  const showPrizePill = !!spinResult && ['tip', 'done'].includes(phase)
+  const progressPhases: Phase[] = ['review', 'spin', 'reveal', 'tip']
+  const phaseOrder:     Phase[] = ['review', 'spin', 'reveal', 'tip', 'done']
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-900 to-purple-950">
@@ -285,13 +305,6 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
                 </button>
               ))}
             </div>
-            {venue?.logo_url && (
-              <div className="flex justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={venue.logo_url} alt={venue.brand_name ?? venue.name}
-                  className="max-h-28 w-auto object-contain" />
-              </div>
-            )}
             <div className="text-center">
               <h1 className="text-2xl font-black text-white tracking-tight">
                 {venue?.brand_name ?? venue?.name ?? t('welcome_title')}
@@ -306,26 +319,28 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
           </div>
         )}
 
-        {/* ===== REVIEW ===== */}
+        {/* ===== REVIEW — iekšējs, privāts; negatīvs teksta lauks ===== */}
         {phase === 'review' && (
           <div className="animate-fade-up w-full flex flex-col items-center">
             <div style={{ filter: 'brightness(0.25)' }}>
               <PrizeWheel segments={segments} targetIndex={-1} spinning={false} onSpinEnd={() => {}} />
             </div>
-            <div className="w-full bg-white rounded-3xl shadow-2xl p-6 -mt-10 z-10">
+            <div className="w-full bg-white rounded-3xl shadow-2xl p-6 -mt-10 z-10 flex flex-col gap-4">
               <h2 className="text-xl font-black text-center text-gray-800">{t('feedback_title')}</h2>
-              <p className="text-sm text-center text-gray-400 mt-1 mb-5">
+              <p className="text-sm text-center text-gray-400">
                 {locale === 'en' ? 'to reveal your prize' : 'lai atklātu savu balvu'}
               </p>
               <Stars value={rating} onChange={setRating} />
-              <textarea
-                value={comment} onChange={e => setComment(e.target.value)}
-                placeholder={locale === 'en' ? 'Comment (optional)' : 'Komentārs (nav obligāti)'}
-                rows={3}
-                className="w-full mt-4 px-3 py-2 text-sm border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-300"
-              />
+              {hasLowRating && (
+                <textarea
+                  value={negFeedback} onChange={e => setNegFeedback(e.target.value)}
+                  placeholder={t('neg_feedback_prompt')}
+                  rows={3}
+                  className="w-full px-3 py-2 text-sm border border-orange-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-orange-300 bg-orange-50"
+                />
+              )}
               <button onClick={handleReviewSubmit} disabled={!rating || saving}
-                className="mt-4 w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl disabled:opacity-40 active:scale-95 transition-all">
+                className="mt-2 w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl disabled:opacity-40 active:scale-95 transition-all">
                 {saving ? (locale === 'en' ? 'Saving...' : 'Saglabā...') : t('review_button')}
               </button>
             </div>
@@ -343,14 +358,14 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
           </div>
         )}
 
-        {/* ===== REVEAL — QR #1: /redeem/{token} ===== */}
-        {phase === 'reveal' && (
+        {/* ===== REVEAL — QR: /redeem/{token} ===== */}
+        {phase === 'reveal' && spinResult && (
           <>
             <PrizeWheel segments={segments} targetIndex={targetIndex} spinning={false} onSpinEnd={() => {}} />
             <div className="animate-pop-in w-full bg-white rounded-3xl shadow-2xl p-6 flex flex-col gap-4">
               <p className="text-xs font-bold tracking-widest text-purple-400 uppercase text-center">{t('prize_title')}</p>
-              <p className="text-3xl font-black text-purple-700 text-center leading-tight">{spinResult?.prize_name}</p>
-              {spinResult?.expires_at && (
+              <p className="text-3xl font-black text-purple-700 text-center leading-tight">{spinResult.prize_name}</p>
+              {spinResult.expires_at && (
                 <p className="text-xs text-gray-400 text-center">
                   {t('prize_valid')}: {new Date(spinResult.expires_at).toLocaleString(locale === 'en' ? 'en-GB' : 'lv-LV', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </p>
@@ -387,44 +402,12 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
                   {smsStatus === 'error' && <p className="text-xs text-red-400">{smsError}</p>}
                 </div>
               )}
-              <button onClick={() => setPhase(hasCoupon ? 'coupon' : 'tip')}
+              <button onClick={() => setPhase('tip')}
                 className="mt-2 w-full py-3 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-xl active:scale-95 transition-all">
                 {t('next_button')}
               </button>
             </div>
           </>
-        )}
-
-        {/* ===== COUPON — QR #2: /prize/{token} ===== */}
-        {phase === 'coupon' && spinResult && (
-          <div className="animate-fade-up w-full bg-white rounded-3xl shadow-2xl p-6 flex flex-col gap-4">
-            <p className="text-xs font-bold tracking-widest text-green-500 uppercase text-center">BONUSS</p>
-            <p className="text-2xl font-black text-gray-800 text-center">{t('coupon_title')}</p>
-            {venue?.fixed_discount_eur && (
-              <p className="text-5xl font-black text-green-600 text-center">-{venue.fixed_discount_eur}€</p>
-            )}
-            {venue?.fixed_discount_min_spend && (
-              <p className="text-sm text-gray-400 text-center">
-                {locale === 'en' ? `Min. spend ${venue.fixed_discount_min_spend}€` : `Min. pasūtījums ${venue.fixed_discount_min_spend}€`}
-              </p>
-            )}
-            {couponExpiry && (
-              <p className="text-sm text-gray-400 text-center">
-                {t('coupon_valid')}: {couponExpiry}
-              </p>
-            )}
-            <div className="flex flex-col items-center gap-2">
-              {couponQrUrl
-                ? <Image src={couponQrUrl} alt="Kupona QR" width={200} height={200} unoptimized className="rounded-2xl shadow-md" />
-                : <div className="w-[200px] h-[200px] bg-gray-100 rounded-2xl animate-pulse" />}
-              <p className="text-sm text-gray-600 font-medium text-center">{t('prize_show')}</p>
-              <p className="text-xs text-gray-400 text-center">{t('screenshot_hint')}</p>
-            </div>
-            <button onClick={() => setPhase('tip')}
-              className="mt-2 w-full py-3 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-xl active:scale-95 transition-all">
-              {t('next_button')}
-            </button>
-          </div>
         )}
 
         {/* ===== TIP ===== */}
@@ -436,12 +419,11 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
             </p>
             <div className="flex gap-3">
               <button
-                onClick={() => { if (staff[0]?.stripe_tip_link) window.open(staff[0].stripe_tip_link, '_blank'); setPhase(hasGoogle ? 'google' : 'done') }}
+                onClick={() => { if (staff[0]?.stripe_tip_link) window.open(staff[0].stripe_tip_link, '_blank'); setPhase('done') }}
                 className="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl active:scale-95 transition-all">
                 {t('tip_yes')}
               </button>
-              <button
-                onClick={() => setPhase(hasGoogle ? 'google' : 'done')}
+              <button onClick={() => setPhase('done')}
                 className="flex-1 py-3 border-2 border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-50 active:scale-95 transition-all">
                 {t('tip_no')}
               </button>
@@ -449,31 +431,63 @@ export default function Wheel({ venueSlug }: { venueSlug: string }) {
           </div>
         )}
 
-        {/* ===== GOOGLE — pēdējais, neitrāls, visiem vienāds ===== */}
-        {phase === 'google' && venue?.google_place_id && (
-          <div className="animate-fade-up w-full bg-white rounded-3xl shadow-xl p-8 text-center flex flex-col gap-4">
-            <p className="text-lg font-bold text-gray-800 leading-snug">{t('google_prompt')}</p>
-            <p className="text-sm text-gray-400">{t('google_optional')}</p>
-            <a
-              href={`https://search.google.com/local/writereview?placeid=${venue.google_place_id}`}
-              target="_blank" rel="noopener noreferrer"
-              onClick={() => { if (reviewId) supabase.from('reviews').update({ google_redirected: true }).eq('id', reviewId) }}
-              className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white text-lg font-black rounded-2xl shadow active:scale-95 transition-all block"
-            >
-              {t('google_cta')}
-            </a>
-            <button onClick={() => setPhase('done')}
-              className="py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors">
-              {t('tip_skip')}
-            </button>
-          </div>
-        )}
-
-        {/* ===== DONE ===== */}
+        {/* ===== DONE — pateicība + Google teksts + kupons (B) ===== */}
         {phase === 'done' && (
-          <div className="animate-pop-in w-full bg-white rounded-3xl shadow-xl p-10 text-center">
-            <p className="text-4xl mb-2">🎉</p>
-            <p className="text-3xl font-black text-gray-800">{t('end_title')}</p>
+          <div className="animate-pop-in w-full flex flex-col gap-4">
+            {/* Pateicība */}
+            <div className="bg-white rounded-3xl shadow-xl p-8 text-center">
+              <p className="text-4xl mb-3">🎉</p>
+              <p className="text-2xl font-black text-gray-800">{t('thanks_visit')}</p>
+            </div>
+
+            {/* Google — tikai teksts, bez pogas/linka */}
+            <div className="bg-white/10 backdrop-blur rounded-2xl p-5 text-center">
+              <p className="text-white font-semibold text-sm leading-relaxed">{t('google_prompt')}</p>
+              <p className="text-purple-300 text-xs mt-2">{t('google_optional')}</p>
+            </div>
+
+            {/* Kupons (Variant B vai production ar discount) */}
+            {hasCoupon && (
+              <div className="bg-white rounded-3xl shadow-xl p-6 flex flex-col gap-4">
+                <p className="text-xs font-bold tracking-widest text-green-500 uppercase text-center">BONUSS</p>
+                <p className="text-lg font-black text-gray-800 text-center">{t('coupon_title')}</p>
+
+                {!voucherResult ? (
+                  <>
+                    <p className="text-sm text-gray-500 text-center">{t('coupon_phone_prompt')}</p>
+                    <div className="flex gap-2">
+                      <input
+                        type="tel" inputMode="numeric" value={couponPhone}
+                        onChange={e => setCouponPhone(e.target.value)}
+                        placeholder="+371 2x xxx xxx"
+                        className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-300"
+                      />
+                      <button
+                        onClick={handleIssueVoucher}
+                        disabled={couponLoading || !couponPhone.trim()}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-lg disabled:opacity-40 active:scale-95 transition-all whitespace-nowrap">
+                        {couponLoading ? '...' : t('voucher_send_btn')}
+                      </button>
+                    </div>
+                    {couponErr && <p className="text-xs text-red-400 text-center">{couponErr}</p>}
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center gap-3">
+                    {voucherResult.discount_eur && (
+                      <p className="text-4xl font-black text-green-600">-{voucherResult.discount_eur}€</p>
+                    )}
+                    {voucherQrUrl
+                      ? <Image src={voucherQrUrl} alt="Kupona QR" width={200} height={200} unoptimized className="rounded-2xl shadow-md" />
+                      : <div className="w-[200px] h-[200px] bg-gray-100 rounded-2xl animate-pulse" />}
+                    <p className="text-sm text-gray-600 font-medium text-center">
+                      {locale === 'en' ? 'Show at the register' : 'Uzrādi pie kases'}
+                    </p>
+                    {couponSent && <p className="text-xs text-green-600">✓ SMS nosūtīts</p>}
+                    <p className="text-xs text-gray-400 text-center">{t('screenshot_hint')}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
