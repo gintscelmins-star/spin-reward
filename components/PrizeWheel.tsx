@@ -12,13 +12,28 @@ interface PrizeWheelProps {
   targetIndex: number   // which segment to land on
   spinning: boolean     // parent flips true to trigger
   onSpinEnd(): void
+  theme?: 'default' | 'carnival'
 }
 
-// Alternating red / cream palette
+// Alternating red / cream palette (default theme)
 const PALETTE = [
   { fill: '#B91C1C', text: '#FFFFFF' },
   { fill: '#FFF8E7', text: '#7C2D12' },
 ]
+
+// Carnival lamp ring
+const LAMP_COLORS_CYCLE = ['#FF3B3B','#FFD700','#00CC44','#00BFFF','#FF8C00','#FF1493','#7B2FFF','#00FFCC']
+const LAMP_COUNT = 24
+const LAMP_PERIOD = 2.4
+const lampPositions = Array.from({ length: LAMP_COUNT }, (_, i) => {
+  const a = i * (2 * Math.PI / LAMP_COUNT) - Math.PI / 2
+  return {
+    x: 160 + 152 * Math.cos(a),
+    y: 160 + 152 * Math.sin(a),
+    color: LAMP_COLORS_CYCLE[i % LAMP_COLORS_CYCLE.length],
+    delay: -(i * LAMP_PERIOD / LAMP_COUNT),
+  }
+})
 
 // ---- Web Audio ----
 
@@ -116,7 +131,7 @@ function computeLabel(raw: string, n: number): { lines: string[]; fontSize: numb
 const C = 160, R = 136, r = 32
 
 export default function PrizeWheel({
-  segments, targetIndex, spinning, onSpinEnd,
+  segments, targetIndex, spinning, onSpinEnd, theme = 'default',
 }: PrizeWheelProps) {
   const wrapRef    = useRef<HTMLDivElement>(null)
   const audioRef   = useRef<ACtx | null>(null)
@@ -255,7 +270,7 @@ export default function PrizeWheel({
             </defs>
 
             {/* Dark base disc */}
-            <circle cx={C} cy={C} r={R + 2} fill="#0D0D18" />
+            <circle cx={C} cy={C} r={R + 2} fill={theme === 'carnival' ? '#1A0035' : '#0D0D18'} />
 
             {/* Segments */}
             {segPaths.map((s, i) => (
@@ -263,7 +278,7 @@ export default function PrizeWheel({
                 <path
                   d={s.d}
                   fill={s.fill}
-                  stroke="rgba(255,255,255,0.12)"
+                  stroke={theme === 'carnival' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.12)'}
                   strokeWidth="1"
                 />
                 {s.lines.map((line, li) => (
@@ -287,9 +302,20 @@ export default function PrizeWheel({
             ))}
 
             {/* Hub */}
-            <circle cx={C} cy={C} r={r}   fill="url(#pw-hub)"           stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" />
-            <circle cx={C} cy={C} r="11"  fill="#0D0D18" />
-            <circle cx={C} cy={C} r="4.5" fill="#D4AF37" />
+            {theme === 'carnival' ? (
+              <>
+                <circle cx={C} cy={C} r={r} fill="#FFD700" stroke="rgba(255,255,255,0.4)" strokeWidth="2.5" />
+                <text x={C} y={C + 2} textAnchor="middle" dominantBaseline="middle"
+                  fill="#7C2D12" fontSize="26" fontWeight="900"
+                  style={{ pointerEvents: 'none', fontFamily: 'system-ui, sans-serif', userSelect: 'none' }}>★</text>
+              </>
+            ) : (
+              <>
+                <circle cx={C} cy={C} r={r}   fill="url(#pw-hub)"           stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" />
+                <circle cx={C} cy={C} r="11"  fill="#0D0D18" />
+                <circle cx={C} cy={C} r="4.5" fill="#D4AF37" />
+              </>
+            )}
           </svg>
         </div>
 
@@ -304,6 +330,16 @@ export default function PrizeWheel({
                 <stop offset="80%"  stopColor="#F5DC6A" />
                 <stop offset="100%" stopColor="#7A5500" />
               </linearGradient>
+              <linearGradient id="pw-ring-carnival" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%"   stopColor="#FF3B3B" />
+                <stop offset="14%"  stopColor="#FF8C00" />
+                <stop offset="28%"  stopColor="#FFD700" />
+                <stop offset="42%"  stopColor="#00CC44" />
+                <stop offset="57%"  stopColor="#00BFFF" />
+                <stop offset="71%"  stopColor="#7B2FFF" />
+                <stop offset="85%"  stopColor="#FF1493" />
+                <stop offset="100%" stopColor="#FF3B3B" />
+              </linearGradient>
               <filter id="pw-glow" x="-50%" y="-50%" width="200%" height="200%">
                 <feGaussianBlur stdDeviation="1.8" result="b" />
                 <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
@@ -312,17 +348,27 @@ export default function PrizeWheel({
 
             {/* Shadow behind ring */}
             <circle cx={C} cy={C} r="148" fill="none" stroke="rgba(0,0,0,0.5)" strokeWidth="20" />
-            {/* Gold ring */}
-            <circle cx={C} cy={C} r="143" fill="none" stroke="url(#pw-ring)"    strokeWidth="14" />
+            {/* Ring — gold (default) or rainbow (carnival) */}
+            <circle cx={C} cy={C} r="143" fill="none"
+              stroke={theme === 'carnival' ? 'url(#pw-ring-carnival)' : 'url(#pw-ring)'}
+              strokeWidth="14" />
             {/* Inner highlight */}
             <circle cx={C} cy={C} r="136" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
             {/* Outer edge */}
             <circle cx={C} cy={C} r="150" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
 
-            {/* Glow dots */}
-            {dots.map((d, i) => (
-              <circle key={i} cx={d.x} cy={d.y} r="3.5" fill="#FFD700" filter="url(#pw-glow)" />
-            ))}
+            {/* Dots — animated lamps (carnival) or static gold (default) */}
+            {theme === 'carnival' ? (
+              lampPositions.map((l, i) => (
+                <circle key={i} cx={l.x} cy={l.y} r="5.5" fill={l.color}
+                  style={{ animation: `lampChase ${LAMP_PERIOD}s linear infinite`, animationDelay: `${l.delay}s` }}
+                />
+              ))
+            ) : (
+              dots.map((d, i) => (
+                <circle key={i} cx={d.x} cy={d.y} r="3.5" fill="#FFD700" filter="url(#pw-glow)" />
+              ))
+            )}
           </svg>
         </div>
 

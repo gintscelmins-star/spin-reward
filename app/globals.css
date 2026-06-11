@@ -70,3 +70,18 @@ body {
 .animate-gold-pulse {
   animation: goldPulse 2.2s ease-in-out infinite;
 }
+
+@keyframes lampChase {
+  0%, 7%    { opacity: 1; }
+  16%, 90%  { opacity: 0.15; }
+  100%      { opacity: 1; }
+}
+
+@keyframes carnivalStripe {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.animate-carnival-stripe {
+  background-size: 200% 100%;
+  animation: carnivalStripe 2.5s linear infinite;
+}

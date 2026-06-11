@@ -1,3 +1,5 @@
+import { createClient } from '@/lib/supabase/server'
+import FunWheel from '@/components/FunWheel'
 import Wheel from '@/components/Wheel'
 
 export default async function VenuePage({
@@ -9,5 +11,14 @@ export default async function VenuePage({
 }) {
   const { venueSlug } = await params
   const { variant } = await searchParams
+
+  const supabase = await createClient()
+  const { data: venue } = await supabase
+    .from('venues')
+    .select('mode')
+    .eq('slug', venueSlug)
+    .single()
+
+  if (venue?.mode === 'fun') return <FunWheel venueSlug={venueSlug} />
   return <Wheel venueSlug={venueSlug} variant={variant} />
 }
