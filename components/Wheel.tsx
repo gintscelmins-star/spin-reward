@@ -301,15 +301,21 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
   const phaseOrder:     Phase[] = ['review', 'spin', 'reveal', 'done']
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-900 to-purple-950">
-      <p className="text-purple-300 text-lg animate-pulse">Ielādē...</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-950 to-indigo-950">
+      <p className="text-yellow-400 text-lg font-black animate-pulse">✨ Ielādē...</p>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a0533] to-[#0d0d1a] flex flex-col items-center">
+    <div className="min-h-screen bg-gradient-to-b from-purple-950 via-indigo-950 to-purple-950 flex flex-col items-center overflow-x-hidden">
       {showPrizePill && <PrizePill token={spinResult!.qr_token} label={t('my_prize')} />}
       {flashAnim && <div className="fixed inset-0 bg-white animate-flash z-[200]" />}
+      <div className="fixed top-0 left-0 right-0 h-3 z-50 pointer-events-none animate-carnival-stripe"
+           style={{ background: 'linear-gradient(90deg,#FF3B3B,#FF8C00,#FFD700,#00CC44,#00BFFF,#7B2FFF,#FF1493,#FF3B3B)', backgroundSize: '200% 100%' }} />
+      <div className="fixed bottom-0 left-0 right-0 h-3 z-50 pointer-events-none animate-carnival-stripe"
+           style={{ background: 'linear-gradient(90deg,#7B2FFF,#00BFFF,#00CC44,#FFD700,#FF8C00,#FF3B3B,#FF1493,#7B2FFF)', backgroundSize: '200% 100%', animationDirection: 'reverse' }} />
+      <div className="fixed inset-0 pointer-events-none"
+           style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 20%, rgba(255,120,0,0.12), transparent 70%)' }} />
 
       <div className="w-full max-w-sm px-4 pt-4 pb-24 flex flex-col items-center gap-5">
 
@@ -317,7 +323,7 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
           <div className="flex justify-center gap-2 pt-1">
             {progressPhases.map(step => (
               <div key={step} className={`w-2 h-2 rounded-full transition-colors ${
-                phaseOrder.indexOf(phase) >= phaseOrder.indexOf(step) ? 'bg-purple-400' : 'bg-white/20'
+                phaseOrder.indexOf(phase) >= phaseOrder.indexOf(step) ? 'bg-yellow-400' : 'bg-white/20'
               }`} />
             ))}
           </div>
@@ -326,23 +332,25 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
         {/* ===== IDLE / WELCOME ===== */}
         {phase === 'idle' && (
           <div className="animate-fade-up w-full flex flex-col items-center gap-5">
-            <div className="flex justify-end w-full gap-1">
-              {['lv', 'en', 'ru'].map(loc => (
-                <button key={loc} onClick={() => setLocale(loc)}
-                  className={`px-2.5 py-0.5 text-xs font-bold rounded-md transition-colors ${locale === loc ? 'bg-purple-500 text-white' : 'text-purple-400 hover:text-purple-200'}`}>
-                  {loc.toUpperCase()}
+            <div className="flex gap-2">
+              {(['lv', 'en', 'ru'] as const).map(l => (
+                <button key={l} onClick={() => setLocale(l)}
+                  className={`px-3 py-1 rounded-full text-sm font-bold transition-all border-2 ${locale === l ? 'bg-yellow-400 text-purple-900 border-yellow-400' : 'bg-transparent text-white border-white/40 hover:border-white/80'}`}>
+                  {l.toUpperCase()}
                 </button>
               ))}
             </div>
             <div className="text-center">
-              <h1 className="text-2xl font-black text-white tracking-tight">
+              <h1 className="text-3xl font-black text-white leading-tight"
+                  style={{ textShadow: '0 0 24px rgba(255,200,0,0.8), 0 2px 8px rgba(0,0,0,0.6)' }}>
                 {venue?.brand_name ?? venue?.name ?? t('welcome_title')}
               </h1>
-              <p className="text-purple-300 text-sm mt-1">{t('welcome_subtitle')}</p>
+              <p className="text-white/70 text-sm mt-1">{t('welcome_subtitle')}</p>
             </div>
-            <PrizeWheel segments={segments} targetIndex={-1} spinning={false} onSpinEnd={() => {}} />
+            <PrizeWheel segments={segments} targetIndex={-1} spinning={false} onSpinEnd={() => {}} theme="carnival" />
             <button onClick={() => setPhase('review')}
-              className="w-full py-4 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white text-xl font-black rounded-2xl shadow-lg shadow-purple-900/50 active:scale-95 transition-all">
+              className="w-full py-5 rounded-2xl text-xl font-black text-purple-950 active:scale-95 transition-all shadow-2xl"
+              style={{ background: 'linear-gradient(135deg,#FFD700,#FF8C00)', boxShadow: '0 8px 32px rgba(255,140,0,0.5)' }}>
               {t('welcome_button')}
             </button>
           </div>
@@ -352,7 +360,7 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
         {phase === 'review' && (
           <div className="animate-fade-up w-full flex flex-col items-center">
             <div style={{ filter: 'brightness(0.25)' }}>
-              <PrizeWheel segments={segments} targetIndex={-1} spinning={false} onSpinEnd={() => {}} />
+              <PrizeWheel segments={segments} targetIndex={-1} spinning={false} onSpinEnd={() => {}} theme="carnival" />
             </div>
             <div className="w-full bg-white rounded-3xl shadow-2xl p-6 -mt-10 z-10 flex flex-col gap-4">
               <h2 className="text-xl font-black text-center text-gray-800">{t('feedback_title')}</h2>
@@ -389,9 +397,10 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
         {/* ===== SPIN ===== */}
         {phase === 'spin' && (
           <div className="animate-fade-up w-full flex flex-col items-center gap-5">
-            <PrizeWheel segments={segments} targetIndex={targetIndex} spinning={wheelSpinning} onSpinEnd={handleSpinEnd} />
+            <PrizeWheel segments={segments} targetIndex={targetIndex} spinning={wheelSpinning} onSpinEnd={handleSpinEnd} theme="carnival" />
             <button onClick={handleSpin} disabled={wheelSpinning || spinLoading}
-              className="w-full py-4 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white text-xl font-black rounded-2xl shadow-lg shadow-purple-900/50 active:scale-95 transition-all disabled:opacity-60">
+              className="w-full py-5 rounded-2xl text-xl font-black text-purple-950 active:scale-95 transition-all shadow-2xl disabled:opacity-50"
+              style={{ background: 'linear-gradient(135deg,#FFD700,#FF8C00)', boxShadow: '0 8px 32px rgba(255,140,0,0.5)' }}>
               {spinLoading ? (locale === 'ru' ? 'Готовимся...' : locale === 'en' ? 'Loading...' : 'Gatavojas...') : t('spin_button')}
             </button>
           </div>
@@ -400,7 +409,7 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
         {/* ===== REVEAL — QR: /redeem/{token} ===== */}
         {phase === 'reveal' && spinResult && (
           <>
-            <PrizeWheel segments={segments} targetIndex={targetIndex} spinning={false} onSpinEnd={() => {}} />
+            <PrizeWheel segments={segments} targetIndex={targetIndex} spinning={false} onSpinEnd={() => {}} theme="carnival" />
             {revealStage >= 1 && (
               <div className="animate-wow-bounce w-full text-center px-2">
                 <p className="text-3xl font-black text-yellow-400 leading-tight"
@@ -471,7 +480,7 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
             {/* Google — tikai teksts, bez pogas/linka */}
             <div className="bg-white/10 backdrop-blur rounded-2xl p-5 text-center">
               <p className="text-white font-semibold text-sm leading-relaxed">{t('google_prompt')}</p>
-              <p className="text-purple-300 text-xs mt-2">{t('google_optional')}</p>
+              <p className="text-white/60 text-xs mt-2">{t('google_optional')}</p>
             </div>
 
             {/* Kupons (Variant B vai production ar discount) */}
