@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SpinReward",
-  description: "Apmeklētāju iesaiste, atsauksmes un atgriešanās izklaides un servisa vietām.",
+  title: "Spillit",
+  description: "Pārvērt katru apmeklējumu atsauksmēs, lojalitātē un labākos darbiniekos.",
 };
 
 export default function RootLayout({
