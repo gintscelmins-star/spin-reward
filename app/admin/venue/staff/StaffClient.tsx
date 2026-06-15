@@ -14,6 +14,7 @@ interface Staff {
   daily_spin_limit: number | null
   staff_code: string | null
   active: boolean
+  tips_enabled: boolean
 }
 
 interface Props {
@@ -245,6 +246,22 @@ export default function StaffClient({ staff, venueId, seats, activeCount }: Prop
                   </div>
                 )}
               </div>
+
+              {editing && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tips iespējotas
+                  </label>
+                  <select
+                    name="tips_enabled"
+                    defaultValue={String(editing.tips_enabled ?? true)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white"
+                  >
+                    <option value="true">Jā</option>
+                    <option value="false">Nē</option>
+                  </select>
+                </div>
+              )}
 
               <div className="flex gap-3 pt-2">
                 <button

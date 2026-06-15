@@ -58,11 +58,12 @@ export async function upsertStaff(
   const limitRaw = (formData.get('daily_spin_limit') as string).trim()
   const daily_spin_limit = limitRaw ? parseInt(limitRaw, 10) : null
   const active = formData.get('active') !== 'false'
+  const tips_enabled = formData.get('tips_enabled') !== 'false'
 
   if (id) {
     const { error } = await supabase
       .from('staff')
-      .update({ name, role, phone, stripe_tip_link, daily_spin_limit, active })
+      .update({ name, role, phone, stripe_tip_link, daily_spin_limit, active, tips_enabled })
       .eq('id', id)
     if (error) return { error: error.message }
   } else {

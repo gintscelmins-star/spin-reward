@@ -27,6 +27,7 @@ interface Venue {
   fixed_discount_eur: number | null
   fixed_discount_min_spend: number | null
   fixed_discount_days: number | null
+  module_google_enabled: boolean | null
 }
 
 interface SpinResult {
@@ -160,13 +161,14 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
     async function load() {
       const { data: v } = await supabase
         .from('venues')
-        .select('id, name, google_place_id, default_locale, logo_url, brand_name, fixed_discount_enabled, fixed_discount_eur, fixed_discount_min_spend, fixed_discount_days')
+        .select('id, name, google_place_id, default_locale, logo_url, brand_name, fixed_discount_enabled, fixed_discount_eur, fixed_discount_min_spend, fixed_discount_days, module_google_enabled')
         .eq('slug', venueSlug).single()
 
       const devVenue: Venue = {
         id: 'dev', name: venueSlug, google_place_id: 'ChIJdev', default_locale: 'lv',
         logo_url: null, brand_name: null, fixed_discount_enabled: false,
         fixed_discount_eur: null, fixed_discount_min_spend: null, fixed_discount_days: null,
+        module_google_enabled: true,
       }
       const devPrizes: Prize[] = [
         { id:'1', name:'Kafija',    color:'#B91C1C' },
@@ -478,10 +480,12 @@ export default function Wheel({ venueSlug, variant }: { venueSlug: string; varia
             </div>
 
             {/* Google — tikai teksts, bez pogas/linka */}
-            <div className="bg-white/10 backdrop-blur rounded-2xl p-5 text-center">
-              <p className="text-white font-semibold text-sm leading-relaxed">{t('google_prompt')}</p>
-              <p className="text-white/60 text-xs mt-2">{t('google_optional')}</p>
-            </div>
+            {venue?.module_google_enabled !== false && (
+              <div className="bg-white/10 backdrop-blur rounded-2xl p-5 text-center">
+                <p className="text-white font-semibold text-sm leading-relaxed">{t('google_prompt')}</p>
+                <p className="text-white/60 text-xs mt-2">{t('google_optional')}</p>
+              </div>
+            )}
 
             {/* Kupons (Variant B vai production ar discount) */}
             {hasCoupon && (

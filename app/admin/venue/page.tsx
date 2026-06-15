@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import LogoutButton from '@/components/LogoutButton'
+import ModulesSection from './ModulesSection'
 
 export default async function ClientAdminVenuePage({
   searchParams,
@@ -92,6 +93,15 @@ export default async function ClientAdminVenuePage({
           </div>
         </div>
 
+        <ModulesSection
+          venueId={venueId}
+          initial={{
+            module_google_enabled: venue.module_google_enabled ?? true,
+            module_tips_enabled: venue.module_tips_enabled ?? false,
+            module_whatsapp_enabled: venue.module_whatsapp_enabled ?? false,
+          }}
+        />
+
         <div className="grid grid-cols-2 gap-4">
           <Link
             href={`/admin/venue/prizes${q}`}
@@ -141,6 +151,13 @@ export default async function ClientAdminVenuePage({
           >
             <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Statistika</p>
             <p className="text-sm text-gray-400 mt-1">Spini, atsauksmes, tips</p>
+          </Link>
+          <Link
+            href={`/admin/venue/instructions${q}`}
+            className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition-shadow group col-span-2"
+          >
+            <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Instrukcija</p>
+            <p className="text-sm text-gray-400 mt-1">Kā lietot SpinReward — īss ceļvedis</p>
           </Link>
         </div>
       </div>

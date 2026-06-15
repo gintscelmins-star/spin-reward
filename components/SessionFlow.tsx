@@ -34,9 +34,13 @@ const DEFAULTS: Record<string, string> = {
   screenshot_hint:     'Uztaisi ekrānšāviņu, lai nepazaudētu',
   my_prize:            'Tava balva',
   reveal_wow:          'WOW! Apsveicam, tu laimēji!',
+  tip_title:           'Vai pateikties darbiniekam?',
+  tip_subtitle:        'Ja tev patika serviss, vari pateikties {name}',
+  tip_yes:             '💛 Pateikties',
+  tip_no:              'Nē, paldies',
 }
 
-type Phase = 'idle' | 'welcome' | 'review' | 'spin' | 'reveal' | 'done'
+type Phase = 'idle' | 'welcome' | 'review' | 'spin' | 'reveal' | 'tip' | 'done'
 
 interface SessionCtx {
   venue_id: string
@@ -146,7 +150,10 @@ export default function SessionFlow({ sessionId, variant }: { sessionId: string;
   const [targetIndex,   setTargetIndex]   = useState(-1)
   const [wheelSpinning, setWheelSpinning] = useState(false)
   const [revealStage,   setRevealStage]   = useState<0 | 1 | 2>(0)
-  const [flashAnim,     setFlashAnim]     = useState(false)
+  const [flashAnim,          setFlashAnim]          = useState(false)
+  const [moduleTipsEnabled,  setModuleTipsEnabled]  = useState(false)
+  const [moduleGoogleEnabled,setModuleGoogleEnabled] = useState(true)
+  const [staffTipsEnabled,   setStaffTipsEnabled]   = useState(false)
 
   const spinCalled    = useRef(false)
   const voucherCalled = useRef(false)
@@ -154,6 +161,7 @@ export default function SessionFlow({ sessionId, variant }: { sessionId: string;
   function t(key: string) { return copy[key] ?? DEFAULTS[key] ?? key }
 
   const hasCoupon = variant === 'B' ? true : variant === 'A' ? false : !!(ctx?.fixed_discount_enabled)
+  const showTip   = moduleTipsEnabled && staffTipsEnabled && !!ctx?.revolut_link
 
   useEffect(() => {
     async function init() {
@@ -170,6 +178,26 @@ export default function SessionFlow({ sessionId, variant }: { sessionId: string;
       ])
       setQuestions((qs ?? []) as ReviewQuestion[])
       setPrizes((ps ?? []) as Prize[])
+
+      const { data: mods } = await supabase
+        .from('venues')
+        .select('module_tips_enabled, module_google_enabled')
+        .eq('id', c.venue_id)
+        .single()
+      const modsData = mods as { module_tips_enabled?: boolean; module_google_enabled?: boolean } | null
+      setModuleTipsEnabled(modsData?.module_tips_enabled ?? false)
+      setModuleGoogleEnabled(modsData?.module_google_enabled ?? true)
+
+      if (c.staff_id) {
+        const { data: staffRow } = await supabase
+          .from('staff')
+          .select('tips_enabled')
+          .eq('id', c.staff_id)
+          .single()
+        const staffData = staffRow as { tips_enabled?: boolean } | null
+        setStaffTipsEnabled(staffData?.tips_enabled ?? true)
+      }
+
       setPhase('welcome')
     }
     init()
@@ -453,13 +481,40 @@ export default function SessionFlow({ sessionId, variant }: { sessionId: string;
                     {smsStatus === 'error' && <p className="text-xs text-red-400">{smsError}</p>}
                   </div>
                 )}
-                <button onClick={() => setPhase('done')}
+                <button onClick={() => setPhase(showTip ? 'tip' : 'done')}
                   className="mt-2 w-full py-3 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-xl active:scale-95 transition-all">
                   {t('next_button')}
                 </button>
               </div>
             )}
           </>
+        )}
+
+        {/* ===== TIP ===== */}
+        {phase === 'tip' && ctx?.revolut_link && (
+          <div className="animate-pop-in w-full bg-white rounded-3xl shadow-2xl p-8 flex flex-col gap-5 text-center">
+            <p className="text-5xl">🙏</p>
+            <h2 className="text-xl font-black text-gray-800">{t('tip_title')}</h2>
+            <p className="text-gray-500 text-sm">
+              {t('tip_subtitle').replace('{name}', ctx.staff_name ?? '')}
+            </p>
+            <a
+              href={ctx.revolut_link}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setTimeout(() => setPhase('done'), 300)}
+              className="w-full py-3 font-bold rounded-xl active:scale-95 transition-all text-center text-purple-950"
+              style={{ background: 'linear-gradient(135deg,#FFD700,#FF8C00)', boxShadow: '0 4px 20px rgba(255,140,0,0.4)' }}
+            >
+              {t('tip_yes')}
+            </a>
+            <button
+              onClick={() => setPhase('done')}
+              className="w-full py-3 text-gray-400 hover:text-gray-600 text-sm transition-colors"
+            >
+              {t('tip_no')}
+            </button>
+          </div>
         )}
 
         {/* ===== DONE — pateicība + Google teksts + kupons (B) ===== */}
@@ -472,10 +527,12 @@ export default function SessionFlow({ sessionId, variant }: { sessionId: string;
             </div>
 
             {/* Google — tikai teksts, bez pogas/linka */}
-            <div className="bg-white/10 backdrop-blur rounded-2xl p-5 text-center">
-              <p className="text-white font-semibold text-sm leading-relaxed">{t('google_prompt')}</p>
-              <p className="text-white/60 text-xs mt-2">{t('google_optional')}</p>
-            </div>
+            {moduleGoogleEnabled && (
+              <div className="bg-white/10 backdrop-blur rounded-2xl p-5 text-center">
+                <p className="text-white font-semibold text-sm leading-relaxed">{t('google_prompt')}</p>
+                <p className="text-white/60 text-xs mt-2">{t('google_optional')}</p>
+              </div>
+            )}
 
             {/* Kupons (Variant B vai production ar discount) */}
             {hasCoupon && (
