@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useActionState } from 'react'
+import Link from 'next/link'
 import { upsertStaff, toggleStaffActive } from './actions'
 import type { StaffState } from './actions'
 
@@ -22,9 +23,10 @@ interface Props {
   venueId: string
   seats: number
   activeCount: number
+  q: string
 }
 
-export default function StaffClient({ staff, venueId, seats, activeCount }: Props) {
+export default function StaffClient({ staff, venueId, seats, activeCount, q }: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const [editing, setEditing] = useState<Staff | null>(null)
   const [state, formAction, pending] = useActionState<StaffState, FormData>(upsertStaff, null)
@@ -131,6 +133,12 @@ export default function StaffClient({ staff, venueId, seats, activeCount }: Prop
                     >
                       Rediģēt
                     </button>
+                    <Link
+                      href={`/admin/venue/staff/${s.id}${q}`}
+                      className="text-xs text-gray-500 hover:text-purple-600 hover:underline"
+                    >
+                      Stats
+                    </Link>
                     <form action={toggleStaffActive}>
                       <input type="hidden" name="venueId" value={venueId} />
                       <input type="hidden" name="id" value={s.id} />

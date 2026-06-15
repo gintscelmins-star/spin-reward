@@ -33,7 +33,7 @@ export default async function SessionPage({
   startOfToday.setUTCHours(0, 0, 0, 0)
   const in7Days = new Date(startOfToday.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-  const [{ data: staffList }, { data: activities }, { data: bookings }] = await Promise.all([
+  const [{ data: staffList }, { data: activities }, { data: bookings }, { data: todaySessions }] = await Promise.all([
     supabase
       .from('staff')
       .select('id, name')
@@ -53,6 +53,13 @@ export default async function SessionPage({
       .gte('starts_at', startOfToday.toISOString())
       .lt('starts_at', in7Days.toISOString())
       .order('starts_at'),
+    supabase
+      .from('sessions')
+      .select('id, staff_id, activity_id, created_at')
+      .eq('venue_id', venueId)
+      .eq('status', 'active')
+      .gte('created_at', startOfToday.toISOString())
+      .order('created_at', { ascending: false }),
   ])
 
   const backHref =
@@ -74,6 +81,7 @@ export default async function SessionPage({
         activities={activities ?? []}
         bookings={bookings ?? []}
         venueId={venueId}
+        todaySessions={todaySessions ?? []}
       />
     </div>
   )

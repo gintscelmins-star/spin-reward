@@ -102,6 +102,48 @@ export default async function ClientAdminVenuePage({
           }}
         />
 
+        {/* Modules overview — always at top */}
+        <Link
+          href={`/admin/venue/upsell${q}`}
+          className="block rounded-2xl border border-indigo-100 p-5 hover:shadow-md transition-all group"
+          style={{ background: 'linear-gradient(135deg, #EEF2FF 0%, #F5F3FF 60%, #FFF0FB 100%)' }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-base font-bold text-indigo-800 group-hover:text-indigo-600">
+                Papildu moduļi
+              </span>
+              <span className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-600 rounded-full font-semibold">
+                Pēc pasūtījuma
+              </span>
+            </div>
+            <span className="text-gray-400 group-hover:text-indigo-500 transition-colors text-sm">→</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {([
+              { icon: '🎡', name: 'Spin Reward', active: true },
+              { icon: '💛', name: 'Tips', active: venue.module_tips_enabled ?? false },
+              { icon: '🔍', name: 'Google', active: venue.module_google_enabled ?? true },
+              { icon: '⭐', name: 'Novērtējums', active: false },
+              { icon: '📣', name: 'Spin+Meta', active: false },
+              { icon: '🎫', name: 'Digital Stamps', active: false },
+              { icon: '📋', name: 'Lead Capture', active: false },
+              { icon: '🎓', name: 'Onboarding', active: false },
+            ] as const).map(m => (
+              <span
+                key={m.name}
+                className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${
+                  m.active
+                    ? 'bg-green-100 text-green-700 border border-green-200'
+                    : 'bg-white/70 text-indigo-400 border border-indigo-100'
+                }`}
+              >
+                {m.icon} {m.name}
+              </span>
+            ))}
+          </div>
+        </Link>
+
         <div className="grid grid-cols-2 gap-4">
           <Link
             href={`/admin/venue/prizes${q}`}
@@ -165,28 +207,6 @@ export default async function ClientAdminVenuePage({
           >
             <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Instrukcija</p>
             <p className="text-sm text-gray-400 mt-1">Kā lietot SpinReward — īss ceļvedis</p>
-          </Link>
-          <Link
-            href={`/admin/venue/upsell${q}`}
-            className="col-span-2 rounded-2xl shadow p-6 hover:shadow-md transition-shadow group border border-indigo-100"
-            style={{ background: 'linear-gradient(135deg, #EEF2FF 0%, #F5F3FF 50%, #FFF0FB 100%)' }}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-lg font-bold text-indigo-800 group-hover:text-indigo-600">
-                    Papildu moduļi
-                  </p>
-                  <span className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-600 rounded-full font-semibold">
-                    Drīzumā
-                  </span>
-                </div>
-                <p className="text-sm text-indigo-500">
-                  Klientu atgūšana, AI zvani, darbinieku onboarding — skatīt vīziju
-                </p>
-              </div>
-              <span className="text-2xl">✦</span>
-            </div>
           </Link>
         </div>
       </div>

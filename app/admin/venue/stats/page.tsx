@@ -298,7 +298,7 @@ export default async function StatsPage({
         </section>
 
         <p className="text-xs text-gray-300 text-center pb-2">
-          Per-darbinieka sadalījums pieejams pēc V1.4
+          Per-darbinieka statistika — skat. Personāls → Stats
         </p>
       </div>
     </div>

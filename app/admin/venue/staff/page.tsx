@@ -58,6 +58,7 @@ export default async function StaffPage({
           venueId={venueId}
           seats={venue.seats}
           activeCount={activeCount ?? 0}
+          q={q}
         />
       </div>
     </div>

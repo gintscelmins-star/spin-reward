@@ -26,7 +26,7 @@ export default async function AdminPage() {
     .single<Profile>()
 
   if (profile?.role === 'super_admin') redirect('/admin/venues')
-  if (profile?.role === 'client_admin') redirect('/admin/today')
+  if (profile?.role === 'client_admin') redirect('/admin/venue')
   if (profile?.role === 'staff') redirect('/admin/session')
 
   if (!profile?.role) {
