@@ -159,6 +159,28 @@ export default async function ClientAdminVenuePage({
             <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Instrukcija</p>
             <p className="text-sm text-gray-400 mt-1">Kā lietot SpinReward — īss ceļvedis</p>
           </Link>
+          <Link
+            href={`/admin/venue/upsell${q}`}
+            className="col-span-2 rounded-2xl shadow p-6 hover:shadow-md transition-shadow group border border-indigo-100"
+            style={{ background: 'linear-gradient(135deg, #EEF2FF 0%, #F5F3FF 50%, #FFF0FB 100%)' }}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-lg font-bold text-indigo-800 group-hover:text-indigo-600">
+                    Papildu moduļi
+                  </p>
+                  <span className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-600 rounded-full font-semibold">
+                    Drīzumā
+                  </span>
+                </div>
+                <p className="text-sm text-indigo-500">
+                  Klientu atgūšana, AI zvani, darbinieku onboarding — skatīt vīziju
+                </p>
+              </div>
+              <span className="text-2xl">✦</span>
+            </div>
+          </Link>
         </div>
       </div>
     </div>
