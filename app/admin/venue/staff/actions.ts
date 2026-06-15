@@ -93,3 +93,26 @@ export async function toggleStaffActive(formData: FormData): Promise<void> {
   await supabase.from('staff').update({ active }).eq('id', id)
   revalidatePath('/admin/venue/staff')
 }
+
+export async function submitStaffEvaluation(formData: FormData): Promise<void> {
+  const venueId = formData.get('venueId') as string
+  const supabase = await getVenueAccess(venueId)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('403')
+
+  const staffId = formData.get('staffId') as string
+  const rating = parseInt(formData.get('rating') as string, 10)
+  const notes = (formData.get('notes') as string | null)?.trim() || null
+
+  if (!staffId || isNaN(rating) || rating < 1 || rating > 5) throw new Error('Nepareizi dati')
+
+  const { error } = await supabase.from('staff_evaluations').insert({
+    staff_id: staffId,
+    venue_id: venueId,
+    admin_id: user.id,
+    rating,
+    notes,
+  })
+  if (error) throw new Error(error.message)
+  revalidatePath(`/admin/venue/staff/${staffId}`)
+}

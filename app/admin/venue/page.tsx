@@ -61,6 +61,19 @@ export default async function ClientAdminVenuePage({
           <LogoutButton />
         </div>
 
+        {/* Instrukcija — VIENMĒR visaugšā */}
+        <Link
+          href={`/admin/venue/instructions${q}`}
+          className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 hover:bg-amber-100 transition-colors group"
+        >
+          <span className="text-2xl">📋</span>
+          <div className="flex-1">
+            <p className="font-bold text-amber-900 group-hover:text-amber-700">Instrukcija</p>
+            <p className="text-xs text-amber-700/70">Kā lietot SpinReward — īss ceļvedis</p>
+          </div>
+          <span className="text-amber-400 group-hover:text-amber-600 text-sm">→</span>
+        </Link>
+
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white rounded-2xl shadow p-5">
             <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Plāns</p>
@@ -200,13 +213,6 @@ export default async function ClientAdminVenuePage({
           >
             <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Statistika</p>
             <p className="text-sm text-gray-400 mt-1">Spini, atsauksmes, tips</p>
-          </Link>
-          <Link
-            href={`/admin/venue/instructions${q}`}
-            className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition-shadow group col-span-2"
-          >
-            <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Instrukcija</p>
-            <p className="text-sm text-gray-400 mt-1">Kā lietot SpinReward — īss ceļvedis</p>
           </Link>
         </div>
       </div>

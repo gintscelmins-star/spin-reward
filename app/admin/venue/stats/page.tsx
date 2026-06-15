@@ -66,7 +66,7 @@ export default async function StatsPage({
       : null
 
   // Parallel data fetch
-  const [spinsRes, reviewsRes, answersRes, tipsRes] = await Promise.all([
+  const [spinsRes, reviewsRes, answersRes, tipsRes, evalsRes] = await Promise.all([
     (() => {
       const q = supabase
         .from('spins')
@@ -95,12 +95,24 @@ export default async function StatsPage({
         .eq('venue_id', venueId)
       return since ? q.gte('created_at', since) : q
     })(),
+    (() => {
+      const q = supabase
+        .from('staff_evaluations')
+        .select('rating, notes, created_at, staff:staff_id(name)')
+        .eq('venue_id', venueId)
+        .order('created_at', { ascending: false })
+        .limit(20)
+      return since ? q.gte('created_at', since) : q
+    })(),
   ])
 
   const spins = ((spinsRes.data ?? []) as unknown) as SpinRow[]
   const reviews = ((reviewsRes.data ?? []) as unknown) as ReviewRow[]
   const answers = ((answersRes.data ?? []) as unknown) as AnswerRow[]
   const tips = ((tipsRes.data ?? []) as unknown) as TipRow[]
+  const staffEvals = (evalsRes?.data ?? []) as unknown as Array<{
+    rating: number; notes: string | null; created_at: string; staff: { name: string } | null
+  }>
 
   // ---- Aggregations ----
 
@@ -294,6 +306,34 @@ export default async function StatsPage({
           )}
           {tipStats.count === 0 && (
             <p className="text-gray-400 text-sm mt-3">Nav datu</p>
+          )}
+        </section>
+
+        {/* Staff evaluations */}
+        <section className="bg-white rounded-2xl shadow p-6">
+          <h2 className="text-lg font-bold text-gray-700 mb-4">Vadītāja novērtējumi</h2>
+          {staffEvals.length === 0 ? (
+            <p className="text-gray-400 text-sm">
+              Nav vadītāja novērtējumu izvēlētajā periodā.{' '}
+              <span className="text-gray-300">Pieejami Personāls → darbinieks → Vadītāja novērtējums.</span>
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {staffEvals.map((e, i) => (
+                <div key={i} className="flex items-start gap-3 text-sm border-b border-gray-50 pb-3 last:border-0 last:pb-0">
+                  <span className="font-bold text-purple-600 flex-shrink-0 w-8">{e.rating}★</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-700 text-xs">
+                      {e.staff?.name ?? 'Nezināms darbinieks'}
+                    </p>
+                    {e.notes && <p className="text-gray-500 text-xs mt-0.5 leading-relaxed">{e.notes}</p>}
+                    <p className="text-gray-300 text-xs mt-1">
+                      {new Date(e.created_at).toLocaleDateString('lv-LV', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </section>
 

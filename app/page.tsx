@@ -1,65 +1,64 @@
 import Link from 'next/link'
+import ContactForm from '@/components/ContactForm'
 
 const YEAR = new Date().getFullYear()
-const CONTACT = 'gints.celmins@gmail.com'
-
-/* ── Data ──────────────────────────────────────────────────────── */
+// TODO: Nākamajā sprintā — pašreģistrācija + paroles atiestatīšana. Pagaidām ved uz /login.
+const WA_LINK = 'https://wa.me/37129325325?text=Sveiki!%20Interesē%20Spillit'
 
 const MODULES = [
-  { icon: '🎡', name: 'Spin Reward',            price: 'Bezmaksas', free: true,
-    desc: 'Laimes rats pēc katras vizītes — automātisks WOW moments.' },
-  { icon: '💛', name: 'Tips',                    price: '€19/mēn',  free: false,
-    desc: 'Digitālā dzeramnauda ar Revolut/Stripe. Klients pateicas viegli.' },
-  { icon: '⭐', name: 'Darbinieku novērtējums',  price: '€29/mēn',  free: false,
-    desc: 'Privātas atsauksmes + darbinieka reitings pa sesijām.' },
-  { icon: '🔍', name: 'Google atgādinājums',     price: '€29/mēn',  free: false,
-    desc: 'Auto-piedāvājums atstāt Google atsauksmi pēc labas pieredzes.' },
-  { icon: '📣', name: 'Spin+Meta',               price: '€39/mēn',  free: false,
-    desc: 'Meta pikselis laimes ratā. Retargetē faktiskos apmeklētājus.' },
-  { icon: '📋', name: 'Lead Capture',            price: '€79/mēn',  free: false,
-    desc: 'Klients atstāj e-pastu apmaiņā pret balvu. Sava kontaktu DB.' },
-  { icon: '🎓', name: 'Onboarding',              price: 'Individuāli', free: false,
-    desc: 'Kursi, testi un vadītāja pārskats. Cena pēc komandas lieluma.' },
-  { icon: '🎫', name: 'Digital Stamps',          price: '€29/mēn',  free: false,
-    desc: 'Digitālā lojalitātes kartīte. 10 apmeklējumi = bezmaksas balva.' },
-]
-
-const PLANS = [
   {
-    name: 'Sākums',
-    price: 'Bezmaksas',
-    sub: 'uz visiem laikiem',
-    highlight: false,
-    modules: ['Spin Reward'],
-    cta: 'Sākt bezmaksas',
-    href: '/login',
+    icon: '🎡',
+    name: 'Spin Reward',
+    free: true,
+    desc: 'Laimes rats pēc katras vizītes — automātisks WOW moments ar balvām.',
   },
   {
-    name: 'Atsauksmes',
-    price: '€49',
-    sub: 'mēnesī',
-    highlight: false,
-    modules: ['Spin Reward', 'Google atgādinājums', 'Digital Stamps'],
-    cta: 'Sākt izmēģinājumu',
-    href: '/login',
+    icon: '⭐',
+    name: 'Darbinieku novērtējums',
+    free: true,
+    desc: 'Privātas atsauksmes + darbinieka reitings pa sesijām. Uzlabot pirms tas nonāk Google.',
   },
   {
-    name: 'Komanda',
-    price: '€99',
-    sub: 'mēnesī',
-    highlight: true,
-    modules: ['Spin Reward', 'Google atgādinājums', 'Digital Stamps', 'Tips', 'Darbinieku novērtējums'],
-    cta: 'Sākt izmēģinājumu',
-    href: '/login',
+    icon: '💛',
+    name: 'Tips',
+    free: false,
+    desc: 'Digitālā dzeramnauda ar Revolut/Stripe. Klients pateicas viegli.',
   },
   {
-    name: 'Pro',
-    price: '€169',
-    sub: 'mēnesī',
-    highlight: false,
-    modules: ['Spin Reward', 'Google atgādinājums', 'Digital Stamps', 'Tips', 'Darbinieku novērtējums', 'Spin+Meta', 'Lead Capture'],
-    cta: 'Pieprasīt',
-    href: `mailto:${CONTACT}`,
+    icon: '🔍',
+    name: 'Google atgādinājums',
+    free: false,
+    desc: 'Auto-piedāvājums atstāt Google atsauksmi tikai pēc labas pieredzes.',
+  },
+  {
+    icon: '📣',
+    name: 'Spin+Meta',
+    free: false,
+    desc: 'Meta pikselis laimes ratā. Retargetē faktiskos apmeklētājus.',
+  },
+  {
+    icon: '📋',
+    name: 'Lead Capture',
+    free: false,
+    desc: 'Klients atstāj e-pastu apmaiņā pret balvu. Sava kontaktu bāze.',
+  },
+  {
+    icon: '🎂',
+    name: 'Leads sildīšana',
+    free: false,
+    desc: 'Atzīmē klienta dzimšanas dienu → nākamgad automātisks SMS ar atlaidi pirms pasākuma.',
+  },
+  {
+    icon: '🎓',
+    name: 'Onboarding',
+    free: false,
+    desc: 'Kursi, testi un vadītāja pārskats jauniem darbiniekiem.',
+  },
+  {
+    icon: '🎫',
+    name: 'Digital Stamps',
+    free: false,
+    desc: 'Digitālā lojalitātes kartīte. 10 apmeklējumi = bezmaksas balva.',
   },
 ]
 
@@ -68,7 +67,12 @@ const AUDIENCE = [
   'Restorāni', 'Bāri', 'Kafejnīcas', 'Skaistumkopšana', 'Fitness',
 ]
 
-/* ── Component ─────────────────────────────────────────────────── */
+const HOW = [
+  { step: '1', title: 'Reģistrē uzņēmumu', desc: 'Piesakies bezmaksas kontam — uzstādīšana < 10 min.' },
+  { step: '2', title: 'Pievieno darbiniekus', desc: 'Katrs darbinieks saņem savu kodu vai QR.' },
+  { step: '3', title: 'Klients griež ratu', desc: 'Pēc katras vizītes — balva + atsauksme automātiski.' },
+  { step: '4', title: 'Tu redzi visu', desc: 'Reitingi, komentāri un darbinieku statistika reāllaikā.' },
+]
 
 export default function LandingPage() {
   return (
@@ -76,15 +80,26 @@ export default function LandingPage() {
 
       {/* ── Nav ─────────────────────────────────────────── */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between">
-          <span className="text-xl font-black text-purple-950 tracking-tight">Spillit</span>
-          <Link
-            href="/login"
-            className="px-5 py-2 rounded-full text-sm font-bold text-purple-950 transition-all active:scale-95 shadow-md"
-            style={{ background: 'linear-gradient(135deg,#FFD700,#FF8C00)' }}
-          >
-            Pieslēgties
-          </Link>
+        <div className="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between gap-3">
+          <Link href="/" className="text-xl font-black text-purple-950 tracking-tight">Spillit</Link>
+          <div className="flex items-center gap-2">
+            <a
+              href={WA_LINK}
+              target="_blank"
+              rel="noreferrer"
+              className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold text-green-800 bg-green-50 border border-green-200 hover:bg-green-100 transition-colors"
+            >
+              <span>💬</span> WhatsApp
+            </a>
+            {/* Pagaidām ved uz /login. Nākamajā sprintā — pašreģistrācija + paroles atiestatīšana. */}
+            <Link
+              href="/login"
+              className="px-5 py-2 rounded-full text-sm font-bold text-purple-950 transition-all active:scale-95 shadow-md"
+              style={{ background: 'linear-gradient(135deg,#FFD700,#FF8C00)' }}
+            >
+              Izmēģini bezmaksas!
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -120,13 +135,24 @@ export default function LandingPage() {
             ar iespēju uzlabot pirms tā nonāk Google.
           </p>
 
-          <Link
-            href="/login"
-            className="inline-block px-9 py-4 rounded-2xl text-lg font-black text-purple-950 transition-all active:scale-95"
-            style={{ background: 'linear-gradient(135deg,#FFD700,#FF8C00)', boxShadow: '0 8px 36px rgba(255,140,0,0.45)' }}
-          >
-            Pieslēgties →
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            {/* Pagaidām ved uz /login. Nākamajā sprintā — pašreģistrācija + paroles atiestatīšana. */}
+            <Link
+              href="/login"
+              className="inline-block px-9 py-4 rounded-2xl text-lg font-black text-purple-950 transition-all active:scale-95"
+              style={{ background: 'linear-gradient(135deg,#FFD700,#FF8C00)', boxShadow: '0 8px 36px rgba(255,140,0,0.45)' }}
+            >
+              Izmēģini bezmaksas! →
+            </Link>
+            <a
+              href={WA_LINK}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 px-7 py-4 rounded-2xl text-base font-bold text-white/90 bg-white/10 hover:bg-white/15 border border-white/20 transition-all active:scale-95"
+            >
+              💬 Jautājumi? WhatsApp
+            </a>
+          </div>
         </div>
       </section>
 
@@ -150,107 +176,84 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Moduļi ──────────────────────────────────────── */}
-      <section className="max-w-5xl mx-auto px-5 py-20">
+      {/* ── Kā darbojas ─────────────────────────────────── */}
+      <section className="max-w-4xl mx-auto px-5 py-20">
         <div className="text-center mb-10">
-          <p className="text-sm font-semibold text-purple-500 uppercase tracking-widest mb-2">Moduļi</p>
-          <h2 className="text-3xl font-black text-gray-900">Komplektē pēc savas vajadzības</h2>
-          <p className="text-gray-500 mt-2 text-sm">Sāc ar bezmaksas kodolu, pievieno tikai to, ko vajag</p>
+          <p className="text-sm font-semibold text-purple-500 uppercase tracking-widest mb-2">Vienkārši</p>
+          <h2 className="text-3xl font-black text-gray-900">Kā darbojas Spillit</h2>
         </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {MODULES.map(m => (
-            <div
-              key={m.name}
-              className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-2"
-            >
-              <div className="flex items-start justify-between gap-1">
-                <span className="text-2xl">{m.icon}</span>
-                <span
-                  className={`text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0 mt-1 ${
-                    m.free
-                      ? 'bg-green-100 text-green-700'
-                      : m.price === 'Individuāli'
-                      ? 'bg-indigo-100 text-indigo-700'
-                      : 'bg-amber-100 text-amber-700'
-                  }`}
-                >
-                  {m.price}
-                </span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {HOW.map(h => (
+            <div key={h.step} className="flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-xl font-black text-purple-700">
+                {h.step}
               </div>
-              <p className="font-black text-gray-900 text-sm leading-tight">{m.name}</p>
-              <p className="text-xs text-gray-500 leading-relaxed">{m.desc}</p>
+              <p className="font-black text-gray-900">{h.title}</p>
+              <p className="text-sm text-gray-500 leading-relaxed">{h.desc}</p>
             </div>
           ))}
         </div>
-
-        <p className="text-center text-xs text-gray-400 mt-4">
-          * Onboarding — individuāla cena pēc komandas lieluma
-        </p>
       </section>
 
-      {/* ── Plāni ───────────────────────────────────────── */}
-      <section className="bg-gray-50 border-t border-gray-100 px-5 py-20">
+      {/* ── Moduļi ──────────────────────────────────────── */}
+      <section className="bg-gray-50 border-t border-b border-gray-100 px-5 py-20">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
-            <p className="text-sm font-semibold text-purple-500 uppercase tracking-widest mb-2">Cenas</p>
-            <h2 className="text-3xl font-black text-gray-900">Izvēlies plānu</h2>
+            <p className="text-sm font-semibold text-purple-500 uppercase tracking-widest mb-2">Moduļi</p>
+            <h2 className="text-3xl font-black text-gray-900">Komplektē pēc savas vajadzības</h2>
+            <p className="text-gray-500 mt-2 text-sm">
+              Sāc ar bezmaksas kodolu — rats + darbinieku novērtējums. Pievieno tikai to, ko vajag.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-            {PLANS.map(plan => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+            {MODULES.map(m => (
               <div
-                key={plan.name}
-                className={`bg-white rounded-3xl flex flex-col overflow-hidden ${
-                  plan.highlight
-                    ? 'shadow-xl ring-2 ring-purple-500'
-                    : 'shadow border border-gray-100'
-                }`}
+                key={m.name}
+                className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-2"
               >
-                {plan.highlight && (
-                  <div className="bg-purple-600 text-white text-center text-xs font-bold py-1.5 tracking-wider">
-                    POPULĀRĀKAIS
-                  </div>
-                )}
-                <div className="p-6 flex flex-col gap-4 flex-1">
-                  <div>
-                    <p className="text-base font-black text-gray-900">{plan.name}</p>
-                    <div className="flex items-baseline gap-1 mt-1">
-                      <span className="text-3xl font-black text-purple-700">{plan.price}</span>
-                      <span className="text-sm text-gray-400">{plan.sub}</span>
-                    </div>
-                  </div>
-
-                  <ul className="space-y-1.5 flex-1">
-                    {plan.modules.map(mod => (
-                      <li key={mod} className="flex items-center gap-2 text-sm text-gray-600">
-                        <span className="text-green-500 font-bold flex-shrink-0">✓</span>
-                        {mod}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Link
-                    href={plan.href}
-                    className={`block w-full py-3 rounded-xl text-center text-sm font-bold transition-all active:scale-95 ${
-                      plan.highlight
-                        ? 'text-purple-950'
-                        : 'bg-gray-900 hover:bg-gray-800 text-white'
+                <div className="flex items-start justify-between gap-1">
+                  <span className="text-2xl">{m.icon}</span>
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0 mt-1 ${
+                      m.free
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-amber-50 text-amber-700 border border-amber-200'
                     }`}
-                    style={plan.highlight ? { background: 'linear-gradient(135deg,#FFD700,#FF8C00)', boxShadow: '0 4px 20px rgba(255,140,0,0.35)' } : {}}
                   >
-                    {plan.cta}
-                  </Link>
+                    {m.free ? 'Bezmaksas' : 'Pēc pieprasījuma'}
+                  </span>
                 </div>
+                <p className="font-black text-gray-900 text-sm leading-tight">{m.name}</p>
+                <p className="text-xs text-gray-500 leading-relaxed">{m.desc}</p>
               </div>
             ))}
           </div>
 
-          <p className="text-center text-xs text-gray-400 mt-6">
-            Onboarding modulis — individuāla cena. Sazinies:{' '}
-            <a href={`mailto:${CONTACT}`} className="underline hover:text-gray-600">{CONTACT}</a>
+          <div className="text-center">
+            <Link
+              href="/moduli"
+              className="inline-block px-6 py-2.5 rounded-xl text-sm font-bold text-purple-700 bg-purple-50 border border-purple-100 hover:bg-purple-100 transition-colors"
+            >
+              Detalizēts moduļu apraksts →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Kontaktforma ─────────────────────────────────── */}
+      <section id="kontakts" className="max-w-2xl mx-auto px-5 py-20">
+        <div className="text-center mb-8">
+          <p className="text-sm font-semibold text-purple-500 uppercase tracking-widest mb-2">Sazinies</p>
+          <h2 className="text-3xl font-black text-gray-900">Uzdod jautājumu</h2>
+          <p className="text-gray-500 mt-2 text-sm">
+            Atbildēsim darba dienās 1–2 stundu laikā. Vai raksti WhatsApp →{' '}
+            <a href={WA_LINK} target="_blank" rel="noreferrer" className="text-green-600 font-semibold hover:underline">
+              +371 29325325
+            </a>
           </p>
         </div>
+        <ContactForm />
       </section>
 
       {/* ── CTA bottom ──────────────────────────────────── */}
@@ -260,23 +263,41 @@ export default function LandingPage() {
           <p className="text-white/55 mb-9 leading-relaxed">
             Uzstādi savu pirmo laimes ratu dažu minūšu laikā — bez tehniskām zināšanām.
           </p>
-          <Link
-            href="/login"
-            className="inline-block px-9 py-4 rounded-2xl text-lg font-black text-purple-950 transition-all active:scale-95"
-            style={{ background: 'linear-gradient(135deg,#FFD700,#FF8C00)', boxShadow: '0 8px 36px rgba(255,140,0,0.4)' }}
-          >
-            Pieslēgties →
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/login"
+              className="inline-block px-9 py-4 rounded-2xl text-lg font-black text-purple-950 transition-all active:scale-95"
+              style={{ background: 'linear-gradient(135deg,#FFD700,#FF8C00)', boxShadow: '0 8px 36px rgba(255,140,0,0.4)' }}
+            >
+              Izmēģini bezmaksas! →
+            </Link>
+            <a
+              href={WA_LINK}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 px-7 py-4 rounded-2xl text-base font-bold text-white/90 bg-white/10 border border-white/20 hover:bg-white/15 transition-all"
+            >
+              💬 WhatsApp
+            </a>
+          </div>
         </div>
       </section>
 
       {/* ── Footer ──────────────────────────────────────── */}
       <footer className="bg-purple-950 border-t border-white/5 px-5 py-6">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-white/25 text-xs">© Spillit {YEAR}</p>
-          <a href={`mailto:${CONTACT}`} className="text-white/30 text-xs hover:text-white/60 transition-colors">
-            {CONTACT}
-          </a>
+          <div className="flex items-center gap-4">
+            <Link href="/moduli" className="text-white/30 text-xs hover:text-white/60 transition-colors">
+              Moduļi
+            </Link>
+            <a href={WA_LINK} target="_blank" rel="noreferrer" className="text-white/30 text-xs hover:text-white/60 transition-colors">
+              WhatsApp
+            </a>
+            <a href="mailto:gints@spillit.lv" className="text-white/30 text-xs hover:text-white/60 transition-colors">
+              gints@spillit.lv
+            </a>
+          </div>
         </div>
       </footer>
 

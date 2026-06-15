@@ -1,16 +1,32 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { submitStaffEvaluation } from '../actions'
+import StaffDateFilter from './StaffDateFilter'
 
-interface SpinRow { status: string }
-interface AnswerRow { rating: number }
+interface ReviewRow {
+  session_date: string | null
+  rating: number | null
+  comment: string | null
+  activity: string | null
+}
+
+function stars(n: number | null) {
+  if (!n) return '—'
+  return '★'.repeat(n) + '☆'.repeat(Math.max(0, 5 - n))
+}
+
+function fmtDate(iso: string | null) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('lv-LV', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
+}
 
 export default async function StaffStatsPage({
   params,
   searchParams,
 }: {
   params: Promise<{ staffId: string }>
-  searchParams: Promise<{ venueId?: string }>
+  searchParams: Promise<{ venueId?: string; from?: string; to?: string }>
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -32,6 +48,13 @@ export default async function StaffStatsPage({
 
   if (!venueId) redirect('/admin')
 
+  // Default date range: last 30 days
+  const today = new Date()
+  const defaultTo = today.toISOString().slice(0, 10)
+  const defaultFrom = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  const from = sp.from ?? defaultFrom
+  const to = sp.to ?? defaultTo
+
   const { data: staff } = await supabase
     .from('staff')
     .select('id, name, role, active, stripe_tip_link')
@@ -41,49 +64,29 @@ export default async function StaffStatsPage({
 
   if (!staff) redirect('/admin/venue/staff')
 
-  const now = new Date()
-  const startOfToday = new Date(now)
-  startOfToday.setUTCHours(0, 0, 0, 0)
-  const since7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-  const since30d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+  // Per-session reviews via RPC
+  const { data: reviews } = await supabase.rpc('get_staff_reviews', {
+    p_venue_id: venueId,
+    p_staff_id: staffId,
+    p_from: from,
+    p_to: to,
+  })
+  const reviewRows = ((reviews ?? []) as unknown as ReviewRow[])
 
-  const { data: sessions } = await supabase
-    .from('sessions')
-    .select('id, created_at')
+  // Summary stats in date range
+  const ratingRows = reviewRows.filter(r => r.rating != null && r.rating > 0)
+  const avgRating = ratingRows.length
+    ? Math.round((ratingRows.reduce((s, r) => s + (r.rating ?? 0), 0) / ratingRows.length) * 10) / 10
+    : null
+
+  // Existing evaluations by admins for this staff
+  const { data: evals } = await supabase
+    .from('staff_evaluations')
+    .select('id, rating, notes, created_at')
     .eq('staff_id', staffId)
     .eq('venue_id', venueId)
     .order('created_at', { ascending: false })
-
-  const allSessions = sessions ?? []
-  const sessionIds = allSessions.map(s => s.id)
-
-  const todayCount = allSessions.filter(s => s.created_at >= startOfToday.toISOString()).length
-  const week7Count = allSessions.filter(s => s.created_at >= since7d.toISOString()).length
-  const month30Count = allSessions.filter(s => s.created_at >= since30d.toISOString()).length
-
-  const [spinsRes, answersRes] = await Promise.all([
-    sessionIds.length
-      ? supabase.from('spins').select('status').in('session_id', sessionIds)
-      : { data: [] as SpinRow[], error: null },
-    sessionIds.length
-      ? supabase.from('review_answers').select('rating').in('session_id', sessionIds)
-      : { data: [] as AnswerRow[], error: null },
-  ])
-
-  const spins = (spinsRes.error ? [] : (spinsRes.data ?? [])) as SpinRow[]
-  const answers = (answersRes.error ? [] : (answersRes.data ?? [])) as AnswerRow[]
-
-  const spinStats = {
-    total: spins.length,
-    redeemed: spins.filter(s => s.status === 'redeemed').length,
-    active: spins.filter(s => s.status === 'active').length,
-  }
-
-  const ratingAnswers = answers.filter(a => a.rating > 0)
-  const avgRating =
-    ratingAnswers.length > 0
-      ? Math.round((ratingAnswers.reduce((sum, a) => sum + a.rating, 0) / ratingAnswers.length) * 10) / 10
-      : null
+    .limit(10)
 
   const q = profile.role === 'super_admin' ? `?venueId=${venueId}` : ''
 
@@ -95,6 +98,7 @@ export default async function StaffStatsPage({
           ← Personāls
         </Link>
 
+        {/* Staff header */}
         <div className="bg-white rounded-2xl shadow p-6 flex items-center gap-4">
           <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-xl font-bold text-purple-700 flex-shrink-0">
             {staff.name.charAt(0).toUpperCase()}
@@ -110,70 +114,184 @@ export default async function StaffStatsPage({
           </span>
         </div>
 
+        {/* Date range filter */}
+        <div className="bg-white rounded-2xl shadow px-5 py-4 flex items-center justify-between flex-wrap gap-3">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Laika periods</p>
+          <StaffDateFilter
+            from={from}
+            to={to}
+            venueId={profile.role === 'super_admin' ? venueId : undefined}
+          />
+        </div>
+
+        {/* Summary stats */}
         <section className="bg-white rounded-2xl shadow p-6">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">Sesijas</p>
-          <div className="grid grid-cols-4 gap-4 text-center">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
+            Kopsavilkums ({from} – {to})
+          </p>
+          <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-3xl font-bold text-gray-800">{allSessions.length}</p>
-              <p className="text-xs text-gray-400 mt-1">Kopā</p>
+              <p className="text-3xl font-bold text-gray-800">{reviewRows.length}</p>
+              <p className="text-xs text-gray-400 mt-1">Sesijas</p>
             </div>
             <div>
-              <p className="text-3xl font-bold text-purple-600">{month30Count}</p>
-              <p className="text-xs text-gray-400 mt-1">30 dienas</p>
+              <p className="text-3xl font-bold text-blue-600">{ratingRows.length}</p>
+              <p className="text-xs text-gray-400 mt-1">Ar vērtējumu</p>
             </div>
             <div>
-              <p className="text-3xl font-bold text-purple-500">{week7Count}</p>
-              <p className="text-xs text-gray-400 mt-1">7 dienas</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-purple-400">{todayCount}</p>
-              <p className="text-xs text-gray-400 mt-1">Šodien</p>
+              <p className="text-3xl font-bold text-purple-700">
+                {avgRating != null ? avgRating.toFixed(1) : '—'}
+                {avgRating != null && <span className="text-xl text-yellow-400 ml-1">★</span>}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">Vidējais</p>
             </div>
           </div>
         </section>
 
-        {!spinsRes.error && (
-          <section className="bg-white rounded-2xl shadow p-6">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">Spini</p>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <p className="text-3xl font-bold text-gray-800">{spinStats.total}</p>
-                <p className="text-xs text-gray-400 mt-1">Kopā</p>
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-green-600">{spinStats.redeemed}</p>
-                <p className="text-xs text-gray-400 mt-1">Izpirkts</p>
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-blue-500">{spinStats.active}</p>
-                <p className="text-xs text-gray-400 mt-1">Aktīvs</p>
+        {/* Per-session reviews table */}
+        <section className="bg-white rounded-2xl shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-50">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+              Sesijas un atsauksmes
+            </p>
+          </div>
+          {reviewRows.length === 0 ? (
+            <p className="px-6 py-8 text-center text-sm text-gray-400">
+              Nav datu izvēlētajā periodā
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="text-left px-4 py-2.5 text-gray-400 font-medium text-xs">Datums</th>
+                    <th className="text-left px-4 py-2.5 text-gray-400 font-medium text-xs">Aktivitāte</th>
+                    <th className="text-center px-4 py-2.5 text-gray-400 font-medium text-xs">Vērtējums</th>
+                    <th className="text-left px-4 py-2.5 text-gray-400 font-medium text-xs">Komentārs</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reviewRows.map((r, i) => (
+                    <tr key={i} className="border-t border-gray-50 hover:bg-gray-50/50">
+                      <td className="px-4 py-2.5 text-gray-500 text-xs whitespace-nowrap">
+                        {fmtDate(r.session_date)}
+                      </td>
+                      <td className="px-4 py-2.5 text-gray-600 text-xs">
+                        {r.activity ?? '—'}
+                      </td>
+                      <td className="px-4 py-2.5 text-center">
+                        <span className={`text-xs font-bold ${
+                          r.rating && r.rating >= 4 ? 'text-green-600' :
+                          r.rating && r.rating <= 2 ? 'text-red-500' : 'text-yellow-600'
+                        }`}>
+                          {r.rating != null ? `${r.rating} ★` : '—'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-gray-600 text-xs max-w-[200px]">
+                        <span className="line-clamp-2">{r.comment || '—'}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        {/* Admin evaluation form */}
+        <section className="bg-white rounded-2xl shadow p-6">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
+            Vadītāja novērtējums
+          </p>
+          <form action={submitStaffEvaluation} className="flex flex-col gap-4">
+            <input type="hidden" name="staffId" value={staffId} />
+            <input type="hidden" name="venueId" value={venueId} />
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Vērtējums *</label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map(n => (
+                  <label key={n} className="flex flex-col items-center gap-1 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="rating"
+                      value={n}
+                      required
+                      className="accent-purple-600"
+                    />
+                    <span className="text-sm text-gray-600">{n}★</span>
+                  </label>
+                ))}
               </div>
             </div>
-          </section>
-        )}
 
-        {!answersRes.error && (
-          <section className="bg-white rounded-2xl shadow p-6">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">Novērtējumi</p>
-            {answers.length === 0 ? (
-              <p className="text-sm text-gray-400">Nav datu</p>
-            ) : (
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-4xl font-bold text-purple-700">
-                    {avgRating !== null ? avgRating.toFixed(1) : '—'}
-                    <span className="text-2xl text-yellow-400 ml-1">★</span>
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">Vidējais vērtējums</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-gray-700">{answers.length}</p>
-                  <p className="text-xs text-gray-400 mt-1">Atbildes kopā</p>
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Piezīmes</label>
+              <textarea
+                name="notes"
+                rows={3}
+                placeholder="Novērojumi, ieteikumi darbiniekam..."
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-300"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3 rounded-xl font-bold text-white bg-purple-600 hover:bg-purple-700 transition-colors active:scale-95"
+            >
+              Saglabāt novērtējumu
+            </button>
+          </form>
+
+          {/* Previous evaluations */}
+          {evals && evals.length > 0 && (
+            <div className="mt-5 border-t border-gray-100 pt-4">
+              <p className="text-xs text-gray-400 uppercase tracking-widest mb-3">Iepriekšējie novērtējumi</p>
+              <div className="space-y-3">
+                {evals.map(e => (
+                  <div key={e.id} className="flex items-start gap-3 text-sm">
+                    <span className="font-bold text-purple-600 flex-shrink-0">{e.rating}★</span>
+                    <div className="flex-1 min-w-0">
+                      {e.notes && <p className="text-gray-700 text-xs leading-relaxed">{e.notes}</p>}
+                      <p className="text-gray-400 text-xs mt-0.5">{fmtDate(e.created_at)}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
-          </section>
-        )}
+            </div>
+          )}
+        </section>
+
+        {/* Locked mockup — task checkboxes + messages to staff */}
+        <section className="relative rounded-2xl overflow-hidden">
+          <div className="bg-white border border-gray-100 p-6 opacity-40 pointer-events-none select-none">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">Uzdevumi un ziņas</p>
+            <div className="space-y-3 mb-5">
+              {['Piedalīties apmācībās', 'Atjaunot QR kodu', 'Izlasīt feedback pārskatu'].map(t => (
+                <label key={t} className="flex items-center gap-3 text-sm text-gray-600">
+                  <input type="checkbox" disabled className="w-4 h-4" />
+                  {t}
+                </label>
+              ))}
+            </div>
+            <textarea
+              disabled
+              rows={2}
+              placeholder="Ziņa darbiniekam..."
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm resize-none"
+            />
+            <button disabled className="mt-3 px-4 py-2 bg-purple-200 text-purple-300 rounded-xl text-sm font-bold">
+              Nosūtīt
+            </button>
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-[1px] rounded-2xl">
+            <div className="text-center">
+              <p className="text-2xl mb-1">🔒</p>
+              <p className="font-bold text-gray-700 text-sm">Drīzumā</p>
+              <p className="text-xs text-gray-500 mt-0.5">Nākamajā sprintā</p>
+            </div>
+          </div>
+        </section>
 
         {staff.stripe_tip_link && (
           <section className="bg-white rounded-2xl shadow p-6">

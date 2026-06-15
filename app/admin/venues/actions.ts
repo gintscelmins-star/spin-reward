@@ -152,3 +152,19 @@ export async function deleteClientAdmin(formData: FormData): Promise<void> {
 
   revalidatePath(`/admin/venues/${venueId}`)
 }
+
+// ---- updateVenuePlan ----
+export async function updateVenuePlan(venueId: string, plan: string) {
+  await assertSuperAdmin()
+  const { error } = await getAdmin().from('venues').update({ plan }).eq('id', venueId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/venues')
+}
+
+// ---- updateVenueModule ----
+export async function updateVenueModule(venueId: string, field: string, value: boolean) {
+  await assertSuperAdmin()
+  const { error } = await getAdmin().from('venues').update({ [field]: value }).eq('id', venueId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/venues')
+}
