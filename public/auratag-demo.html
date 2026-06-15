@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>AuraTag — Spēles rezultāti</title>
+
+<!-- OG / Social -->
+<meta property="og:title" content="AuraTag — Mans spēles rezultāts">
+<meta property="og:description" content="Pārbaudies AuraTag lazerēdienā un noskaidro savu stilu.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="/auratag/og-poster.jpg">
+<meta property="og:video" content="/auratag/commando.mp4">
+<meta property="og:video:type" content="video/mp4">
+<meta property="og:video:width" content="720">
+<meta property="og:video:height" content="1280">
+<meta name="twitter:card" content="player">
+<meta name="twitter:title" content="AuraTag — Spēles rezultāts">
+<meta name="twitter:player:width" content="360">
+<meta name="twitter:player:height" content="640">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#070710;--panel:#0d0d1f;--red:#ef4444;--blue:#3b82f6;
+  --gold:#ffd700;--neon:#00d4ff;--green:#22c55e;
+  --text:#e2e8f0;--muted:#64748b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100svh;overflow-x:hidden}
+.phase{display:none;min-height:100svh}
+.phase.active{display:flex;flex-direction:column}
+
+/* ── PHASE 1: Game Overview ── */
+#p1{background:radial-gradient(ellipse at 50% 0%,#1a0a2e 0%,var(--bg) 70%);padding:16px}
+.p1-title{text-align:center;font-family:'Orbitron',sans-serif;font-size:clamp(14px,3vw,20px);
+  font-weight:700;color:var(--gold);letter-spacing:3px;text-transform:uppercase;
+  text-shadow:0 0 20px rgba(255,215,0,.5);padding:12px 0 8px}
+.p1-timer{text-align:center;font-family:'Orbitron',sans-serif;font-size:clamp(36px,10vw,64px);
+  font-weight:900;color:#fff;text-shadow:0 0 30px rgba(255,255,255,.4);letter-spacing:4px;margin:4px 0}
+.p1-field{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;margin-top:12px;flex:1}
+.p1-team{background:rgba(255,255,255,.03);border-radius:12px;padding:12px 10px;border:1px solid rgba(255,255,255,.06)}
+.p1-team-red{border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.05)}
+.p1-team-blue{border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.05)}
+.p1-team-name{font-family:'Orbitron',sans-serif;font-size:clamp(12px,2.5vw,18px);font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px}
+.p1-team-red .p1-team-name{color:var(--red)}
+.p1-team-blue .p1-team-name{color:var(--blue)}
+.p1-score{font-family:'Orbitron',sans-serif;font-size:clamp(18px,4vw,32px);font-weight:900;margin-bottom:10px}
+.p1-team-red .p1-score{color:var(--red);text-shadow:0 0 20px rgba(239,68,68,.5)}
+.p1-team-blue .p1-score{color:var(--blue);text-shadow:0 0 20px rgba(59,130,246,.5)}
+.p1-player{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:clamp(11px,2vw,14px)}
+.p1-player:last-child{border-bottom:none}
+.p1-pname{font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.p1-pts{font-family:'Orbitron',sans-serif;font-size:12px;color:var(--gold)}
+.p1-pts.pos{color:var(--green);font-size:11px}
+.p1-center{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-width:120px}
+.leader-ring{width:min(120px,22vw);height:min(120px,22vw);border-radius:50%;
+  border:3px solid var(--neon);box-shadow:0 0 20px var(--neon),inset 0 0 20px rgba(0,212,255,.1);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  background:rgba(0,212,255,.05)}
+.leader-label{font-size:10px;color:var(--neon);letter-spacing:2px;text-transform:uppercase;font-weight:700}
+.leader-name{font-family:'Orbitron',sans-serif;font-size:clamp(10px,2.5vw,15px);font-weight:900;color:var(--neon);text-shadow:0 0 10px var(--neon);margin:2px 0}
+.leader-pts{font-family:'Orbitron',sans-serif;font-size:clamp(18px,5vw,28px);font-weight:900;color:#fff}
+.p1-btn{width:100%;margin-top:16px;padding:14px;background:linear-gradient(135deg,#7c3aed,#4f46e5);
+  border:none;border-radius:12px;color:#fff;font-family:'Orbitron',sans-serif;font-size:14px;
+  font-weight:700;letter-spacing:2px;cursor:pointer;text-transform:uppercase;
+  transition:all .2s;box-shadow:0 0 20px rgba(124,58,237,.4)}
+.p1-btn:hover{transform:translateY(-1px);box-shadow:0 4px 30px rgba(124,58,237,.6)}
+
+/* ── PHASE 2: Leaderboard ── */
+#p2{padding:12px;background:var(--bg)}
+.lb-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.lb-title{font-family:'Orbitron',sans-serif;font-size:clamp(14px,3vw,20px);font-weight:900;
+  letter-spacing:2px;color:#fff;text-transform:uppercase}
+.lb-subtitle{font-size:12px;color:var(--muted);letter-spacing:1px}
+.lb-wrap{overflow-x:auto;border-radius:12px;border:1px solid rgba(255,255,255,.07);flex:1}
+.lb-table{width:100%;border-collapse:collapse;font-size:clamp(11px,1.5vw,13px);min-width:780px}
+.lb-table thead th{background:rgba(255,255,255,.05);padding:10px 8px;text-align:right;
+  font-weight:700;color:var(--muted);letter-spacing:1px;font-size:11px;text-transform:uppercase;
+  border-bottom:1px solid rgba(255,255,255,.1);white-space:nowrap}
+.lb-table thead th:nth-child(-n+4){text-align:left}
+.lb-table tbody tr{border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;transition:background .15s}
+.lb-table tbody tr:hover{background:rgba(255,255,255,.06)}
+.lb-table td{padding:9px 8px;text-align:right;vertical-align:middle}
+.lb-table td:nth-child(-n+4){text-align:left}
+.lb-rank{font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;color:var(--gold);width:36px}
+.lb-rank.r1{color:#ffd700;text-shadow:0 0 10px rgba(255,215,0,.7)}
+.lb-rank.r2{color:#c0c0c0}
+.lb-rank.r3{color:#cd7f32}
+.team-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.team-dot.green{background:var(--green);box-shadow:0 0 6px var(--green)}
+.team-dot.red{background:var(--red);box-shadow:0 0 6px var(--red)}
+.vest-num{display:inline-block;background:rgba(255,255,255,.1);border-radius:4px;
+  padding:1px 5px;font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700}
+.p-name{font-weight:700;font-size:13px;letter-spacing:.5px}
+.rating-high{color:var(--gold);font-weight:700;font-family:'Orbitron',sans-serif}
+.rating-med{color:var(--green)}
+.acc-high{color:var(--green);font-weight:700}
+.kd-pos{color:var(--green);font-weight:700}
+.kd-neg{color:var(--red)}
+.medal-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gold);
+  margin-right:4px;box-shadow:0 0 6px var(--gold)}
+
+/* ── PHASE 3: Profile ── */
+#p3{padding:12px;background:var(--bg);gap:12px}
+.prof-back{display:inline-flex;align-items:center;gap:8px;cursor:pointer;color:var(--muted);
+  font-size:13px;font-weight:600;padding:4px 0 8px;transition:color .2s}
+.prof-back:hover{color:#fff}
+.prof-name-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.prof-player-name{font-family:'Orbitron',sans-serif;font-size:clamp(18px,5vw,28px);font-weight:900;color:#fff;letter-spacing:2px}
+.prof-vest{background:rgba(255,255,255,.1);border-radius:6px;padding:2px 8px;
+  font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;color:var(--muted)}
+
+/* Medals row */
+.medals-row{display:flex;gap:clamp(6px,2vw,16px);overflow-x:auto;padding:4px 0 8px;scrollbar-width:none}
+.medals-row::-webkit-scrollbar{display:none}
+.medal-badge{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:62px;
+  opacity:.2;filter:grayscale(1) brightness(.6);transition:all .3s;cursor:default}
+.medal-badge.earned{opacity:1;filter:none}
+.medal-icon{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:22px;background:radial-gradient(circle,#3a3a4a,#1a1a28);
+  border:2px solid rgba(255,255,255,.15);position:relative}
+.medal-badge.earned .medal-icon{background:radial-gradient(circle,#b45309,#78350f);
+  border-color:var(--gold);box-shadow:0 0 16px rgba(255,215,0,.5),0 0 4px var(--gold)}
+.medal-badge-name{font-size:9px;font-weight:700;letter-spacing:1px;color:var(--muted);text-align:center;text-transform:uppercase}
+.medal-badge.earned .medal-badge-name{color:var(--gold)}
+
+/* Profile grid */
+.prof-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1}
+@media(max-width:640px){.prof-grid{grid-template-columns:1fr}}
+
+.prof-stats{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px}
+.prof-stats-title{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--muted);
+  text-transform:uppercase;margin-bottom:10px;border-bottom:1px solid rgba(255,255,255,.07);padding-bottom:6px}
+.stat-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;
+  border-bottom:1px solid rgba(255,255,255,.04)}
+.stat-row:last-child{border-bottom:none}
+.stat-label{color:var(--muted);font-size:13px;font-weight:600}
+.stat-value{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;color:#fff}
+.stat-value.gold{color:var(--gold);text-shadow:0 0 8px rgba(255,215,0,.4)}
+.stat-value.green{color:var(--green)}
+.stat-value.red{color:var(--red)}
+
+/* ══ TRADING CARD ══ */
+.card-col{display:flex;flex-direction:column;align-items:center;gap:12px}
+.trading-card{
+  width:min(300px,85vw);
+  aspect-ratio:9/16;
+  position:relative;
+  border-radius:14px;
+  padding:10px;
+  display:flex;flex-direction:column;gap:8px;
+  /* Gunmetal metal frame */
+  background:linear-gradient(160deg,#2e2e3e 0%,#1c1c2a 30%,#222232 70%,#2a2a3a 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.18),
+    inset 0 -2px 0 rgba(0,0,0,.6),
+    inset 2px 0 0 rgba(255,255,255,.09),
+    inset -2px 0 0 rgba(0,0,0,.4),
+    0 0 0 1px rgba(255,255,255,.07),
+    0 30px 60px rgba(0,0,0,.95),
+    0 0 60px rgba(0,180,255,.08);
+  animation:cardReveal .5s cubic-bezier(.34,1.56,.64,1) both, glowPulse 4s ease-in-out 1s infinite
+}
+@keyframes cardReveal{from{transform:scale(.75) translateY(20px);opacity:0}to{transform:none;opacity:1}}
+@keyframes glowPulse{
+  0%,100%{box-shadow:inset 0 2px 0 rgba(255,255,255,.18),inset 0 -2px 0 rgba(0,0,0,.6),inset 2px 0 0 rgba(255,255,255,.09),inset -2px 0 0 rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.07),0 30px 60px rgba(0,0,0,.95),0 0 60px rgba(0,180,255,.08)}
+  50%{box-shadow:inset 0 2px 0 rgba(255,255,255,.18),inset 0 -2px 0 rgba(0,0,0,.6),inset 2px 0 0 rgba(255,255,255,.09),inset -2px 0 0 rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.07),0 30px 60px rgba(0,0,0,.95),0 0 80px rgba(0,180,255,.25),0 0 120px rgba(0,180,255,.1)}
+}
+/* Corner rivets */
+.trading-card::before,.trading-card::after{content:'';position:absolute;width:10px;height:10px;border-radius:50%;
+  background:radial-gradient(circle,#5a5a6a,#2a2a3a);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.2),inset 0 -2px 0 rgba(0,0,0,.5),0 0 4px rgba(0,0,0,.5)}
+.trading-card::before{top:8px;left:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),8px 0 0 0 rgba(90,90,106,1),0 8px 0 0 rgba(90,90,106,1);}
+/* More rivets via extra elements */
+.rivet{position:absolute;width:10px;height:10px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#6a6a7e,#1e1e2c);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2),inset 0 -1px 0 rgba(0,0,0,.6)}
+.rivet.tl{top:8px;left:8px}.rivet.tr{top:8px;right:8px}.rivet.bl{bottom:8px;left:8px}.rivet.br{bottom:8px;right:8px}
+
+.card-title-bar{
+  text-align:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.08);
+  font-family:'Orbitron',sans-serif;font-size:clamp(14px,4vw,20px);font-weight:900;letter-spacing:4px;text-transform:uppercase;
+  color:#ff3333;
+  text-shadow:0 0 10px rgba(255,51,51,.9),0 0 25px rgba(255,51,51,.5),0 0 50px rgba(255,51,51,.2)
+}
+.card-inner{
+  flex:1;border-radius:8px;display:flex;flex-direction:column;overflow:hidden;position:relative;
+  border:2px solid var(--neon);
+  box-shadow:0 0 12px rgba(0,212,255,.5),0 0 30px rgba(0,212,255,.2),inset 0 0 20px rgba(0,212,255,.05);
+  background:linear-gradient(160deg,#06061a 0%,#0a0a1e 100%)
+}
+/* Greeble side strips */
+.card-greeble{position:absolute;top:0;bottom:0;width:14px;display:flex;flex-direction:column;justify-content:space-around;overflow:hidden;pointer-events:none}
+.card-greeble.left{left:0;background:linear-gradient(90deg,rgba(0,212,255,.12),transparent);padding-left:2px}
+.card-greeble.right{right:0;background:linear-gradient(270deg,rgba(0,212,255,.12),transparent);text-align:right;padding-right:2px}
+.card-greeble span{font-size:5px;color:rgba(0,212,255,.4);font-family:monospace;letter-spacing:.5px;line-height:1.4;display:block;transform:rotate(0deg)}
+
+.card-video-wrap{flex:1;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.card-video-wrap video,.card-video-wrap .card-img-fallback{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover
+}
+.card-img-fallback{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 40%,#1a1a40,#060614);font-size:60px;gap:8px}
+.card-img-fallback span{font-size:60px}
+.card-img-fallback p{font-family:'Orbitron',sans-serif;font-size:10px;color:var(--neon);letter-spacing:2px}
+
+/* Stats overlay on card */
+.card-stats-overlay{position:absolute;left:0;top:0;bottom:0;display:flex;flex-direction:column;
+  justify-content:flex-end;padding:8px 6px;pointer-events:none;
+  background:linear-gradient(90deg,rgba(0,212,255,.18),transparent 60%)}
+.card-stat-line{display:flex;align-items:center;gap:4px;line-height:1}
+.card-stat-icon{font-size:9px;color:rgba(0,212,255,.6);font-family:monospace}
+.card-stat-text{font-family:'Orbitron',sans-serif;font-size:8px;color:var(--neon);
+  text-shadow:0 0 6px var(--neon);font-weight:700;letter-spacing:.5px;line-height:1.6}
+
+/* Player name on card */
+.card-player-bar{background:rgba(0,0,0,.7);border-top:1px solid rgba(0,212,255,.3);
+  padding:5px 10px;display:flex;align-items:center;justify-content:center}
+.card-player-bar-name{font-family:'Orbitron',sans-serif;font-size:clamp(10px,2.5vw,13px);
+  font-weight:900;letter-spacing:3px;color:#fff;text-transform:uppercase;
+  text-shadow:0 0 8px rgba(255,255,255,.4)}
+
+.card-emblem{padding:6px 8px;display:flex;align-items:center;justify-content:space-between}
+.emblem-badge{display:flex;align-items:center;gap:5px}
+.emblem-shield{width:22px;height:26px;background:linear-gradient(160deg,#3a3a4a,#1a1a28);
+  clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  display:flex;align-items:center;justify-content:center;font-size:10px}
+.emblem-text{font-family:'Orbitron',sans-serif;font-size:8px;color:var(--muted);letter-spacing:1px;line-height:1.3}
+.card-brand{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:900;
+  color:rgba(255,255,255,.6);letter-spacing:3px;text-shadow:0 0 8px rgba(0,212,255,.3)}
+
+/* Share buttons */
+.card-actions{display:flex;gap:8px;width:100%;max-width:300px}
+.btn-share{flex:1;padding:12px;background:linear-gradient(135deg,#7c3aed,#4f46e5);
+  border:none;border-radius:10px;color:#fff;font-family:'Orbitron',sans-serif;
+  font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;text-transform:uppercase}
+.btn-share:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(124,58,237,.5)}
+.btn-back-list{flex:1;padding:12px;background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.15);border-radius:10px;color:var(--text);
+  font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;
+  cursor:pointer;transition:all .2s;text-transform:uppercase}
+.btn-back-list:hover{background:rgba(255,255,255,.12)}
+
+/* Desktop share modal */
+.share-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;display:none;
+  align-items:flex-end;justify-content:center;padding:16px}
+.share-modal-bg.open{display:flex}
+.share-modal{background:#13132a;border-radius:20px 20px 16px 16px;padding:20px;width:100%;max-width:420px;
+  border:1px solid rgba(255,255,255,.1)}
+.share-modal-title{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;
+  letter-spacing:2px;color:#fff;margin-bottom:16px;text-align:center}
+.share-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.share-btn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 6px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;
+  cursor:pointer;transition:all .15s;text-decoration:none;color:var(--text)}
+.share-btn:hover{background:rgba(255,255,255,.12)}
+.share-btn-icon{font-size:22px}
+.share-btn-label{font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--muted)}
+.share-close{width:100%;padding:11px;background:rgba(255,255,255,.06);border:none;border-radius:10px;
+  color:var(--muted);cursor:pointer;font-size:13px;font-weight:600;margin-top:4px}
+
+/* Utils */
+.back-btn{display:inline-flex;align-items:center;gap:6px;cursor:pointer;color:var(--muted);
+  font-size:13px;font-weight:600;padding:6px 0;transition:color .2s;background:none;border:none}
+.back-btn:hover{color:#fff}
+.back-btn svg{width:16px;height:16px;flex-shrink:0}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px}
+.orb{font-family:'Orbitron',sans-serif}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ PHASE 1 ═══════════════════ -->
+<div id="p1" class="phase active">
+  <div style="padding:14px 14px 0">
+    <div class="p1-title">⚡ The Best of The Best ⚡</div>
+    <div class="p1-timer">05:62</div>
+  </div>
+  <div class="p1-field" style="padding:0 14px;flex:1">
+    <div class="p1-team p1-team-red">
+      <div class="p1-team-name">Red Team</div>
+      <div class="p1-score">36 630</div>
+      <div class="p1-player"><span class="p1-pname">Colossus</span><span class="p1-pts pos">+50</span></div>
+      <div class="p1-player"><span class="p1-pname">Thor</span><span class="p1-pts">375</span></div>
+      <div class="p1-player"><span class="p1-pname">Magneto</span><span class="p1-pts">56</span></div>
+      <div class="p1-player"><span class="p1-pname">Phoenix</span><span class="p1-pts">432</span></div>
+      <div class="p1-player"><span class="p1-pname">Batman</span><span class="p1-pts">347</span></div>
+      <div class="p1-player"><span class="p1-pname" style="color:var(--gold)">Herkules</span><span class="p1-pts" style="color:var(--gold)">523 ★</span></div>
+      <div class="p1-player"><span class="p1-pname">Beast</span><span class="p1-pts">23</span></div>
+      <div class="p1-player"><span class="p1-pname">Robin</span><span class="p1-pts pos">+35</span></div>
+      <div class="p1-player"><span class="p1-pname">Superman</span><span class="p1-pts">74</span></div>
+    </div>
+
+    <div class="p1-center">
+      <div class="leader-ring">
+        <div class="leader-label">Leader</div>
+        <div class="leader-name">Hercules</div>
+        <div class="leader-pts">523</div>
+      </div>
+      <div style="text-align:center;margin-top:4px">
+        <div style="font-size:10px;color:var(--muted);letter-spacing:1px">UZVARĒTĀJS</div>
+        <div class="orb" style="font-size:14px;font-weight:900;color:var(--blue);text-shadow:0 0 12px var(--blue)">BLUE</div>
+      </div>
+    </div>
+
+    <div class="p1-team p1-team-blue">
+      <div class="p1-team-name" style="text-align:right">Blue Team</div>
+      <div class="p1-score" style="text-align:right">36 650</div>
+      <div class="p1-player" style="flex-direction:row-reverse"><span class="p1-pname">Colossus</span><span class="p1-pts pos">+50</span></div>
+      <div class="p1-player" style="flex-direction:row-reverse"><span class="p1-pname">Thor</span><span class="p1-pts">375</span></div>
+      <div class="p1-player" style="flex-direction:row-reverse"><span class="p1-pname">Magneto</span><span class="p1-pts">56</span></div>
+      <div class="p1-player" style="flex-direction:row-reverse"><span class="p1-pname">Phoenix</span><span class="p1-pts">432</span></div>
+      <div class="p1-player" style="flex-direction:row-reverse"><span class="p1-pname">Batman</span><span class="p1-pts">347</span></div>
+      <div class="p1-player" style="flex-direction:row-reverse"><span class="p1-pname" style="color:var(--gold)">Herkules</span><span class="p1-pts" style="color:var(--gold)">523</span></div>
+      <div class="p1-player" style="flex-direction:row-reverse"><span class="p1-pname">Beast</span><span class="p1-pts">23</span></div>
+      <div class="p1-player" style="flex-direction:row-reverse"><span class="p1-pname">Robin</span><span class="p1-pts pos">+35</span></div>
+      <div class="p1-player" style="flex-direction:row-reverse"><span class="p1-pname">Superman</span><span class="p1-pts">74</span></div>
+    </div>
+  </div>
+  <div style="padding:14px">
+    <button class="p1-btn" onclick="showPhase(2)">RĀDĪT LEADERBOARD →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ PHASE 2 ═══════════════════ -->
+<div id="p2" class="phase">
+  <div style="padding:12px">
+    <div class="section-head">
+      <div>
+        <button class="back-btn" onclick="showPhase(1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Atpakaļ
+        </button>
+        <div class="orb" style="font-size:clamp(16px,4vw,22px);font-weight:900;color:#fff;letter-spacing:2px">LEADERBOARD</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;letter-spacing:1px">LaserDog — 2026-06-13 · Klikšķis → profils</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--green)"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--green)"></span>Zaļā komanda</span>
+        <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--red)"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--red)"></span>Sarkanā komanda</span>
+      </div>
+    </div>
+  </div>
+  <div class="lb-wrap" style="margin:0 12px 12px">
+    <table class="lb-table" id="lbTable"></table>
+  </div>
+</div>
+
+<!-- ═══════════════════ PHASE 3 ═══════════════════ -->
+<div id="p3" class="phase">
+  <div style="padding:12px 12px 0">
+    <button class="back-btn" onclick="showPhase(2)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Leaderboard
+    </button>
+    <div class="prof-name-row" id="profNameRow"></div>
+    <div class="medals-row" id="medalsRow"></div>
+  </div>
+  <div class="prof-grid" style="padding:0 12px 12px;flex:1" id="profGrid"></div>
+</div>
+
+<!-- Share modal -->
+<div class="share-modal-bg" id="shareModal">
+  <div class="share-modal">
+    <div class="share-modal-title">📤 DALĪTIES</div>
+    <div class="share-grid" id="shareGrid"></div>
+    <button class="share-close" onclick="closeShare()">Aizvērt</button>
+  </div>
+</div>
+
+<script>
+// ══ DATA ══
+const ALL_MEDALS=[
+  {id:'commando',   name:'COMMANDO',    emoji:'🔫', desc:'Visvairāk izšautas lodes'},
+  {id:'kamikaze',   name:'KAMIKAZE',    emoji:'💥', desc:'Visbiežāk ievainots'},
+  {id:'sniper',     name:'SNIPER',      emoji:'🎯', desc:'Augstākā precizitāte'},
+  {id:'destroyer',  name:'DESTROYER',   emoji:'💀', desc:'Visvairāk trāpījumu'},
+  {id:'warrior',    name:'WARRIOR',     emoji:'⚔️', desc:'Augstākais reitings'},
+  {id:'camper',     name:'CAMPER',      emoji:'🏕️', desc:'Uzmanīgākais taktikis'},
+  {id:'punisher',   name:'PUNISHER',    emoji:'☠️', desc:'Vislabākais K:D'},
+  {id:'executioner',name:'EXECUTIONER', emoji:'🪓', desc:'Komandas MVP'},
+]
+
+const PLAYERS=[
+  {rank:1, vest:14,team:'green',name:'Snaipers',         rating:99.81,acc:10.26,bullets:2350,hits:241,injuries:96, kd:2.51,kdDiff:145, hitsP:12.74,teamHP:19.5, medal:'warrior'},
+  {rank:2, vest:61,team:'green',name:'stalkeris',        rating:93.83,acc:16.40,bullets:1189,hits:195,injuries:91, kd:2.14,kdDiff:104, hitsP:10.31,teamHP:15.78,medal:'sniper'},
+  {rank:3, vest:1, team:'green',name:'ovečkins29',       rating:87.48,acc:12.56,bullets:2054,hits:258,injuries:122,kd:2.11,kdDiff:136, hitsP:13.64,teamHP:20.87,medal:'destroyer'},
+  {rank:4, vest:84,team:'green',name:'fogy1',            rating:71.64,acc:13.70,bullets:1219,hits:167,injuries:98, kd:1.70,kdDiff:69,  hitsP:8.83, teamHP:13.51,medal:null},
+  {rank:5, vest:10,team:'green',name:'Redbullstuntman1.0',rating:37.96,acc:9.09,bullets:1166,hits:106,injuries:109,kd:0.97,kdDiff:-3,  hitsP:5.61, teamHP:8.58, medal:null},
+  {rank:6, vest:48,team:'green',name:'elpuumo',          rating:36.55,acc:8.25, bullets:1164,hits:96, injuries:101,kd:0.95,kdDiff:-5,  hitsP:5.08, teamHP:7.77, medal:null},
+  {rank:7, vest:36,team:'red',  name:'BOZIS3000',        rating:34.21,acc:6.84, bullets:1359,hits:93, injuries:102,kd:0.91,kdDiff:-9,  hitsP:4.92, teamHP:14.2, medal:'kamikaze'},
+  {rank:8, vest:13,team:'red',  name:'Terminators',      rating:31.31,acc:3.44, bullets:2530,hits:87, injuries:98, kd:0.89,kdDiff:-11, hitsP:4.60, teamHP:13.28,medal:'commando'},
+  {rank:9, vest:45,team:'green',name:'Nezinu',           rating:31.13,acc:6.03, bullets:1493,hits:90, injuries:107,kd:0.84,kdDiff:-17, hitsP:4.76, teamHP:7.28, medal:null},
+  {rank:10,vest:41,team:'green',name:'Melnais Buks',     rating:30.09,acc:4.38, bullets:1897,hits:83, injuries:99, kd:0.84,kdDiff:-16, hitsP:4.39, teamHP:6.72, medal:'camper'},
+  {rank:11,vest:87,team:'red',  name:'FANTA303',         rating:29.24,acc:4.82, bullets:1910,hits:92, injuries:114,kd:0.81,kdDiff:-22, hitsP:4.87, teamHP:14.05,medal:'executioner'},
+  {rank:12,vest:42,team:'red',  name:'Leni',             rating:24.95,acc:4.51, bullets:1797,hits:81, injuries:117,kd:0.69,kdDiff:-36, hitsP:4.28, teamHP:12.37,medal:null},
+  {rank:13,vest:80,team:'red',  name:'Snaiper pro',      rating:22.34,acc:4.03, bullets:1217,hits:49, injuries:78, kd:0.63,kdDiff:-29, hitsP:2.59, teamHP:7.48, medal:null},
+  {rank:14,vest:57,team:'green',name:'dass',             rating:21.24,acc:6.90, bullets:609, hits:42, injuries:74, kd:0.57,kdDiff:-32, hitsP:2.22, teamHP:6.41, medal:'punisher'},
+  {rank:15,vest:75,team:'green',name:'Haizivs',          rating:16.64,acc:4.92, bullets:1117,hits:55, injuries:120,kd:0.46,kdDiff:-65, hitsP:2.91, teamHP:8.4,  medal:null},
+  {rank:16,vest:66,team:'green',name:'tommy fast',       rating:16.40,acc:3.07, bullets:2279,hits:70, injuries:150,kd:0.47,kdDiff:-80, hitsP:3.70, teamHP:10.69,medal:null},
+  {rank:17,vest:46,team:'red',  name:'Martini',          rating:15.47,acc:3.11, bullets:1448,hits:45, injuries:102,kd:0.44,kdDiff:-57, hitsP:2.38, teamHP:6.87, medal:null},
+  {rank:18,vest:59,team:'red',  name:'Macdl01',          rating:12.76,acc:3.22, bullets:1273,hits:41, injuries:113,kd:0.36,kdDiff:-72, hitsP:2.17, teamHP:6.26, medal:null},
+]
+
+let currentPlayer=null
+
+// ══ NAVIGATION ══
+function showPhase(n){
+  document.querySelectorAll('.phase').forEach(p=>p.classList.remove('active'))
+  document.getElementById('p'+n).classList.add('active')
+  window.scrollTo(0,0)
+}
+
+// ══ LEADERBOARD ══
+function rankClass(r){return r===1?'r1':r===2?'r2':r===3?'r3':''}
+function ratingClass(v){return v>=80?'rating-high':v>=40?'rating-med':''}
+function accClass(v){return v>=12?'acc-high':''}
+function kdDiffClass(v){return v>0?'kd-pos':v<0?'kd-neg':''}
+
+function buildLeaderboard(){
+  const tbl=document.getElementById('lbTable')
+  tbl.innerHTML=`<thead><tr>
+    <th>Vieta</th><th>Ierocis</th><th>Komanda</th><th>Spēlētājs</th>
+    <th>Reitings</th><th>Precizitāte</th><th>Lodes</th><th>Trāpījumi</th>
+    <th>Ievainojumi</th><th>K:D ratio</th><th>K:D +/-</th>
+    <th>Trāp. %</th><th>Kom. Trāp. %</th>
+  </tr></thead>`
+  const tb=document.createElement('tbody')
+  PLAYERS.forEach(p=>{
+    const tr=document.createElement('tr')
+    tr.onclick=()=>showProfile(p)
+    const kdSign=p.kdDiff>0?'+':''
+    const medal=p.medal?`<span class="medal-dot" title="${p.medal}"></span>`:'';
+    tr.innerHTML=`
+      <td><span class="lb-rank ${rankClass(p.rank)}">${p.rank===1?'🥇':p.rank===2?'🥈':p.rank===3?'🥉':p.rank}</span></td>
+      <td><span class="vest-num">${p.vest}</span></td>
+      <td><span class="team-dot ${p.team}"></span></td>
+      <td>${medal}<span class="p-name">${p.name}</span></td>
+      <td><span class="${ratingClass(p.rating)}">${p.rating}</span></td>
+      <td><span class="${accClass(p.acc)}">${p.acc}%</span></td>
+      <td>${p.bullets.toLocaleString()}</td>
+      <td>${p.hits}</td>
+      <td>${p.injuries}</td>
+      <td><span class="${p.kd>=1?'kd-pos':'kd-neg'}">${p.kd}</span></td>
+      <td><span class="${kdDiffClass(p.kdDiff)}">${kdSign}${p.kdDiff}</span></td>
+      <td>${p.hitsP}%</td>
+      <td>${p.teamHP}%</td>
+    `
+    tb.appendChild(tr)
+  })
+  tbl.appendChild(tb)
+}
+
+// ══ PROFILE ══
+function showProfile(player){
+  currentPlayer=player
+  showPhase(3)
+
+  // Name row
+  const teamColor=player.team==='green'?'var(--green)':'var(--red)'
+  document.getElementById('profNameRow').innerHTML=`
+    <div style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${teamColor};box-shadow:0 0 8px ${teamColor};margin-right:4px"></div>
+    <div class="orb prof-player-name">${player.name}</div>
+    <span class="prof-vest">#${player.vest}</span>
+    ${player.medal?`<span style="background:rgba(255,215,0,.15);border:1px solid var(--gold);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;text-transform:uppercase">${player.medal}</span>`:''}
+  `
+
+  // Medals row
+  const mr=document.getElementById('medalsRow')
+  mr.innerHTML=ALL_MEDALS.map(m=>`
+    <div class="medal-badge ${player.medal===m.id?'earned':''}" title="${m.desc}">
+      <div class="medal-icon">${m.emoji}</div>
+      <div class="medal-badge-name">${m.name}</div>
+    </div>
+  `).join('')
+
+  // Profile grid (stats + card)
+  const pg=document.getElementById('profGrid')
+  const kdSign=player.kdDiff>0?'+':''
+  const kdClass=player.kdDiff>0?'green':'red'
+  const kdRatioClass=player.kd>=1?'green':'red'
+
+  const videoMedal=player.medal==='commando'
+  const videoHtml=videoMedal
+    ?`<video autoplay loop muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
+        <source src="/auratag/commando.mp4" type="video/mp4">
+      </video>`
+    :`<div class="card-img-fallback">
+        <span>${player.medal?ALL_MEDALS.find(m=>m.id===player.medal)?.emoji||'🎮':'🎮'}</span>
+        <p>${player.medal?player.medal.toUpperCase():'PLAYER'}</p>
+      </div>`
+
+  const medalDef=player.medal?ALL_MEDALS.find(m=>m.id===player.medal):null
+  const cardTitle=medalDef?medalDef.name:'PLAYER'
+
+  const greebleL=['01001100','10110010','KD:'+player.kd,'11001010','UNIT-X'+player.vest,'01110100','▓▒░░░▒▓','MARK-III','00110011','10101010']
+  const greebleR=['◄ ░▒▓ ►','ACC:'+player.acc+'%','11010010','AURATAG','01100110','PWR:0.77','░░▒▒▓▓','10011001','SYNC OK','ARMED']
+
+  pg.innerHTML=`
+    <div class="prof-stats">
+      <div class="prof-stats-title">Statistika</div>
+      <div class="stat-row"><span class="stat-label">Vieta</span><span class="stat-value gold">${player.rank===1?'🥇 ':player.rank===2?'🥈 ':player.rank===3?'🥉 ':''} #${player.rank}</span></div>
+      <div class="stat-row"><span class="stat-label">Komanda</span><span class="stat-value" style="color:${teamColor}">${player.team==='green'?'Zaļā':'Sarkanā'}</span></div>
+      <div class="stat-row"><span class="stat-label">Reitings</span><span class="stat-value ${player.rating>=80?'gold':player.rating>=40?'green':''}">${player.rating}</span></div>
+      <div class="stat-row"><span class="stat-label">Trāpījumi</span><span class="stat-value">${player.hits}</span></div>
+      <div class="stat-row"><span class="stat-label">Ievainojumi</span><span class="stat-value">${player.injuries}</span></div>
+      <div class="stat-row"><span class="stat-label">K:D ratio</span><span class="stat-value ${kdRatioClass}">${player.kd}</span></div>
+      <div class="stat-row"><span class="stat-label">K:D +/-</span><span class="stat-value ${kdClass}">${kdSign}${player.kdDiff}</span></div>
+      <div class="stat-row"><span class="stat-label">Precizitāte</span><span class="stat-value ${player.acc>=12?'green':''}">${player.acc}%</span></div>
+      <div class="stat-row"><span class="stat-label">Winrate</span><span class="stat-value green">100%</span></div>
+      <div class="stat-row"><span class="stat-label">Izšautās lodes</span><span class="stat-value">${player.bullets.toLocaleString()}</span></div>
+      <div class="stat-row"><span class="stat-label">Trāp. komandā %</span><span class="stat-value">${player.teamHP}%</span></div>
+    </div>
+
+    <div class="card-col">
+      <div class="trading-card">
+        <div class="rivet tl"></div><div class="rivet tr"></div>
+        <div class="rivet bl"></div><div class="rivet br"></div>
+        <div class="card-title-bar">${cardTitle}</div>
+        <div class="card-inner">
+          <div class="card-greeble left">${greebleL.map(t=>`<span>${t}</span>`).join('')}</div>
+          <div class="card-greeble right">${greebleR.map(t=>`<span>${t}</span>`).join('')}</div>
+          <div class="card-video-wrap">
+            ${videoHtml}
+            <div class="card-stats-overlay">
+              <div style="margin-bottom:6px;border-bottom:1px solid rgba(0,212,255,.3);padding-bottom:4px">
+                <div class="card-stat-text" style="font-size:10px;color:rgba(0,212,255,.5)">K/D ──────</div>
+              </div>
+              <div class="card-stat-line"><span class="card-stat-icon">◆</span><span class="card-stat-text">kd ratio ${player.kd}</span></div>
+              <div class="card-stat-line"><span class="card-stat-icon">◆</span><span class="card-stat-text">precizitāte ${player.acc}%</span></div>
+              <div class="card-stat-line"><span class="card-stat-icon">◆</span><span class="card-stat-text">${player.bullets.toLocaleString()} lodes</span></div>
+            </div>
+          </div>
+          <div class="card-player-bar">
+            <div class="card-player-bar-name">${player.name}</div>
+          </div>
+          <div class="card-emblem">
+            <div class="emblem-badge">
+              <div class="emblem-shield">⚔</div>
+              <div class="emblem-text">UNSC<br>UAC</div>
+            </div>
+            <div class="card-brand">AURATAG</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="btn-share" onclick="shareCard()">📤 Dalīties</button>
+        <button class="btn-back-list" onclick="showPhase(2)">← Saraksts</button>
+      </div>
+    </div>
+  `
+}
+
+// ══ SHARE ══
+async function shareCard(){
+  if(!currentPlayer) return
+  const p=currentPlayer
+  const medal=p.medal?ALL_MEDALS.find(m=>m.id===p.medal):null
+  const title=`${p.name} — ${medal?medal.name:'PLAYER'} | AuraTag`
+  const text=`Mans rezultāts: ${medal?medal.name:'PLAYER'}, K/D ${p.kd}, precizitāte ${p.acc}%, ${p.bullets} lodes izšautas`
+  const url=window.location.href
+
+  // 1. Try Web Share with video file (mobile native sheet)
+  if(navigator.share){
+    const videoPath=`/auratag/${p.medal||'commando'}.mp4`
+    try{
+      const res=await fetch(videoPath)
+      if(res.ok){
+        const blob=await res.blob()
+        const file=new File([blob],`${p.medal||'auratag'}.mp4`,{type:'video/mp4'})
+        if(navigator.canShare&&navigator.canShare({files:[file]})){
+          await navigator.share({files:[file],title,text})
+          return
+        }
+      }
+    }catch(_){}
+
+    // 2. URL share fallback
+    try{
+      if(navigator.canShare&&navigator.canShare({url})){
+        await navigator.share({title,text,url})
+        return
+      } else {
+        await navigator.share({title,text,url})
+        return
+      }
+    }catch(e){
+      if(e.name!=='AbortError') showDesktopShare(p,title,text,url)
+      return
+    }
+  }
+
+  // 3. Desktop fallback
+  showDesktopShare(p,title,text,url)
+}
+
+function showDesktopShare(p,title,text,url){
+  const encodedText=encodeURIComponent(text)
+  const encodedUrl=encodeURIComponent(url)
+  const medal=p.medal||'commando'
+  const grid=document.getElementById('shareGrid')
+  grid.innerHTML=[
+    {icon:'📘',label:'Facebook', href:`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`},
+    {icon:'𝕏',  label:'X / Twitter',href:`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedText}`},
+    {icon:'💬',label:'WhatsApp', href:`https://wa.me/?text=${encodedText}%20${encodedUrl}`},
+    {icon:'✈️', label:'Telegram', href:`https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`},
+    {icon:'📥',label:'Lejupielādēt', href:`/auratag/${medal}.mp4`, download:true},
+    {icon:'🔗',label:'Kopēt saiti',  action:'copy'},
+  ].map(b=>{
+    if(b.action==='copy'){
+      return `<button class="share-btn" onclick="copyLink('${url}')"><span class="share-btn-icon">${b.icon}</span><span class="share-btn-label">${b.label}</span></button>`
+    }
+    const extra=b.download?`download="${medal}.mp4"`:'target="_blank" rel="noreferrer"'
+    return `<a class="share-btn" href="${b.href}" ${extra}><span class="share-btn-icon">${b.icon}</span><span class="share-btn-label">${b.label}</span></a>`
+  }).join('')
+  document.getElementById('shareModal').classList.add('open')
+}
+
+function closeShare(){document.getElementById('shareModal').classList.remove('open')}
+document.getElementById('shareModal').addEventListener('click',function(e){if(e.target===this)closeShare()})
+
+async function copyLink(url){
+  try{await navigator.clipboard.writeText(url);alert('Saite nokopēta!')}
+  catch(_){prompt('Kopē saiti:',url)}
+}
+
+// ══ INIT ══
+buildLeaderboard()
+</script>
+</body>
+</html>
