@@ -3,7 +3,7 @@ import ContactForm from '@/components/ContactForm'
 
 const YEAR = new Date().getFullYear()
 // TODO: Nākamajā sprintā — pašreģistrācija + paroles atiestatīšana. Pagaidām ved uz /login.
-const WA_LINK = 'https://wa.me/37129325325?text=Sveiki!%20Interesē%20Spillit'
+const WA_LINK = 'https://wa.me/37129320325?text=Sveiki!%20Interesē%20Spillit'
 
 const MODULES = [
   {
@@ -67,12 +67,6 @@ const AUDIENCE = [
   'Restorāni', 'Bāri', 'Kafejnīcas', 'Skaistumkopšana', 'Fitness',
 ]
 
-const HOW = [
-  { step: '1', title: 'Reģistrē uzņēmumu', desc: 'Piesakies bezmaksas kontam — uzstādīšana < 10 min.' },
-  { step: '2', title: 'Pievieno darbiniekus', desc: 'Katrs darbinieks saņem savu kodu vai QR.' },
-  { step: '3', title: 'Klients griež ratu', desc: 'Pēc katras vizītes — balva + atsauksme automātiski.' },
-  { step: '4', title: 'Tu redzi visu', desc: 'Reitingi, komentāri un darbinieku statistika reāllaikā.' },
-]
 
 export default function LandingPage() {
   return (
@@ -176,25 +170,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Kā darbojas ─────────────────────────────────── */}
-      <section className="max-w-4xl mx-auto px-5 py-20">
-        <div className="text-center mb-10">
-          <p className="text-sm font-semibold text-purple-500 uppercase tracking-widest mb-2">Vienkārši</p>
-          <h2 className="text-3xl font-black text-gray-900">Kā darbojas Spillit</h2>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {HOW.map(h => (
-            <div key={h.step} className="flex flex-col items-center text-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-xl font-black text-purple-700">
-                {h.step}
-              </div>
-              <p className="font-black text-gray-900">{h.title}</p>
-              <p className="text-sm text-gray-500 leading-relaxed">{h.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* ── Moduļi ──────────────────────────────────────── */}
       <section className="bg-gray-50 border-t border-b border-gray-100 px-5 py-20">
         <div className="max-w-5xl mx-auto">
@@ -249,7 +224,7 @@ export default function LandingPage() {
           <p className="text-gray-500 mt-2 text-sm">
             Atbildēsim darba dienās 1–2 stundu laikā. Vai raksti WhatsApp →{' '}
             <a href={WA_LINK} target="_blank" rel="noreferrer" className="text-green-600 font-semibold hover:underline">
-              +371 29325325
+              +371 29320325
             </a>
           </p>
         </div>

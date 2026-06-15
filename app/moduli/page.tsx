@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import ContactForm from '@/components/ContactForm'
 
-const WA_LINK = 'https://wa.me/37129325325?text=Sveiki!%20Interesē%20Spillit'
+const WA_LINK = 'https://wa.me/37129320325?text=Sveiki!%20Interesē%20Spillit'
 
 const MODULES = [
   {
@@ -250,7 +250,7 @@ export default function ModuliPage() {
               Izvēlies interesējošos moduļus un mēs sazināsimies ar individuālu piedāvājumu.
               Vai raksti WhatsApp →{' '}
               <a href={WA_LINK} target="_blank" rel="noreferrer" className="text-green-600 font-semibold hover:underline">
-                +371 29325325
+                +371 29320325
               </a>
             </p>
           </div>
