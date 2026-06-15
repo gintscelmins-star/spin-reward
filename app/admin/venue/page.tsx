@@ -111,6 +111,13 @@ export default async function ClientAdminVenuePage({
             <p className="text-sm text-gray-400 mt-1">Pārvaldīt ruletē esošās balvas</p>
           </Link>
           <Link
+            href={`/admin/venue/ledger${q}`}
+            className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition-shadow group"
+          >
+            <p className="text-lg font-bold text-gray-800 group-hover:text-purple-700">Izsniedzamās balvas</p>
+            <p className="text-sm text-gray-400 mt-1">Krājums, ledger, CSV grāmatvedībai</p>
+          </Link>
+          <Link
             href={`/admin/venue/staff${q}`}
             className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition-shadow group"
           >

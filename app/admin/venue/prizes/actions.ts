@@ -35,16 +35,19 @@ export async function upsertPrize(
   const id = (formData.get('id') as string) || null
   const name = (formData.get('name') as string).trim()
   const description = (formData.get('description') as string).trim() || null
+  const code = (formData.get('code') as string).trim() || null
   const probability_weight = parseInt(formData.get('probability_weight') as string, 10)
   const totalRaw = (formData.get('total_available') as string).trim()
   const total_available = totalRaw ? parseInt(totalRaw, 10) : null
+  const stockRaw = (formData.get('stock') as string).trim()
+  const stock = stockRaw ? parseInt(stockRaw, 10) : null
   const expires_days = parseInt(formData.get('expires_days') as string, 10)
   const active = formData.get('active') === 'true'
 
   if (id) {
     const { error } = await supabase
       .from('prizes')
-      .update({ name, description, probability_weight, total_available, expires_days, active })
+      .update({ name, description, code, probability_weight, total_available, stock, expires_days, active })
       .eq('id', id)
     if (error) return { error: error.message }
   } else {
@@ -52,9 +55,11 @@ export async function upsertPrize(
       venue_id: venueId,
       name,
       description,
+      code,
       probability_weight,
       total_available,
       remaining: total_available,
+      stock,
       expires_days,
       active,
     })

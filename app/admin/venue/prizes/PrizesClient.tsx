@@ -14,6 +14,8 @@ interface Prize {
   remaining: number | null
   expires_days: number
   active: boolean
+  code: string | null
+  stock: number | null
 }
 
 interface Props {
@@ -65,8 +67,9 @@ export default function PrizesClient({ prizes, venueId, totalWeight }: Props) {
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
               <th className="text-left px-4 py-3 text-gray-500 font-medium">Nosaukums</th>
+              <th className="text-left px-4 py-3 text-gray-500 font-medium">Kods</th>
               <th className="text-left px-4 py-3 text-gray-500 font-medium">Svars / %</th>
-              <th className="text-left px-4 py-3 text-gray-500 font-medium">Skaits</th>
+              <th className="text-left px-4 py-3 text-gray-500 font-medium">Krājums</th>
               <th className="text-left px-4 py-3 text-gray-500 font-medium">Derīg. (d)</th>
               <th className="text-left px-4 py-3 text-gray-500 font-medium">Statuss</th>
               <th className="px-4 py-3" />
@@ -83,14 +86,15 @@ export default function PrizesClient({ prizes, venueId, totalWeight }: Props) {
                       <p className="text-xs text-gray-400">{p.description}</p>
                     )}
                   </td>
+                  <td className="px-4 py-3 font-mono text-xs text-gray-500">
+                    {p.code ?? '—'}
+                  </td>
                   <td className="px-4 py-3 font-mono text-gray-600">
                     {p.probability_weight}
                     <span className="text-gray-400 text-xs ml-1">({pct}%)</span>
                   </td>
                   <td className="px-4 py-3 text-gray-600">
-                    {p.total_available == null
-                      ? '∞'
-                      : `${p.remaining ?? 0}/${p.total_available}`}
+                    {p.stock == null ? '∞' : p.stock}
                   </td>
                   <td className="px-4 py-3 text-gray-600">{p.expires_days}</td>
                   <td className="px-4 py-3">
@@ -129,7 +133,7 @@ export default function PrizesClient({ prizes, venueId, totalWeight }: Props) {
             })}
             {prizes.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-gray-400">
+                <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
                   Nav nevienas balvas — pievienojiet pirmo
                 </td>
               </tr>
@@ -174,6 +178,33 @@ export default function PrizesClient({ prizes, venueId, totalWeight }: Props) {
                   defaultValue={editing?.description ?? ''}
                   className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Kods / SKU
+                  </label>
+                  <input
+                    name="code"
+                    placeholder="piem. KAFIJA-01"
+                    defaultValue={editing?.code ?? ''}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 font-mono text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Krājums
+                  </label>
+                  <input
+                    name="stock"
+                    type="number"
+                    min="0"
+                    placeholder="tukšs = ∞"
+                    defaultValue={editing?.stock ?? ''}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
