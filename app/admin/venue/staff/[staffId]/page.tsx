@@ -192,9 +192,6 @@ export default async function StaffStatsPage({
 
         {/* Admin evaluation form */}
         <section className="bg-white rounded-2xl shadow p-6">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
-            Vadītāja novērtējums
-          </p>
           <form action={submitStaffEvaluation} className="flex flex-col gap-4">
             <input type="hidden" name="staffId" value={staffId} />
             <input type="hidden" name="venueId" value={venueId} />

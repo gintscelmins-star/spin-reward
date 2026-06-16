@@ -383,8 +383,7 @@ export default async function StatsPage({
           <h2 className="text-lg font-bold text-gray-700 mb-4">Vadītāja novērtējumi</h2>
           {staffEvals.length === 0 ? (
             <p className="text-gray-400 text-sm">
-              Nav vadītāja novērtējumu izvēlētajā periodā.{' '}
-              <span className="text-gray-300">Pieejami Personāls → darbinieks → Vadītāja novērtējums.</span>
+              Nav vadītāja novērtējumu izvēlētajā periodā.
             </p>
           ) : (
             <div className="space-y-3">
