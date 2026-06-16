@@ -31,11 +31,11 @@ const MODULES = [
       'Reitings pa sesijām — vienmēr zini, kurš strādā labi',
       'Komentāri redzami tikai vadītājam',
       'Salīdzinājums pa darbinieku grupām',
-      'Admin var pievienot vadītāja novērtējumu katrai sesijai',
+      'Admin var pievienot vadītāja novērtējumu',
     ],
   },
   {
-    icon: '💛',
+    icon: '⭐',
     name: 'Tips',
     price: 'no €9/mēn',
     free: false,
@@ -100,7 +100,7 @@ const MODULES = [
     price: 'no €7/mēn',
     free: false,
     tag: 'no €7/mēn',
-    short: 'Auto-atgādinājums par dzimšanas dienu vai pasākumu',
+    short: 'Auto-atgādinājums klientiem par ciklisku pasākumu',
     desc: 'Atzīmē klienta dzimšanas dienu vai citu nozīmīgu datumu → nākamgad nedēļu pirms notikuma klients automātiski saņem SMS vai e-pastu ar personalizētu atlaidi vai piedāvājumu.',
     features: [
       'Datuma atzīmēšana sesijas laikā (bērna dzimšanas diena, gadadiena u.c.)',
@@ -151,22 +151,7 @@ const MODULES = [
       'Kursu modulāra struktūra (video, teksts, jautājumi)',
       'Testi ar automātisko vērtēšanu',
       'Vadītāja pārskats: kurš ko ir apguvis',
-      'Sertifikāti pēc moduļa pabeigšanas',
-    ],
-  },
-  {
-    icon: '🏷️',
-    name: 'AuraTag',
-    price: 'individuāli',
-    free: false,
-    tag: 'individuāli',
-    short: 'NFC/QR birkas fiziskai lojalitātei',
-    desc: 'Fiziskas NFC vai QR birkas, kas aktivizē Spillit sesiju pie pieskāriena. Ideāli kafejnīcām, sporta klubiem un jebkurai fiziskai videi — bez aplikācijas.',
-    features: [
-      'NFC un QR atbalsts vienā birikā',
-      'Pielāgojams dizains ar jūsu logotipu',
-      'Automatizēta sesijas aktivizācija',
-      'Analytics: kurā birikā, kurā laikā, cik bieži',
+      'Vienota informācijas bāze visiem darbiniekiem',
     ],
   },
 ]
@@ -295,7 +280,7 @@ export default function ModuliPage() {
             ))}
           </div>
           <p className="text-center text-xs text-gray-400 mt-4">
-            Onboarding un AuraTag — individuāla cena. <a href="#pieteikums" className="text-purple-500 hover:underline">Sazinies →</a>
+            Onboarding — individuāla cena. <a href="#pieteikums" className="text-purple-500 hover:underline">Sazinies →</a>
           </p>
         </div>
       </div>

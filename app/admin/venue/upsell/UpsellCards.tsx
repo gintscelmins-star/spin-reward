@@ -143,19 +143,6 @@ const MODULES: Module[] = [
       'Automātisks progress report vadītājam uz e-pastu',
     ],
   },
-  {
-    icon: '🏷️',
-    name: 'AuraTag',
-    free: false,
-    price: 'individuāli',
-    how: 'Fiziskas NFC/QR birkas aktivizē Spillit sesiju pie pieskāriena — bez aplikācijas lejupielādes.',
-    benefit: 'Katrs klients skenē, griež ratu un atstāj atsauksmi — pilnautomātiski.',
-    features: [
-      'NFC un QR atbalsts vienā birikā',
-      'Pielāgojams dizains ar jūsu logotipu',
-      'Automatizēta sesijas aktivizācija',
-    ],
-  },
 ]
 
 function PriceBadge({ m }: { m: Module }) {

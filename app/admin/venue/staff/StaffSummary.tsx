@@ -45,6 +45,35 @@ function fmtDate(dateStr: string): string {
   return `${dd}.${mm}.${yyyy}`
 }
 
+function exportCsv(rows: SummaryRow[], staff: StaffData[], from: string, to: string) {
+  const headers = ['Darbinieks', 'Spēles', 'Atsauksmes', 'Vidējais', '1★', '2★', '3★', '4★', '5★', 'Ar komentāru']
+  const csvRows = rows.map(row => {
+    const staffName = staff.find(s => s.id === row.staff_id)?.name ?? 'Nezināms'
+    return [
+      `"${staffName.replace(/"/g, '""')}"`,
+      row.sessions_count,
+      row.reviews_count,
+      row.avg_rating != null ? row.avg_rating.toFixed(1) : '—',
+      row.rating_1_count,
+      row.rating_2_count,
+      row.rating_3_count,
+      row.rating_4_count,
+      row.rating_5_count,
+      row.comment_count,
+    ]
+  })
+  const csv = [headers, ...csvRows].map(row => row.join(',')).join('\r\n')
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `staff-summary-${from}-${to}.csv`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 export default function StaffSummary({ staff, summary, venueId, from, to, q }: Props) {
   const router = useRouter()
   const [minRating, setMinRating] = useState(0)
@@ -55,9 +84,23 @@ export default function StaffSummary({ staff, summary, venueId, from, to, q }: P
     summary.map(s => [s.staff_id, s])
   )
 
-  const filtered = staff.filter(s => {
+  const staffRows = staff.map(s => {
     const row = summaryMap.get(s.id)
-    if (!row) return true
+    return row ?? {
+      staff_id: s.id,
+      sessions_count: 0,
+      reviews_count: 0,
+      avg_rating: null,
+      rating_1_count: 0,
+      rating_2_count: 0,
+      rating_3_count: 0,
+      rating_4_count: 0,
+      rating_5_count: 0,
+      comment_count: 0,
+    }
+  })
+
+  const filtered = staffRows.filter(row => {
     if (minRating > 0 && (row.avg_rating ?? 0) < minRating) return false
     return true
   })
@@ -107,6 +150,13 @@ export default function StaffSummary({ staff, summary, venueId, from, to, q }: P
             Pievienot
           </button>
           <div className="flex items-center gap-2 ml-auto">
+            <button
+              type="button"
+              onClick={() => exportCsv(staffRows, staff, currentFrom, currentTo)}
+              className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-50"
+            >
+              CSV eksportēt
+            </button>
             <label className="text-xs font-medium text-gray-600">Min. vērtējums</label>
             <select
               value={minRating}
@@ -142,13 +192,12 @@ export default function StaffSummary({ staff, summary, venueId, from, to, q }: P
             </tr>
           </thead>
           <tbody>
-            {filtered.map(s => {
-              const row = summaryMap.get(s.id)
-              if (!row) return null
+            {filtered.map(row => {
+              const staffRow = staff.find(s => s.id === row.staff_id)
               const avgRating = row.avg_rating ?? 0
               return (
-                <tr key={s.id} className="border-t border-gray-50 hover:bg-gray-50/60">
-                  <td className="px-5 py-3 font-medium text-gray-800">{s.name}</td>
+                <tr key={row.staff_id} className="border-t border-gray-50 hover:bg-gray-50/60">
+                  <td className="px-5 py-3 font-medium text-gray-800">{staffRow?.name ?? '—'}</td>
                   <td className="px-5 py-3 text-right font-mono text-gray-700">{row.sessions_count}</td>
                   <td className="px-5 py-3 text-right font-mono text-gray-700">{row.reviews_count}</td>
                   <td className="px-5 py-3 text-right font-bold">
@@ -167,7 +216,7 @@ export default function StaffSummary({ staff, summary, venueId, from, to, q }: P
                   <td className="px-5 py-3 text-right text-xs text-gray-600">{row.comment_count}</td>
                   <td className="px-5 py-3">
                     <Link
-                      href={`/admin/venue/staff/${s.id}?from=${currentFrom}&to=${currentTo}${q ? `&${q.slice(1)}` : ''}`}
+                      href={`/admin/venue/staff/${row.staff_id}?from=${currentFrom}&to=${currentTo}${q ? `&${q.slice(1)}` : ''}`}
                       className="text-xs text-purple-600 hover:underline"
                     >
                       Detaļas →

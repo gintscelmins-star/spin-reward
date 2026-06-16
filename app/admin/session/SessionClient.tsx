@@ -21,12 +21,11 @@ interface SessionItem {
 interface Props {
   staffList: StaffMember[]
   activities: Activity[]
-  bookings: Booking[]
   venueId: string
   todaySessions: Omit<SessionItem, 'qrDataUrl' | 'isNew'>[]
 }
 
-export default function SessionClient({ staffList, activities, bookings, venueId, todaySessions }: Props) {
+export default function SessionClient({ staffList, activities, venueId, todaySessions }: Props) {
   const [state, formAction, pending] = useActionState<SessionState, FormData>(createSession, null)
   const [sessions, setSessions] = useState<SessionItem[]>(() =>
     todaySessions.map(s => ({ ...s, qrDataUrl: null }))
@@ -155,27 +154,6 @@ export default function SessionClient({ staffList, activities, bookings, venueId
             </select>
           </div>
 
-          {bookings.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Rezervācija</label>
-              <select
-                name="booking_id"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white text-sm"
-              >
-                <option value="">— Bez rezervācijas —</option>
-                {bookings.map(b => {
-                  const time = b.starts_at
-                    ? new Date(b.starts_at).toLocaleTimeString('lv-LV', { hour: '2-digit', minute: '2-digit' })
-                    : ''
-                  return (
-                    <option key={b.id} value={b.id}>
-                      {time ? `${time} — ` : ''}{b.customer_name ?? '—'}
-                    </option>
-                  )
-                })}
-              </select>
-            </div>
-          )}
 
           <button
             type="submit"

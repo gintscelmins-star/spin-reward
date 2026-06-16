@@ -11,7 +11,6 @@ export async function createSession(
 ): Promise<SessionState> {
   const venueId = formData.get('venueId') as string
   const activity_id = (formData.get('activity_id') as string) || null
-  const booking_id = (formData.get('booking_id') as string) || null
   let staff_id = (formData.get('staff_id') as string) || null
 
   const supabase = await createClient()
@@ -69,7 +68,6 @@ export async function createSession(
       venue_id: venueId,
       staff_id,
       activity_id,
-      booking_id,
       status: 'active',
       activate_ip,
     })

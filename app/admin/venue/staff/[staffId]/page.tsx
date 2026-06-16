@@ -2,10 +2,12 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { submitStaffEvaluation } from '../actions'
+import { getStaffReviewsRows } from '../queries'
 import StaffDateFilter from './StaffDateFilter'
 import { fmtDateTime } from '@/lib/fmt'
 
 interface ReviewRow {
+  session_id: string | null
   session_date: string | null
   rating: number | null
   comment: string | null
@@ -56,20 +58,14 @@ export default async function StaffStatsPage({
 
   if (!staff) redirect('/admin/venue/staff')
 
-  // Per-session reviews via RPC
-  const { data: reviews } = await supabase.rpc('get_staff_reviews', {
-    p_venue_id: venueId,
-    p_staff_id: staffId,
-    p_from: from,
-    p_to: to,
-  })
-  const reviewRows = ((reviews ?? []) as unknown as ReviewRow[])
+  const reviewRows = await getStaffReviewsRows(supabase, venueId, staffId, from, to)
 
   // Summary stats in date range
   const ratingRows = reviewRows.filter(r => r.rating != null && r.rating > 0)
   const avgRating = ratingRows.length
     ? Math.round((ratingRows.reduce((s, r) => s + (r.rating ?? 0), 0) / ratingRows.length) * 10) / 10
     : null
+  const sessionCount = new Set(reviewRows.map(r => r.session_id).filter(Boolean)).size
 
   // Existing evaluations by admins for this staff
   const { data: evals } = await supabase
@@ -123,7 +119,7 @@ export default async function StaffStatsPage({
           </p>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-3xl font-bold text-gray-800">{reviewRows.length}</p>
+              <p className="text-3xl font-bold text-gray-800">{sessionCount}</p>
               <p className="text-xs text-gray-400 mt-1">Sesijas</p>
             </div>
             <div>

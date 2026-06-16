@@ -16,7 +16,6 @@ const MODULES = [
   { icon: '🎫', name: 'Digital Stamps',               price: 'no €10/mēn', free: false, desc: 'Digitālā lojalitātes kartīte. 10 apmeklējumi = bezmaksas balva.' },
   { icon: '📅', name: 'Maiņu grafiks',                price: 'no €25/mēn', free: false, desc: 'Plūstošas maiņas un WhatsApp čeklists darbinieku paveiktajam.' },
   { icon: '🎓', name: 'Onboarding',                   price: 'individuāli',free: false, desc: 'Kursi, testi un vadītāja pārskats jauniem darbiniekiem.' },
-  { icon: '🏷️', name: 'AuraTag',                     price: 'individuāli',free: false, desc: 'NFC/QR birkas fiziskai sesiju aktivizācijai — bez app lejupielādes.' },
 ]
 
 const AUDIENCE = [

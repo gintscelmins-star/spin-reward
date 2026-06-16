@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import StaffClient from './StaffClient'
 import StaffSummary from './StaffSummary'
+import { getStaffSummaryRows } from './queries'
 import VenuePicker from '../_components/VenuePicker'
 
 export default async function StaffPage({
@@ -39,7 +40,7 @@ export default async function StaffPage({
   const from = params.from ?? defaultFrom
   const to = params.to ?? defaultTo
 
-  const [{ data: staff }, { data: venue }, { count: activeCount }, { data: summaryRows }] = await Promise.all([
+  const [{ data: staff }, { data: venue }, { count: activeCount }] = await Promise.all([
     supabase.from('staff').select('*').eq('venue_id', venueId).order('name'),
     supabase.from('venues').select('seats').eq('id', venueId).single(),
     supabase
@@ -47,8 +48,9 @@ export default async function StaffPage({
       .select('*', { count: 'exact', head: true })
       .eq('venue_id', venueId)
       .eq('active', true),
-    supabase.rpc('get_staff_summary', { p_venue_id: venueId, p_from: from, p_to: to }),
   ])
+
+  const summaryRows = await getStaffSummaryRows(supabase, venueId, from, to)
 
   if (!venue) redirect('/admin')
 
