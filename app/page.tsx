@@ -6,60 +6,17 @@ const YEAR = new Date().getFullYear()
 const WA_LINK = 'https://wa.me/37129320325?text=Sveiki!%20Interesē%20Spillit'
 
 const MODULES = [
-  {
-    icon: '🎡',
-    name: 'Spin Reward',
-    free: true,
-    desc: 'Laimes rats pēc katras vizītes — automātisks WOW moments ar balvām.',
-  },
-  {
-    icon: '⭐',
-    name: 'Darbinieku novērtējums',
-    free: true,
-    desc: 'Privātas atsauksmes + darbinieka reitings pa sesijām. Uzlabot pirms tas nonāk Google.',
-  },
-  {
-    icon: '💛',
-    name: 'Tips',
-    free: false,
-    desc: 'Digitālā dzeramnauda ar Revolut/Stripe. Klients pateicas viegli.',
-  },
-  {
-    icon: '🔍',
-    name: 'Google atgādinājums',
-    free: false,
-    desc: 'Auto-piedāvājums atstāt Google atsauksmi tikai pēc labas pieredzes.',
-  },
-  {
-    icon: '📣',
-    name: 'Spin+Meta',
-    free: false,
-    desc: 'Meta pikselis laimes ratā. Retargetē faktiskos apmeklētājus.',
-  },
-  {
-    icon: '📋',
-    name: 'Lead Capture',
-    free: false,
-    desc: 'Klients atstāj e-pastu apmaiņā pret balvu. Sava kontaktu bāze.',
-  },
-  {
-    icon: '🎂',
-    name: 'Leads sildīšana',
-    free: false,
-    desc: 'Atzīmē klienta dzimšanas dienu → nākamgad automātisks SMS ar atlaidi pirms pasākuma.',
-  },
-  {
-    icon: '🎓',
-    name: 'Onboarding',
-    free: false,
-    desc: 'Kursi, testi un vadītāja pārskats jauniem darbiniekiem.',
-  },
-  {
-    icon: '🎫',
-    name: 'Digital Stamps',
-    free: false,
-    desc: 'Digitālā lojalitātes kartīte. 10 apmeklējumi = bezmaksas balva.',
-  },
+  { icon: '🎡', name: 'Spin Reward',                 price: null,          free: true,  desc: 'Laimes rats pēc katras vizītes — automātisks WOW moments ar balvām.' },
+  { icon: '⭐', name: 'Darbinieku novērtējums',       price: null,          free: true,  desc: 'Privātas atsauksmes + darbinieka reitings pa sesijām. Uzlabot pirms tas nonāk Google.' },
+  { icon: '💛', name: 'Tips',                         price: 'no €9/mēn',  free: false, desc: 'Digitālā dzeramnauda ar Revolut/Stripe. Klients pateicas viegli.' },
+  { icon: '🔍', name: 'Google atgādinājums',          price: 'no €11/mēn', free: false, desc: 'Auto-piedāvājums atstāt Google atsauksmi tikai pēc labas pieredzes.' },
+  { icon: '📣', name: 'Spin+Meta',                    price: 'no €11/mēn', free: false, desc: 'Meta pikselis laimes ratā. Retargetē faktiskos apmeklētājus.' },
+  { icon: '📋', name: 'Lead Capture',                 price: 'no €7/mēn',  free: false, desc: 'Klients atstāj e-pastu apmaiņā pret balvu. Sava kontaktu bāze.' },
+  { icon: '🎂', name: 'Leads sildīšana',              price: 'no €7/mēn',  free: false, desc: 'Atzīmē klienta dzimšanas dienu → nākamgad automātisks SMS ar atlaidi.' },
+  { icon: '🎫', name: 'Digital Stamps',               price: 'no €10/mēn', free: false, desc: 'Digitālā lojalitātes kartīte. 10 apmeklējumi = bezmaksas balva.' },
+  { icon: '📅', name: 'Maiņu grafiks',                price: 'no €25/mēn', free: false, desc: 'Plūstošas maiņas un WhatsApp čeklists darbinieku paveiktajam.' },
+  { icon: '🎓', name: 'Onboarding',                   price: 'individuāli',free: false, desc: 'Kursi, testi un vadītāja pārskats jauniem darbiniekiem.' },
+  { icon: '🏷️', name: 'AuraTag',                     price: 'individuāli',free: false, desc: 'NFC/QR birkas fiziskai sesiju aktivizācijai — bez app lejupielādes.' },
 ]
 
 const AUDIENCE = [
@@ -77,6 +34,12 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between gap-3">
           <Link href="/" className="text-xl font-black text-purple-950 tracking-tight">Spillit</Link>
           <div className="flex items-center gap-2">
+            <Link
+              href="/moduli"
+              className="hidden sm:block text-sm font-semibold text-gray-600 hover:text-purple-700 transition-colors px-2"
+            >
+              Moduļi &amp; Cenas
+            </Link>
             <a
               href={WA_LINK}
               target="_blank"
@@ -174,14 +137,14 @@ export default function LandingPage() {
       <section className="bg-gray-50 border-t border-b border-gray-100 px-5 py-20">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
-            <p className="text-sm font-semibold text-purple-500 uppercase tracking-widest mb-2">Moduļi</p>
+            <p className="text-sm font-semibold text-purple-500 uppercase tracking-widest mb-2">Moduļi un cenas</p>
             <h2 className="text-3xl font-black text-gray-900">Komplektē pēc savas vajadzības</h2>
             <p className="text-gray-500 mt-2 text-sm">
               Sāc ar bezmaksas kodolu — rats + darbinieku novērtējums. Pievieno tikai to, ko vajag.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
             {MODULES.map(m => (
               <div
                 key={m.name}
@@ -193,10 +156,12 @@ export default function LandingPage() {
                     className={`text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0 mt-1 ${
                       m.free
                         ? 'bg-green-100 text-green-700'
-                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                        : m.price === 'individuāli'
+                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                        : 'bg-indigo-100 text-indigo-700'
                     }`}
                   >
-                    {m.free ? 'Bezmaksas' : 'Pēc pieprasījuma'}
+                    {m.free ? 'Bezmaksas' : m.price}
                   </span>
                 </div>
                 <p className="font-black text-gray-900 text-sm leading-tight">{m.name}</p>
@@ -208,9 +173,9 @@ export default function LandingPage() {
           <div className="text-center">
             <Link
               href="/moduli"
-              className="inline-block px-6 py-2.5 rounded-xl text-sm font-bold text-purple-700 bg-purple-50 border border-purple-100 hover:bg-purple-100 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-purple-700 bg-purple-50 border border-purple-200 hover:bg-purple-100 transition-colors shadow-sm"
             >
-              Detalizēts moduļu apraksts →
+              Skatīt visas cenas un detalizētu aprakstu →
             </Link>
           </div>
         </div>
