@@ -31,7 +31,11 @@ export default async function LedgerPage({
 
   if (!venueId) return <VenuePicker basePath="/admin/venue/ledger" />
 
-  const { data: rows } = await supabase.rpc('get_prize_ledger', { venue_id: venueId })
+  const { data: rows, error: ledgerError } = await supabase.rpc('get_prize_ledger', { venue_id: venueId })
+
+  if (ledgerError) {
+    console.error('[ledger] get_prize_ledger error:', ledgerError)
+  }
 
   const q = profile.role === 'super_admin' ? `?venueId=${venueId}` : ''
 
@@ -55,6 +59,16 @@ export default async function LedgerPage({
             </Link>
           </div>
         </div>
+
+        {ledgerError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-800">
+            <p className="font-semibold mb-1">Kļūda ielādējot ledger</p>
+            <p className="font-mono text-xs text-red-600">{ledgerError.message}</p>
+            <p className="text-xs text-red-500 mt-1">
+              Kods: {ledgerError.code} — pārbaudiet vai RPC funkcija <code>get_prize_ledger</code> eksistē un RLS ļauj piekļūt.
+            </p>
+          </div>
+        )}
 
         <LedgerClient rows={(rows ?? []) as LedgerRow[]} />
       </div>

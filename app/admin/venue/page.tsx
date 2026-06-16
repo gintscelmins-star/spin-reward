@@ -106,14 +106,7 @@ export default async function ClientAdminVenuePage({
           </div>
         </div>
 
-        <ModulesSection
-          venueId={venueId}
-          initial={{
-            module_google_enabled: venue.module_google_enabled ?? true,
-            module_tips_enabled: venue.module_tips_enabled ?? false,
-            module_whatsapp_enabled: venue.module_whatsapp_enabled ?? false,
-          }}
-        />
+        <ModulesSection venueId={venueId} />
 
         {/* Modules overview — always at top */}
         <Link

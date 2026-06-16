@@ -15,6 +15,15 @@ interface ReviewRow {
   google_redirected: boolean
 }
 
+interface ReviewDetailRow {
+  id: string
+  created_at: string
+  google_redirected: boolean
+  staff: { name: string } | null
+  activity: { name: string } | null
+  review_answers: { rating: number; comment: string | null }[]
+}
+
 interface AnswerRow {
   question_id: string | null
   rating: number
@@ -66,7 +75,7 @@ export default async function StatsPage({
       : null
 
   // Parallel data fetch
-  const [spinsRes, reviewsRes, answersRes, tipsRes, evalsRes] = await Promise.all([
+  const [spinsRes, reviewsRes, answersRes, tipsRes, evalsRes, reviewDetailsRes] = await Promise.all([
     (() => {
       const q = supabase
         .from('spins')
@@ -104,6 +113,15 @@ export default async function StatsPage({
         .limit(20)
       return since ? q.gte('created_at', since) : q
     })(),
+    (() => {
+      const q = supabase
+        .from('reviews')
+        .select('id, created_at, google_redirected, staff:staff_id(name), activity:activity_id(name), review_answers(rating, comment)')
+        .eq('venue_id', venueId)
+        .order('created_at', { ascending: false })
+        .limit(50)
+      return since ? q.gte('created_at', since) : q
+    })(),
   ])
 
   const spins = ((spinsRes.data ?? []) as unknown) as SpinRow[]
@@ -113,6 +131,10 @@ export default async function StatsPage({
   const staffEvals = (evalsRes?.data ?? []) as unknown as Array<{
     rating: number; notes: string | null; created_at: string; staff: { name: string } | null
   }>
+  const reviewDetails = (reviewDetailsRes?.data ?? []) as unknown as ReviewDetailRow[]
+  if (reviewDetailsRes?.error) {
+    console.error('[stats] reviews fetch error:', reviewDetailsRes.error)
+  }
 
   // ---- Aggregations ----
 
@@ -306,6 +328,58 @@ export default async function StatsPage({
           )}
           {tipStats.count === 0 && (
             <p className="text-gray-400 text-sm mt-3">Nav datu</p>
+          )}
+        </section>
+
+        {/* Reviews detail list */}
+        <section className="bg-white rounded-2xl shadow p-6">
+          <h2 className="text-lg font-bold text-gray-700 mb-4">Atsauksmju saraksts</h2>
+          {reviewDetailsRes?.error && (
+            <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+              Kļūda ielādējot atsauksmes: {reviewDetailsRes.error.message}
+            </div>
+          )}
+          {reviewDetails.length === 0 ? (
+            <p className="text-gray-400 text-sm">Nav atsauksmju izvēlētajā periodā.</p>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {reviewDetails.map(r => {
+                const avgRating = r.review_answers.length > 0
+                  ? r.review_answers.reduce((s, a) => s + a.rating, 0) / r.review_answers.length
+                  : null
+                const comment = r.review_answers.find(a => a.comment)?.comment ?? null
+                return (
+                  <div key={r.id} className="py-3 flex items-start gap-3 text-sm">
+                    <div className="flex-shrink-0 w-10 text-center">
+                      {avgRating !== null ? (
+                        <span className="font-black text-purple-600">{avgRating.toFixed(1)}★</span>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-gray-700 text-xs">
+                          {r.staff?.name ?? 'Nezināms darbinieks'}
+                        </span>
+                        {r.activity?.name && (
+                          <span className="text-xs text-gray-400">· {r.activity.name}</span>
+                        )}
+                        {r.google_redirected && (
+                          <span className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded font-medium">Google</span>
+                        )}
+                      </div>
+                      {comment && (
+                        <p className="text-xs text-gray-500 mt-0.5 leading-relaxed italic">&ldquo;{comment}&rdquo;</p>
+                      )}
+                    </div>
+                    <span className="flex-shrink-0 text-xs text-gray-300">
+                      {new Date(r.created_at).toLocaleDateString('lv-LV', { day: '2-digit', month: '2-digit' })}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
           )}
         </section>
 
