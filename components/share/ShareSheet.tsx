@@ -10,6 +10,7 @@ interface Props {
   callsign: string
   shareUrl: string
   videoUrl?: string
+  posterUrl?: string
 }
 
 interface Network {
@@ -91,7 +92,7 @@ const NETWORKS: Network[] = [
   },
 ]
 
-export default function ShareSheet({ open, onClose, token, callsign, shareUrl, videoUrl }: Props) {
+export default function ShareSheet({ open, onClose, token, callsign, shareUrl, videoUrl, posterUrl }: Props) {
   const panelRef = useRef<HTMLDivElement>(null)
   const shareText = `${callsign} GUNSnLASERS rezultāts — skaties!`
 
@@ -203,7 +204,7 @@ export default function ShareSheet({ open, onClose, token, callsign, shareUrl, v
         <div className="gnl-sh-head">
           <div className="gnl-sh-thumb">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={videoUrl ? videoUrl.replace('.mp4', ' pict.jpg') : ''} alt={callsign} />
+            {posterUrl && <img src={posterUrl} alt={callsign} />}
           </div>
           <div className="gnl-sh-info">
             <div className="name">{callsign}</div>

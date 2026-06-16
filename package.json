@@ -11,13 +11,18 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@remotion/cli": "^4.0.477",
+    "@remotion/google-fonts": "^4.0.477",
+    "@remotion/lambda": "^4.0.477",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2",
     "canvas-confetti": "^1.9.4",
     "next": "16.2.7",
     "qrcode": "^1.5.4",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "remotion": "^4.0.477",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",

@@ -15,6 +15,7 @@ export interface GameResult {
   injuries: number | null
   team_hit_pct: number | null
   share_token: string
+  share_video_url: string | null
   created_at: string
 }
 
@@ -91,4 +92,10 @@ export function teamLabel(team: string | null): { label: string; color: string }
 export function fmt(val: number | null, decimals = 2, suffix = ''): string {
   if (val == null) return '—'
   return val.toFixed(decimals) + suffix
+}
+
+/** Returns the best available video URL: baked MP4 (Phase 2) or template fallback (Phase 1). */
+export function resultVideo(r: Pick<GameResult, 'share_video_url' | 'top_class'>): string {
+  if (r.share_video_url) return r.share_video_url
+  return classMedia(r.top_class).video
 }

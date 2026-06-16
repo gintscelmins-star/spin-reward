@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { getResult, classMedia } from '@/lib/result'
+import { getResult, resultVideo } from '@/lib/result'
 import ResultClient from './ResultClient'
 
 export const dynamic = 'force-dynamic'
@@ -15,7 +15,7 @@ export async function generateMetadata({
   if (!result) return { title: 'GUNSnLASERS' }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? ''
-  const media = classMedia(result.top_class)
+  const videoUrl = resultVideo(result)
   const title = `${result.callsign} — ${result.top_class ?? 'WARRIOR'} | GUNSnLASERS`
   const description = `Reitings: ${result.rating?.toFixed(2) ?? '—'} · K:D: ${result.kd_ratio?.toFixed(2) ?? '—'} · Precizitāte: ${result.accuracy?.toFixed(2) ?? '—'}%`
   const ogImageUrl = `${siteUrl}/r/${token}/opengraph-image`
@@ -28,7 +28,7 @@ export async function generateMetadata({
       description,
       url: `${siteUrl}/r/${token}`,
       images: [{ url: ogImageUrl, width: 1200, height: 630, alt: title }],
-      videos: [{ url: media.video, type: 'video/mp4' }],
+      videos: [{ url: videoUrl, type: 'video/mp4' }],
     },
     twitter: {
       card: 'player',

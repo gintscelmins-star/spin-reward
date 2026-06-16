@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { GameResult } from '@/lib/result'
-import { classMedia, teamLabel, fmt } from '@/lib/result'
+import { resultVideo, classMedia, teamLabel, fmt } from '@/lib/result'
 import { trackEvent } from '@/lib/track'
 
 interface Props {
@@ -14,6 +14,7 @@ export default function ShareCard({ result, onShare }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [muted, setMuted] = useState(true)
   const [playing, setPlaying] = useState(false)
+  const videoUrl = resultVideo(result)
   const media = classMedia(result.top_class)
   const team = teamLabel(result.team)
 
@@ -215,7 +216,7 @@ export default function ShareCard({ result, onShare }: Props) {
             <img src={media.poster} alt={media.label} />
             <video
               ref={videoRef}
-              src={media.video}
+              src={videoUrl}
               muted
               loop
               playsInline
