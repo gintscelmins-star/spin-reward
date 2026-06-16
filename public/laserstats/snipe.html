@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GUNSnLASERS — Snipe Video</title>
+<meta property="og:title" content="SNIPE · GUNSnLASERS">
+<meta property="og:description" content="Epic sniper shot. Skaties skaistāko kadru!">
+<meta property="og:image" content="sniper.mp4">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@400;500;600;700&family=Black+Ops+One&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#06050f;
+  --red:#e8193c; --red2:#ff3b5c; --red-g:rgba(232,25,60,.5);
+  --blue:#1a8fff; --blue2:#00cfff; --blue-g:rgba(26,143,255,.4);
+  --gold:#ffd24a; --cyan:#00e5ff;
+  --ink:#e8eaff; --muted:#8a86b8; --line:#2a1f55;
+  --card:#0e0b24;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow-x:hidden;background:var(--bg)}
+body{font-family:'Rajdhani',sans-serif;color:var(--ink);display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+
+.container{max-width:420px;width:100%;display:flex;flex-direction:column;gap:20px;align-items:center}
+
+/* ═══ SNIPE CARD ═══ */
+.snipe-card{
+  width:100%;aspect-ratio:9/16;border-radius:8px;position:relative;overflow:hidden;
+  background:#1a0f0a;
+  border:3px solid #3a2a20;
+  box-shadow:
+    0 0 0 1px #5a3a28,
+    inset 0 0 0 2px #2a1a10,
+    0 20px 60px rgba(0,0,0,.8),
+    0 0 40px rgba(232,25,60,.15);
+}
+
+/* industrial rivets */
+.snipe-card::before{
+  content:"⬟ ⬟ ⬟ ⬟";
+  position:absolute;top:8px;left:0;right:0;text-align:center;
+  font-size:8px;color:#5a4030;letter-spacing:12px;z-index:10;pointer-events:none
+}
+
+.snipe-card::after{
+  content:"⬟ ⬟ ⬟ ⬟";
+  position:absolute;bottom:8px;left:0;right:0;text-align:center;
+  font-size:8px;color:#5a4030;letter-spacing:12px;z-index:10;pointer-events:none
+}
+
+/* side rivets */
+.rivet-left,.rivet-right{
+  position:absolute;top:0;bottom:0;width:16px;z-index:10;
+  display:flex;flex-direction:column;justify-content:space-around;align-items:center;pointer-events:none
+}
+.rivet-left{left:4px}
+.rivet-right{right:4px}
+.rivet{
+  width:6px;height:6px;border-radius:50%;
+  background:radial-gradient(circle at 30% 30%,#8a6040,#3a2010);
+  box-shadow:0 0 3px rgba(0,0,0,.8)
+}
+
+/* card title */
+.card-title{
+  position:absolute;top:0;left:0;right:0;text-align:center;z-index:8;padding:14px 20px 10px
+}
+
+.card-name{
+  font-family:'Black Ops One',sans-serif;font-size:36px;letter-spacing:4px;
+  color:var(--red2);
+  text-shadow:
+    0 0 20px rgba(232,25,60,.8),
+    0 0 40px rgba(232,25,60,.4),
+    2px 2px 0 #000,
+    -1px -1px 0 #600;
+  -webkit-text-stroke:1px rgba(255,100,80,.3);
+}
+
+/* media area */
+.card-media{
+  position:absolute;left:80px;right:0;top:60px;bottom:120px;overflow:hidden
+}
+
+.card-media video{
+  width:100%;height:100%;object-fit:cover;object-position:center;
+  animation:zoomout 5s ease forwards
+}
+
+@keyframes zoomout{from{transform:scale(1.2)}to{transform:scale(1)}}
+
+/* gradient overlays */
+.card-grad-l{
+  position:absolute;top:0;bottom:0;left:0;width:90px;z-index:5;
+  background:linear-gradient(90deg,#1a0f0a 60%,transparent)
+}
+
+.card-grad-b{
+  position:absolute;bottom:0;left:0;right:0;height:140px;z-index:5;
+  background:linear-gradient(0deg,#120a06 40%,transparent)
+}
+
+.card-grad-t{
+  position:absolute;top:0;left:0;right:0;height:80px;z-index:5;
+  background:linear-gradient(180deg,#1a0f0a 10%,transparent)
+}
+
+/* stats section */
+.snipe-stats{
+  width:100%;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;
+}
+
+.stats-title{
+  font-family:'Orbitron';font-weight:700;font-size:10px;letter-spacing:2px;color:var(--muted);
+  text-transform:uppercase;margin-bottom:14px
+}
+
+.stat-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px
+}
+
+.stat-box{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;padding:12px 14px
+}
+
+.stat-box .k{
+  font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase
+}
+
+.stat-box .v{
+  font-family:'Orbitron';font-weight:700;font-size:18px;margin-top:6px;color:var(--cyan)
+}
+
+/* controls */
+.controls{
+  display:flex;gap:12px;width:100%
+}
+
+.ctrl-btn{
+  flex:1;padding:12px 16px;border:1px solid rgba(255,255,255,.15);
+  border-radius:10px;background:rgba(255,255,255,.04);color:var(--ink);
+  font-family:'Rajdhani';font-weight:700;cursor:pointer;transition:.2s;
+  letter-spacing:1px;font-size:13px
+}
+
+.ctrl-btn:hover{
+  background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.3);
+  box-shadow:0 0 15px rgba(255,255,255,.1)
+}
+
+.ctrl-btn.primary{
+  background:linear-gradient(90deg,var(--red),#ff6b35);color:#fff;border:0;
+  box-shadow:0 0 30px rgba(232,25,60,.4),0 8px 20px rgba(0,0,0,.4)
+}
+
+.ctrl-btn.primary:hover{
+  transform:translateY(-2px);box-shadow:0 0 44px rgba(232,25,60,.6)
+}
+
+.ctrl-btn svg{
+  width:16px;height:16px;display:inline-block;margin-right:6px;stroke-width:2;fill:none;stroke:currentColor
+}
+
+/* footer */
+.footer{
+  font-family:'Orbitron';font-weight:700;font-size:11px;letter-spacing:8px;
+  color:rgba(255,255,255,.2);text-align:center
+}
+
+/* responsive */
+@media(max-width:480px){
+  body{padding:12px}
+  .snipe-card{aspect-ratio:9/16}
+  .card-name{font-size:28px}
+  .controls{gap:8px}
+  .ctrl-btn{font-size:12px;padding:10px 12px}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  
+  <div class="snipe-card">
+    <div class="rivet-left">
+      <div class="rivet"></div>
+      <div class="rivet"></div>
+      <div class="rivet"></div>
+      <div class="rivet"></div>
+      <div class="rivet"></div>
+    </div>
+    <div class="rivet-right">
+      <div class="rivet"></div>
+      <div class="rivet"></div>
+      <div class="rivet"></div>
+      <div class="rivet"></div>
+      <div class="rivet"></div>
+    </div>
+    
+    <div class="card-title">
+      <div class="card-name">SNIPE</div>
+    </div>
+    
+    <div class="card-media">
+      <video autoplay muted loop playsinline>
+        <source src="sniper.mp4" type="video/mp4">
+      </video>
+    </div>
+    
+    <div class="card-grad-l"></div>
+    <div class="card-grad-t"></div>
+    <div class="card-grad-b"></div>
+  </div>
+
+  <div class="snipe-stats">
+    <div class="stats-title">Video Info</div>
+    <div class="stat-grid">
+      <div class="stat-box">
+        <div class="k">Tipo</div>
+        <div class="v">SNIPER</div>
+      </div>
+      <div class="stat-box">
+        <div class="k">Grūtības</div>
+        <div class="v">ELITE</div>
+      </div>
+      <div class="stat-box">
+        <div class="k">Efekts</div>
+        <div class="v">10/10</div>
+      </div>
+      <div class="stat-box">
+        <div class="k">Status</div>
+        <div class="v">LIVE</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn primary" onclick="document.querySelector('video').play()">
+      <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      SKATĪT
+    </button>
+    <button class="ctrl-btn" onclick="alert('Share feature coming soon!')">
+      <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
+      DALĪTIES
+    </button>
+  </div>
+
+  <div class="footer">GUNSnLASERS</div>
+
+</div>
+
+<script>
+  // Video tracking
+  const video = document.querySelector('video');
+  video.addEventListener('play', () => {
+    console.log('Snipe video started');
+  });
+  video.addEventListener('ended', () => {
+    console.log('Snipe video finished');
+  });
+</script>
+
+</body>
+</html>

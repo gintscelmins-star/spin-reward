@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GUNSnLASERS — Spēles Statistika</title>
+<meta property="og:title" content="Māris.N — COMMANDO | GUNSnLASERS">
+<meta property="og:description" content="K/D 0.89 · Precizitāte 3.44% · 2530 lodes. Apskati savu statistiku!">
+<meta property="og:image" content="commandopict.jfif">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@400;500;600;700&family=Black+Ops+One&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#06050f;
+  --red:#e8193c; --red2:#ff3b5c; --red-g:rgba(232,25,60,.5);
+  --blue:#1a8fff; --blue2:#00cfff; --blue-g:rgba(26,143,255,.4);
+  --gold:#ffd24a; --cyan:#00e5ff;
+  --ink:#e8eaff; --muted:#8a86b8; --line:#2a1f55;
+  --card:#0e0b24;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow-x:hidden}
+body{font-family:'Rajdhani',sans-serif;color:var(--ink);background:var(--bg)}
+.screen{display:none;min-height:100vh;animation:fadein .4s ease}
+.screen.active{display:flex;flex-direction:column}
+@keyframes fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+button{font-family:'Rajdhani';cursor:pointer;border:none;outline:none}
+
+/* ═══ SCREEN 1 — SCOREBOARD ═══ */
+#s1{
+  background:
+    radial-gradient(ellipse 120% 60% at 50% -5%,#1a0a4a 0%,transparent 65%),
+    radial-gradient(ellipse 60% 80% at 0% 100%,#1a0520 0%,transparent 50%),
+    radial-gradient(ellipse 60% 80% at 100% 100%,#051a35 0%,transparent 50%),
+    linear-gradient(180deg,#0a0618,#060410);
+  padding:0;
+}
+.s1-inner{flex:1;display:flex;flex-direction:column;max-width:1200px;margin:0 auto;width:100%;padding:16px 20px 20px}
+.s1-top{text-align:center;padding:10px 0 14px}
+.s1-label{font-family:'Orbitron';font-weight:700;font-size:clamp(14px,2vw,20px);letter-spacing:6px;color:#fff;
+  text-shadow:0 0 30px rgba(255,255,255,.3)}
+.s1-main{display:grid;grid-template-columns:1fr auto 1fr;gap:20px;flex:1;align-items:start}
+.team-block{display:flex;flex-direction:column;gap:0}
+.team-block.blue-side{text-align:right}
+.team-name{font-family:'Orbitron';font-weight:900;font-size:clamp(22px,3.5vw,38px)}
+.team-score{font-family:'Orbitron';font-weight:700;font-size:clamp(18px,2.5vw,28px);margin-bottom:12px}
+.red-side .team-name,.red-side .team-score{color:var(--red);text-shadow:0 0 20px var(--red-g)}
+.blue-side .team-name,.blue-side .team-score{color:var(--blue2);text-shadow:0 0 20px var(--blue-g)}
+.player-row{display:flex;align-items:center;gap:8px;padding:7px 10px;margin-bottom:4px;
+  background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,.01));
+  border:1px solid rgba(255,255,255,.08);border-radius:8px}
+.blue-side .player-row{flex-direction:row-reverse}
+.pr-num{font-family:'Orbitron';font-size:11px;color:var(--muted);width:20px;text-align:center;flex-shrink:0}
+.pr-bar{width:90px;height:4px;border-radius:3px;flex-shrink:0;opacity:.7}
+.red-side .pr-bar{background:linear-gradient(90deg,var(--red),transparent)}
+.blue-side .pr-bar{background:linear-gradient(90deg,transparent,var(--blue2))}
+.pr-name{font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.5px;flex:1}
+.pr-score{font-family:'Orbitron';font-size:13px;font-weight:700;flex-shrink:0}
+.pr-bonus{font-family:'Orbitron';font-size:11px;color:var(--gold);flex-shrink:0}
+.red-side .pr-score{color:#ffc0c8}
+.blue-side .pr-score{color:#b8e8ff}
+
+/* center ring */
+.center-ring{display:flex;flex-direction:column;align-items:center;padding:8px 0}
+.timer-wrap{position:relative;margin-bottom:10px}
+.timer-bg{font-family:'Orbitron';font-weight:900;font-size:clamp(60px,8vw,100px);
+  color:rgba(255,255,255,.04);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  white-space:nowrap;letter-spacing:4px}
+.timer{font-family:'Orbitron';font-weight:900;font-size:clamp(40px,6vw,72px);color:#fff;
+  letter-spacing:4px;text-shadow:0 0 30px rgba(255,255,255,.4);position:relative;z-index:1}
+.ring-outer{position:relative;width:220px;height:220px;display:flex;align-items:center;justify-content:center}
+.ring-outer::before{content:"";position:absolute;inset:0;border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.15);box-shadow:0 0 50px #5533ff33 inset,0 0 30px #5533ff22}
+.ring-outer::after{content:"";position:absolute;inset:16px;border-radius:50%;
+  border:1px solid var(--cyan);opacity:.25;box-shadow:0 0 20px rgba(0,229,255,.3) inset}
+.ring-spin{position:absolute;inset:4px;border-radius:50%;border:2px dashed rgba(0,229,255,.2);
+  animation:spin 18s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ring-content{text-align:center;position:relative;z-index:2}
+.ring-lbl{font-family:'Orbitron';font-size:10px;letter-spacing:5px;color:var(--muted);margin-bottom:4px}
+.ring-name{font-family:'Orbitron';font-weight:900;font-size:clamp(18px,2.5vw,24px);
+  color:var(--cyan);text-shadow:0 0 20px rgba(0,229,255,.7)}
+.ring-pts{font-family:'Orbitron';font-weight:900;font-size:clamp(24px,3vw,34px);color:var(--cyan)}
+
+.s1-bottom{text-align:center;padding:14px 0 4px}
+.goto-btn{padding:13px 36px;font-family:'Orbitron';font-weight:700;font-size:14px;letter-spacing:2px;
+  background:linear-gradient(90deg,var(--red),#ff6b35);color:#fff;border-radius:12px;
+  box-shadow:0 0 30px rgba(232,25,60,.4),0 8px 20px rgba(0,0,0,.4);transition:.2s}
+.goto-btn:hover{transform:translateY(-2px);box-shadow:0 0 44px rgba(232,25,60,.6)}
+.brand-footer{font-family:'Orbitron';font-weight:700;font-size:11px;letter-spacing:8px;
+  color:rgba(255,255,255,.2);margin-top:10px}
+
+/* ═══ SCREEN 2 — LEADERBOARD ═══ */
+#s2{background:linear-gradient(160deg,#07051a,#0a0618,#07051a)}
+.s2-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;
+  border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)}
+.s2-title{font-family:'Orbitron';font-weight:900;font-size:clamp(16px,2.5vw,24px);letter-spacing:2px}
+.back-btn{padding:9px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);
+  border-radius:9px;color:var(--ink);font-weight:700;letter-spacing:1px;transition:.15s}
+.back-btn:hover{background:rgba(255,255,255,.12)}
+.tbl-wrap{overflow-x:auto;flex:1}
+table{width:100%;border-collapse:collapse;min-width:900px}
+thead th{font-family:'Orbitron';font-size:10px;letter-spacing:1px;color:var(--muted);
+  text-transform:uppercase;text-align:left;padding:12px 10px;
+  border-bottom:1px solid var(--line);position:sticky;top:0;background:#09071d;white-space:nowrap}
+tbody td{padding:10px 10px;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px;font-weight:600}
+tbody tr{cursor:pointer;transition:background .15s}
+tbody tr:hover{background:rgba(26,143,255,.08)}
+tbody tr:hover td:first-child{box-shadow:inset 3px 0 0 var(--blue2)}
+.rank-cell{font-family:'Orbitron';font-weight:900;color:#fff}
+.rank-medal{display:inline-flex;align-items:center;gap:5px}
+.wid-cell{font-family:'Orbitron';font-size:12px;color:var(--muted)}
+.team-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.pname{font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.medal-tag{font-family:'Orbitron';font-size:9px;padding:2px 6px;border-radius:12px;margin-left:6px;letter-spacing:1px;vertical-align:middle}
+.rating-hi{color:var(--cyan)} .rating-lo{color:var(--muted)}
+.kd-pos{color:#2bff9b} .kd-neg{color:#ff7a8a}
+.val-hi{color:var(--gold)}
+
+/* ═══ SCREEN 3 — PLAYER ═══ */
+#s3{background:linear-gradient(160deg,#07051a,#0a0618)}
+.s3-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;
+  border-bottom:1px solid var(--line)}
+.s3-title{font-family:'Orbitron';font-weight:900;font-size:clamp(14px,2vw,22px)}
+.s3-body{flex:1;display:grid;grid-template-columns:1fr 380px;gap:24px;padding:20px;align-items:start}
+
+/* medals row */
+.medals-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.med-badge{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 10px;
+  border-radius:10px;border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.04);opacity:.35;transition:.2s;min-width:60px}
+.med-badge.earned{opacity:1;border-color:var(--mc);background:rgba(255,255,255,.08);
+  box-shadow:0 0 16px var(--mc-g,rgba(255,255,255,.2))}
+.med-icon{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:16px}
+.med-badge.earned .med-icon{background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.2),rgba(0,0,0,.4));
+  box-shadow:0 0 14px var(--mc)}
+.med-name{font-family:'Orbitron';font-size:8px;letter-spacing:1px;color:var(--muted);text-align:center}
+.med-badge.earned .med-name{color:var(--mc)}
+
+/* stats panel */
+.stats-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.stat-box{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;padding:12px 14px}
+.stat-box .k{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.stat-box .v{font-family:'Orbitron';font-weight:700;font-size:20px;margin-top:3px}
+.stat-box.hi .v{color:var(--cyan)}
+
+/* ═══ COMMANDO CARD ═══ */
+.card-col{position:relative}
+.pcard{
+  width:360px;min-height:640px;border-radius:6px;position:relative;overflow:hidden;
+  background:#1a0f0a;
+  border:3px solid #3a2a20;
+  box-shadow:
+    0 0 0 1px #5a3a28,
+    inset 0 0 0 2px #2a1a10,
+    0 20px 60px rgba(0,0,0,.8),
+    0 0 40px rgba(232,25,60,.15);
+}
+/* industrial rivets */
+.pcard::before{content:"⬟ ⬟ ⬟ ⬟";position:absolute;top:8px;left:0;right:0;text-align:center;
+  font-size:8px;color:#5a4030;letter-spacing:12px;z-index:10;pointer-events:none}
+.pcard::after{content:"⬟ ⬟ ⬟ ⬟";position:absolute;bottom:8px;left:0;right:0;text-align:center;
+  font-size:8px;color:#5a4030;letter-spacing:12px;z-index:10;pointer-events:none}
+
+/* side rivets */
+.rivet-left,.rivet-right{position:absolute;top:0;bottom:0;width:16px;z-index:10;
+  display:flex;flex-direction:column;justify-content:space-around;align-items:center;pointer-events:none}
+.rivet-left{left:4px}.rivet-right{right:4px}
+.rivet{width:6px;height:6px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#8a6040,#3a2010);
+  box-shadow:0 0 3px rgba(0,0,0,.8)}
+
+/* card title */
+.card-title{position:absolute;top:0;left:0;right:0;text-align:center;z-index:8;padding:14px 20px 10px}
+.card-medal-name{
+  font-family:'Black Ops One',sans-serif;font-size:36px;letter-spacing:4px;
+  color:var(--red2);
+  text-shadow:
+    0 0 20px rgba(232,25,60,.8),
+    0 0 40px rgba(232,25,60,.4),
+    2px 2px 0 #000,
+    -1px -1px 0 #600;
+  -webkit-text-stroke:1px rgba(255,100,80,.3);
+}
+
+/* media area */
+.card-media{position:absolute;left:80px;right:0;top:60px;bottom:120px;overflow:hidden}
+.card-media video,.card-media img{width:100%;height:100%;object-fit:cover;object-position:top center;
+  animation:zoomout 5s ease forwards}
+@keyframes zoomout{from{transform:scale(1.2)}to{transform:scale(1)}}
+
+/* gradient overlays */
+.card-grad-l{position:absolute;top:0;bottom:0;left:0;width:90px;z-index:5;
+  background:linear-gradient(90deg,#1a0f0a 60%,transparent)}
+.card-grad-b{position:absolute;bottom:0;left:0;right:0;height:140px;z-index:5;
+  background:linear-gradient(0deg,#120a06 40%,transparent)}
+.card-grad-t{position:absolute;top:0;left:0;right:0;height:80px;z-index:5;
+  background:linear-gradient(180deg,#1a0f0a 10%,transparent)}
+
+/* stats on left */
+.card-stats{position:absolute;left:14px;top:110px;z-index:9;display:flex;flex-direction:column;gap:14px;width:72px}
+.cs-item{display:flex;flex-direction:column;gap:2px}
+.cs-icon{font-size:10px;color:#ff6b35;letter-spacing:.5px;font-family:'Orbitron';font-weight:700}
+.cs-label{font-size:9px;color:#8a7060;font-family:'Rajdhani';font-weight:600;letter-spacing:.5px}
+.cs-val{font-family:'Orbitron';font-weight:900;font-size:16px;color:#fff;
+  text-shadow:0 0 10px rgba(0,207,255,.4);line-height:1}
+.cs-sep{width:50px;height:1px;background:linear-gradient(90deg,#5a3020,transparent);margin:2px 0}
+
+/* player name bottom */
+.card-bottom{position:absolute;bottom:0;left:0;right:0;z-index:9;padding:10px 14px 22px;text-align:center}
+.card-player{font-family:'Rajdhani';font-weight:700;font-size:20px;letter-spacing:3px;
+  color:#c8b090;text-shadow:0 0 10px rgba(200,176,144,.3)}
+.card-venue{font-family:'Black Ops One';font-size:18px;letter-spacing:2px;
+  color:var(--red2);text-shadow:0 0 16px rgba(232,25,60,.6)}
+
+/* inner frame glow */
+.card-frame{position:absolute;inset:20px 14px;border:1px solid rgba(26,143,255,.3);border-radius:3px;
+  box-shadow:0 0 20px rgba(0,150,255,.15) inset, 0 0 30px rgba(0,150,255,.08);
+  z-index:6;pointer-events:none}
+
+/* slam medal bottom-right */
+.card-award{position:absolute;bottom:80px;right:14px;z-index:10;text-align:center}
+.award-circle{width:52px;height:52px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.15),rgba(0,0,0,.6));
+  border:2px solid var(--red2);box-shadow:0 0 20px rgba(232,25,60,.6);
+  display:grid;place-items:center;font-size:20px;color:var(--red2);
+  animation:slam .7s cubic-bezier(.2,1.4,.4,1) 1.2s both}
+@keyframes slam{0%{transform:scale(4);opacity:0}60%{transform:scale(.85)}80%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.award-lbl{font-family:'Orbitron';font-size:8px;color:var(--red2);letter-spacing:1px;margin-top:3px}
+
+/* share */
+.share-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.share-btn{padding:10px 14px;border-radius:9px;font-weight:700;font-size:13px;letter-spacing:.5px;
+  display:flex;align-items:center;gap:7px;transition:.15s;flex:1;justify-content:center;min-width:100px}
+.share-main{background:linear-gradient(90deg,var(--red),#ff5533);color:#fff;
+  box-shadow:0 0 20px rgba(232,25,60,.35)}
+.share-main:hover{box-shadow:0 0 30px rgba(232,25,60,.55);transform:translateY(-1px)}
+.share-dl{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:var(--ink)}
+.share-dl:hover{background:rgba(255,255,255,.12)}
+.share-icons{display:none;gap:8px;margin-top:8px;flex-wrap:wrap}
+.share-icons.show{display:flex}
+.soc-btn{padding:9px 12px;border-radius:8px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;flex:1;justify-content:center;min-width:90px;transition:.15s}
+.soc-btn:hover{opacity:.85;transform:translateY(-1px)}
+.s-fb{background:#1877f2;color:#fff} .s-x{background:#000;color:#fff;border:1px solid #333}
+.s-wa{background:#25d366;color:#fff} .s-tg{background:#2aabee;color:#fff}
+.s-cp{background:rgba(255,255,255,.1);color:var(--ink);border:1px solid rgba(255,255,255,.2)}
+
+/* ═══ ADMIN INFO SCREEN ═══ */
+#s4{background:linear-gradient(160deg,#07051a,#0a0618);padding:24px 20px}
+.admin-wrap{max-width:900px;margin:0 auto}
+.admin-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(232,25,60,.15);
+  border:1px solid rgba(232,25,60,.4);border-radius:8px;padding:6px 14px;margin-bottom:20px;
+  font-family:'Orbitron';font-size:11px;letter-spacing:2px;color:var(--red2)}
+.admin-h1{font-family:'Orbitron';font-weight:900;font-size:clamp(22px,3vw,34px);margin-bottom:8px}
+.admin-sub{color:var(--muted);font-size:16px;line-height:1.6;margin-bottom:28px;max-width:700px}
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:28px}
+.feat-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px}
+.feat-icon{font-size:26px;margin-bottom:10px}
+.feat-h{font-family:'Orbitron';font-weight:700;font-size:15px;margin-bottom:6px}
+.feat-p{color:var(--muted);font-size:14px;line-height:1.55}
+.flow-steps{display:flex;gap:0;margin:24px 0;overflow-x:auto}
+.step{display:flex;align-items:center;gap:0;flex-shrink:0}
+.step-box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px;text-align:center;min-width:140px}
+.step-num{font-family:'Orbitron';font-weight:900;font-size:20px;color:var(--red2)}
+.step-txt{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.4}
+.step-arrow{font-size:18px;color:var(--line);padding:0 8px}
+.admin-btns{display:flex;gap:12px;flex-wrap:wrap}
+.abtn{padding:13px 24px;border-radius:11px;font-family:'Orbitron';font-weight:700;font-size:13px;letter-spacing:1px;transition:.2s}
+.abtn-primary{background:linear-gradient(90deg,var(--red),#ff5533);color:#fff;box-shadow:0 0 24px rgba(232,25,60,.3)}
+.abtn-primary:hover{box-shadow:0 0 36px rgba(232,25,60,.5);transform:translateY(-2px)}
+.abtn-sec{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);color:var(--ink)}
+.abtn-sec:hover{background:rgba(255,255,255,.12)}
+.price-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,210,74,.1);
+  border:1px solid rgba(255,210,74,.35);border-radius:6px;padding:4px 10px;
+  font-family:'Orbitron';font-size:11px;color:var(--gold);margin-bottom:20px}
+
+@media(max-width:800px){
+  .s1-main{grid-template-columns:1fr;gap:16px}
+  .center-ring{order:-1}
+  .blue-side .player-row{flex-direction:row;text-align:left}
+  .blue-side{text-align:left}
+  .s3-body{grid-template-columns:1fr}
+  .card-col{display:flex;justify-content:center}
+  .pcard{width:320px;min-height:570px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ SCREEN 1 — SCOREBOARD ═══════════ -->
+<div id="s1" class="screen active">
+<div class="s1-inner">
+  <div class="s1-top">
+    <div class="s1-label">THE BEST OF THE BEST</div>
+  </div>
+  <div class="s1-main">
+    <!-- RED TEAM -->
+    <div class="team-block red-side">
+      <div class="team-name">Red Team</div>
+      <div class="team-score" id="redTotal">—</div>
+      <div id="redRows"></div>
+    </div>
+    <!-- CENTER -->
+    <div class="center-ring">
+      <div class="timer-wrap">
+        <div class="timer-bg">11:24</div>
+        <div class="timer">11:24</div>
+      </div>
+      <div class="ring-outer">
+        <div class="ring-spin"></div>
+        <div class="ring-content">
+          <div class="ring-lbl">LEADER</div>
+          <div class="ring-name" id="leaderName">—</div>
+          <div class="ring-pts" id="leaderPts">—</div>
+        </div>
+      </div>
+    </div>
+    <!-- BLUE TEAM -->
+    <div class="team-block blue-side">
+      <div class="team-name">Blue Team</div>
+      <div class="team-score" id="blueTotal">—</div>
+      <div id="blueRows"></div>
+    </div>
+  </div>
+  <div class="s1-bottom">
+    <button class="goto-btn" onclick="go(2)">SKATĪT PILNU STATISTIKU &nbsp;<i class="fa-solid fa-arrow-right"></i></button>
+    <div class="brand-footer">GUNSnLASERS</div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════ SCREEN 2 — LEADERBOARD ═══════════ -->
+<div id="s2" class="screen">
+  <div class="s2-header">
+    <div class="s2-title">⚡ LĪDERU TABULA</div>
+    <button class="back-btn" onclick="go(1)"><i class="fa-solid fa-arrow-left"></i> Atpakaļ</button>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Vieta</th><th>Ierocis</th><th>Komanda</th><th>Spēlētājs</th>
+        <th>Reitings</th><th>Precizitāte</th><th>Lodes</th><th>Trāpījumi</th>
+        <th>Ievainojumi</th><th>K:D</th><th>K:D +/-</th><th>Trāp.%</th><th>Kom.%</th>
+      </tr></thead>
+      <tbody id="lbBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════ SCREEN 3 — PLAYER ═══════════ -->
+<div id="s3" class="screen">
+  <div class="s3-header">
+    <div class="s3-title" id="s3name">SPĒLĒTĀJS</div>
+    <button class="back-btn" onclick="go(2)"><i class="fa-solid fa-arrow-left"></i> Uz tabulu</button>
+  </div>
+  <div class="s3-body">
+    <div id="statsPanel"></div>
+    <div class="card-col">
+      <div class="pcard" id="pcard">
+        <div class="rivet-left" id="rivL"></div>
+        <div class="rivet-right" id="rivR"></div>
+      </div>
+      <div class="share-row" id="shareRow"></div>
+      <div class="share-icons" id="shareIcons"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SCREEN 4 — ADMIN INFO ═══════════ -->
+<div id="s4" class="screen">
+  <div class="admin-wrap">
+    <button class="back-btn" onclick="go(1)" style="margin-bottom:20px"><i class="fa-solid fa-arrow-left"></i> Atpakaļ</button>
+    <div class="admin-badge"><i class="fa-solid fa-bolt"></i> SPILLIT PAPILDU MODULIS</div>
+    <div class="price-tag"><i class="fa-solid fa-tag"></i> Individuāla cena · Integrācija ar lāzertaga sistēmu</div>
+    <div class="admin-h1">🎯 LaserTag Statistikas Vizualizācija</div>
+    <div class="admin-sub">
+      Pārvērš garlaicīgas Laserdog/LaserWar HTML tabulas vizuāli aizraujošā, gamificētā pieredzē.
+      Spēlētājs pēc spēles skenē QR → redz komandu rezultātus → apskata līderu tabulu →
+      atver savu profilu ar personīgo video kartīti — un dalās ar to Instagram, TikTok, WhatsApp.
+      <br><br>
+      <strong>Katras kartītes apakšā redzams zāles nosaukums "GUNSnLASERS" — bezmaksas mārketings katru reizi, kad kāds dalās.</strong>
+    </div>
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="feat-icon">🏆</div>
+        <div class="feat-h">3 ekrāni, 1 QR</div>
+        <div class="feat-p">Komandu scoreboard → pilnā tabula (13 kolonnas, kā Laserdog) → individuālais profils. Spēlētājs tiek ievilkts dziļāk viņa statistikā.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🎖️</div>
+        <div class="feat-h">Avatar Prioritātes Dzinis</div>
+        <div class="feat-p">Katrs spēlētājs automātiski saņem medaļu pēc hierarhijas: WARRIOR → DESTROYER → SNIPER → COMMANDO → INVULNERABLE → KAMIKAZE. Katra — savs video/attēls un stils.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🎬</div>
+        <div class="feat-h">9:16 Video Kartīte</div>
+        <div class="feat-p">Gritty "Halo/Doom" stila kartiņa ar marines video, metāla rāmi, medaļu slam animāciju un spēlētāja statistiku. Gatava publicēšanai Instagram Reels / TikTok.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📲</div>
+        <div class="feat-h">Dalīšanās visos tīklos</div>
+        <div class="feat-p">Web Share API (native sheet mobilajā) → Instagram, TikTok, WhatsApp, Messenger, Telegram, X — ar vienu pieskārienu. Desktopam: tiešās pogas + video lejupielāde.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📊</div>
+        <div class="feat-h">Automātiska datu apstrāde</div>
+        <div class="feat-p">Nolasa Laserdog / stats.playline.lv izvadi, aprēķina medaļas, sortē, strukturē — bez manuālas ievades. Katram spēlētājam savs profils.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🏅</div>
+        <div class="feat-h">Viral mārketings</div>
+        <div class="feat-p">Katrs dalīšanās brīdis nes zāles logo sociālajos tīklos. Spēlētāji paši rada organisko sasniedzamību — bez maksas.</div>
+      </div>
+    </div>
+    <div style="font-family:'Orbitron';font-size:12px;letter-spacing:2px;color:var(--muted);margin-bottom:12px">SPĒLĒTĀJA CEĻŠ</div>
+    <div class="flow-steps">
+      <div class="step"><div class="step-box"><div class="step-num">1</div><div class="step-txt">Skenē QR<br>pēc spēles</div></div></div>
+      <div class="step-arrow">→</div>
+      <div class="step"><div class="step-box"><div class="step-num">2</div><div class="step-txt">Komandu<br>scoreboard</div></div></div>
+      <div class="step-arrow">→</div>
+      <div class="step"><div class="step-box"><div class="step-num">3</div><div class="step-txt">Pilnā<br>tabula</div></div></div>
+      <div class="step-arrow">→</div>
+      <div class="step"><div class="step-box"><div class="step-num">4</div><div class="step-txt">Savs profils<br>+ medaļa</div></div></div>
+      <div class="step-arrow">→</div>
+      <div class="step"><div class="step-box"><div class="step-num">5</div><div class="step-txt">Dalās<br>soctīklos</div></div></div>
+      <div class="step-arrow">→</div>
+      <div class="step"><div class="step-box"><div class="step-num">6</div><div class="step-txt">GUNSnLASERS<br>logo redzams</div></div></div>
+    </div>
+    <div class="admin-btns">
+      <button class="abtn abtn-primary" onclick="go(1)"><i class="fa-solid fa-eye"></i> &nbsp;Skatīt demo</button>
+      <button class="abtn abtn-sec" onclick="window.open('https://wa.me/37129325325?text=Sveiki!%20Interesē%20LaserTag%20statistikas%20vizualizācija','_blank')"><i class="fa-brands fa-whatsapp"></i> &nbsp;Pieprasīt — WhatsApp</button>
+      <button class="abtn abtn-sec" onclick="window.open('mailto:gints@spillit.lv?subject=LaserTag%20Statistikas%20Vizualizācija&body=Sveiki!%20Mani%20interesē%20šis%20modulis.','_blank')"><i class="fa-solid fa-envelope"></i> &nbsp;E-pasts</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── DATA ── */
+const players=[
+  {name:"Snaipers",     team:"green",wid:14, rating:99.81,acc:10.26,bullets:2350,hits:241,deaths:96, kd:2.51,kdp:145,tp:12.74,ktp:19.5},
+  {name:"stalkeris",    team:"green",wid:61, rating:93.83,acc:16.40,bullets:1189,hits:195,deaths:91, kd:2.14,kdp:104,tp:10.31,ktp:15.78},
+  {name:"oveckins29",   team:"green",wid:1,  rating:87.48,acc:12.56,bullets:2054,hits:258,deaths:122,kd:2.11,kdp:136,tp:13.64,ktp:20.87},
+  {name:"fogy1",        team:"green",wid:84, rating:71.64,acc:13.70,bullets:1219,hits:167,deaths:98, kd:1.70,kdp:69, tp:8.83, ktp:13.51},
+  {name:"Redbullstuntman1.0",team:"green",wid:10,rating:37.96,acc:9.09,bullets:1166,hits:106,deaths:109,kd:0.97,kdp:-3,tp:5.61,ktp:8.58},
+  {name:"elpuumo",      team:"green",wid:48, rating:36.55,acc:8.25,bullets:1164,hits:96, deaths:101,kd:0.95,kdp:-5, tp:5.08, ktp:7.77},
+  {name:"BOZIS3000",    team:"red",  wid:36, rating:34.21,acc:6.84,bullets:1359,hits:93, deaths:102,kd:0.91,kdp:-9, tp:4.92, ktp:14.20},
+  {name:"Terminators",  team:"red",  wid:13, rating:31.31,acc:3.44,bullets:2530,hits:87, deaths:98, kd:0.89,kdp:-11,tp:4.60, ktp:13.28},
+  {name:"Nezinu",       team:"green",wid:45, rating:31.13,acc:6.03,bullets:1493,hits:90, deaths:107,kd:0.84,kdp:-17,tp:4.76, ktp:7.28},
+  {name:"Melnais Buks", team:"green",wid:41, rating:30.09,acc:4.38,bullets:1897,hits:83, deaths:99, kd:0.84,kdp:-16,tp:4.39, ktp:6.72},
+  {name:"FANTA303",     team:"red",  wid:87, rating:29.24,acc:4.82,bullets:1910,hits:92, deaths:114,kd:0.81,kdp:-22,tp:4.87, ktp:14.05},
+  {name:"Leni",         team:"red",  wid:42, rating:24.95,acc:4.51,bullets:1797,hits:81, deaths:117,kd:0.69,kdp:-36,tp:4.28, ktp:12.37},
+  {name:"Snaiper pro",  team:"red",  wid:80, rating:22.34,acc:4.03,bullets:1217,hits:49, deaths:78, kd:0.63,kdp:-29,tp:2.59, ktp:7.48},
+  {name:"dass",         team:"green",wid:57, rating:21.24,acc:6.90,bullets:609, hits:42, deaths:74, kd:0.57,kdp:-32,tp:2.22, ktp:6.41},
+  {name:"Haizivs",      team:"red",  wid:75, rating:16.64,acc:4.92,bullets:1117,hits:55, deaths:120,kd:0.46,kdp:-65,tp:2.91, ktp:8.40},
+  {name:"tommy fast",   team:"red",  wid:66, rating:16.40,acc:3.07,bullets:2279,hits:70, deaths:150,kd:0.47,kdp:-80,tp:3.70, ktp:10.69},
+  {name:"Martini",      team:"red",  wid:46, rating:15.47,acc:3.11,bullets:1448,hits:45, deaths:102,kd:0.44,kdp:-57,tp:2.38, ktp:6.87},
+  {name:"Macdl01",      team:"red",  wid:59, rating:12.76,acc:3.22,bullets:1273,hits:41, deaths:113,kd:0.36,kdp:-72,tp:2.17, ktp:6.26},
+];
+
+/* ── MEDALS ── */
+const MEDALS=[
+  {key:"WARRIOR",    icon:"fa-crown",         color:"#ffd24a", test:(p,m)=>p.rating===m.maxRating},
+  {key:"DESTROYER",  icon:"fa-bolt",           color:"#a855f7", test:(p,m)=>p.hits===m.maxHits},
+  {key:"SNIPER",     icon:"fa-crosshairs",     color:"#00e5ff", test:(p,m)=>p.acc===m.maxAcc},
+  {key:"COMMANDO",   icon:"fa-gun",            color:"#ff8a3c", test:(p,m)=>p.bullets===m.maxBul},
+  {key:"INVULNERABLE",icon:"fa-shield-halved", color:"#2bff9b", test:(p,m)=>p.deaths===m.minDth},
+  {key:"KAMIKAZE",   icon:"fa-fire",           color:"#ff3b5c", test:(p,m)=>p.deaths===m.maxDth},
+];
+const ALL_MEDALS=[...MEDALS,
+  {key:"CAMPER",    icon:"fa-campground",color:"#78716c"},
+  {key:"PUNISHER",  icon:"fa-skull",     color:"#dc2626"},
+  {key:"EXECUTIONER",icon:"fa-axe",      color:"#7c3aed"},
+];
+const BASE={key:"RECRUIT",icon:"fa-user-astronaut",color:"#6b7280"};
+const M={
+  maxRating:Math.max(...players.map(p=>p.rating)),
+  maxHits:Math.max(...players.map(p=>p.hits)),
+  maxAcc:Math.max(...players.map(p=>p.acc)),
+  maxBul:Math.max(...players.map(p=>p.bullets)),
+  maxDth:Math.max(...players.map(p=>p.deaths)),
+  minDth:Math.min(...players.map(p=>p.deaths)),
+};
+players.forEach(p=>{
+  p.earned=MEDALS.filter(md=>md.test(p,M));
+  p.main=p.earned[0]||BASE;
+  p.score=Math.round(p.rating*5+(p.hits-p.deaths)/2);
+});
+
+/* ── NAV ── */
+function go(n){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s'+n).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ── SCREEN 1 ── */
+function buildS1(){
+  const red=players.filter(p=>p.team==='red').sort((a,b)=>b.score-a.score);
+  const grn=players.filter(p=>p.team==='green').sort((a,b)=>b.score-a.score);
+  const redT=red.reduce((s,p)=>s+p.score,0);
+  const grnT=grn.reduce((s,p)=>s+p.score,0);
+  document.getElementById('redTotal').textContent=redT.toLocaleString('lv');
+  document.getElementById('blueTotal').textContent=grnT.toLocaleString('lv');
+  document.getElementById('redRows').innerHTML=red.map((p,i)=>`
+    <div class="player-row"><span class="pr-num">${String(p.wid).padStart(2,'0')}</span>
+    <div class="pr-bar" style="width:${Math.round(p.score/10)}px"></div>
+    <span class="pr-name">${p.name}</span>
+    ${p.kdp>0?`<span class="pr-bonus">+${p.kdp}</span>`:''}
+    <span class="pr-score">${p.score}</span></div>`).join('');
+  document.getElementById('blueRows').innerHTML=grn.map((p,i)=>`
+    <div class="player-row"><span class="pr-score">${p.score}</span>
+    ${p.kdp>0?`<span class="pr-bonus">+${p.kdp}</span>`:''}
+    <span class="pr-name">${p.name}</span>
+    <div class="pr-bar" style="width:${Math.round(p.score/10)}px"></div>
+    <span class="pr-num">${String(p.wid).padStart(2,'0')}</span></div>`).join('');
+  const leader=[...players].sort((a,b)=>b.rating-a.rating)[0];
+  document.getElementById('leaderName').textContent=leader.name.toUpperCase();
+  document.getElementById('leaderPts').textContent=Math.round(leader.rating);
+}
+
+/* ── SCREEN 2 ── */
+function buildS2(){
+  const sorted=[...players].sort((a,b)=>b.rating-a.rating);
+  const rankMedals=['🥇','🥈','🥉'];
+  document.getElementById('lbBody').innerHTML=sorted.map((p,i)=>{
+    const col=p.team==='red'?'#e8193c':'#1a8fff';
+    const med=p.main.key!=='RECRUIT'?`<span class="medal-tag" style="background:${p.main.color}22;color:${p.main.color}">${p.main.key}</span>`:'';
+    const kdCls=p.kdp>=0?'kd-pos':'kd-neg';
+    return `<tr onclick="openPlayer('${p.name}')">
+      <td class="rank-cell">${rankMedals[i]||i+1}</td>
+      <td class="wid-cell">#${p.wid}</td>
+      <td><span class="team-dot" style="background:${col};box-shadow:0 0 8px ${col}"></span>${p.team==='red'?'Red':'Blue'}</td>
+      <td class="pname">${p.name}${med}</td>
+      <td class="${p.rating>50?'rating-hi':'rating-lo'}" style="font-family:'Orbitron';font-weight:700">${p.rating.toFixed(2)}</td>
+      <td>${p.acc.toFixed(2)}%</td>
+      <td>${p.bullets}</td>
+      <td class="${p.hits===M.maxHits?'val-hi':''}">${p.hits}</td>
+      <td>${p.deaths}</td>
+      <td class="${p.kd>=1?'kd-pos':'kd-neg'}" style="font-family:'Orbitron';font-weight:700">${p.kd.toFixed(2)}</td>
+      <td class="${kdCls}">${p.kdp>0?'+':''}${p.kdp}</td>
+      <td>${p.tp.toFixed(2)}%</td>
+      <td class="${p.ktp===Math.max(...players.map(x=>x.ktp))?'val-hi':''}">${p.ktp}%</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── SCREEN 3 ── */
+function openPlayer(name){
+  const p=players.find(x=>x.name===name);
+  const acol=p.team==='red'?'#e8193c':'#1a8fff';
+  document.getElementById('s3name').textContent=p.name.toUpperCase();
+
+  /* medals row */
+  const medalsHtml=ALL_MEDALS.map(md=>{
+    const earned=p.earned.some(e=>e.key===md.key);
+    return `<div class="med-badge${earned?' earned':''}" style="${earned?`--mc:${md.color};--mc-g:${md.color}44`:''}">
+      <div class="med-icon" style="${earned?`color:${md.color};border:1px solid ${md.color}44`:''}"}>
+        <i class="fa-solid ${md.icon}"></i></div>
+      <div class="med-name">${md.key}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('statsPanel').innerHTML=`
+    ${medalsHtml.replace('</div>\n    <div','</div><div').replace(/class="med-badge/g,'class="med-badge')}
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:6px">${medalsHtml}</div>
+    <div class="stats-card">
+      <div style="font-family:'Orbitron';font-weight:900;font-size:22px;color:${acol};text-shadow:0 0 16px ${acol}66">${p.name}</div>
+      <div style="color:var(--muted);font-size:13px;margin:4px 0 0;letter-spacing:1px">${p.team==='red'?'RED TEAM':'BLUE TEAM'} · IEROCIS #${p.wid} · ${p.main.key}</div>
+      <div class="stat-grid">
+        <div class="stat-box hi"><div class="k">Reitings</div><div class="v">${p.rating.toFixed(2)}</div></div>
+        <div class="stat-box"><div class="k">K:D Ratio</div><div class="v">${p.kd.toFixed(2)}</div></div>
+        <div class="stat-box"><div class="k">Trāpījumi</div><div class="v">${p.hits}</div></div>
+        <div class="stat-box"><div class="k">Ievainojumi</div><div class="v">${p.deaths}</div></div>
+        <div class="stat-box"><div class="k">Lodes</div><div class="v">${p.bullets}</div></div>
+        <div class="stat-box"><div class="k">K:D +/-</div><div class="v" style="color:${p.kdp>=0?'#2bff9b':'#ff7a8a'}">${p.kdp>0?'+':''}${p.kdp}</div></div>
+        <div class="stat-box"><div class="k">Precizitāte</div><div class="v">${p.acc.toFixed(2)}%</div></div>
+        <div class="stat-box"><div class="k">Winrate</div><div class="v">${Math.min(100,Math.round(p.kd/(p.kd+1)*100))}%</div></div>
+      </div>
+    </div>`;
+
+  /* player card */
+  const isCommando = p.main.key==='COMMANDO';
+  const card=document.getElementById('pcard');
+  // rivets
+  const rivHtml=[...Array(8)].map(()=>`<div class="rivet"></div>`).join('');
+  document.getElementById('rivL').innerHTML=rivHtml;
+  document.getElementById('rivR').innerHTML=rivHtml;
+
+  const mediaHtml = isCommando
+    ? `<video autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;object-position:top center;animation:zoomout 5s ease forwards">
+         <source src="commando.mp4" type="video/mp4">
+         <img src="commandopict.jfif" style="width:100%;height:100%;object-fit:cover">
+       </video>`
+    : `<img src="commandopict.jfif" style="width:100%;height:100%;object-fit:cover;object-position:top center;animation:zoomout 5s ease forwards;filter:hue-rotate(${p.team==='red'?'0':'180'}deg)">`;
+
+  card.innerHTML=`
+    <div class="rivet-left">${rivHtml}</div>
+    <div class="rivet-right">${rivHtml}</div>
+    <div class="card-title"><div class="card-medal-name">${p.main.key}</div></div>
+    <div class="card-media">${mediaHtml}</div>
+    <div class="card-grad-t"></div>
+    <div class="card-grad-l"></div>
+    <div class="card-grad-b"></div>
+    <div class="card-frame"></div>
+    <div class="card-stats">
+      <div class="cs-item">
+        <div class="cs-icon">KD <i class="fa-solid fa-crosshairs" style="font-size:8px"></i></div>
+        <div class="cs-val">${p.kd.toFixed(2)}</div>
+      </div>
+      <div class="cs-sep"></div>
+      <div class="cs-item">
+        <div class="cs-label">Precizitāte</div>
+        <div class="cs-icon"><i class="fa-solid fa-bullseye" style="font-size:8px"></i></div>
+        <div class="cs-val">${p.acc.toFixed(0)}%</div>
+      </div>
+      <div class="cs-sep"></div>
+      <div class="cs-item">
+        <div class="cs-label">Izšautās lodes</div>
+        <div class="cs-icon"><i class="fa-solid fa-gun" style="font-size:8px"></i></div>
+        <div class="cs-val">${p.bullets}</div>
+      </div>
+    </div>
+    <div class="card-award">
+      <div class="award-circle"><i class="fa-solid ${p.main.icon}"></i></div>
+      <div class="award-lbl">${p.main.key}</div>
+    </div>
+    <div class="card-bottom">
+      <div class="card-player">${p.name}</div>
+      <div class="card-venue">GUNSnLASERS</div>
+    </div>`;
+
+  /* share buttons */
+  const shareText=`${p.name} — ${p.main.key} | K/D ${p.kd} · ${p.acc}% precizitāte · ${p.bullets} lodes #GUNSnLASERS`;
+  const shareUrl=window.location.href;
+  document.getElementById('shareRow').innerHTML=`
+    <button class="share-btn share-main" onclick="doShare('${p.name}','${shareText}','${shareUrl}')">
+      <i class="fa-solid fa-share-nodes"></i> Dalīties
+    </button>
+    <button class="share-btn share-dl" onclick="dlVideo()">
+      <i class="fa-solid fa-download"></i> Lejupielādēt
+    </button>`;
+  document.getElementById('shareIcons').innerHTML=`
+    <button class="soc-btn s-fb" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}','_blank')"><i class="fa-brands fa-facebook"></i> Facebook</button>
+    <button class="soc-btn s-x" onclick="window.open('https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}','_blank')"><i class="fa-brands fa-x-twitter"></i> X</button>
+    <button class="soc-btn s-wa" onclick="window.open('https://wa.me/?text=${encodeURIComponent(shareText+' '+shareUrl)}','_blank')"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
+    <button class="soc-btn s-tg" onclick="window.open('https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}','_blank')"><i class="fa-brands fa-telegram"></i> Telegram</button>
+    <button class="soc-btn s-cp" onclick="navigator.clipboard.writeText('${shareUrl}');this.textContent='✓ Nokopēts!'"><i class="fa-solid fa-copy"></i> Kopēt saiti</button>`;
+
+  go(3);
+}
+
+async function doShare(name,text,url){
+  const icons=document.getElementById('shareIcons');
+  if(navigator.share){
+    try{
+      // try video file share first
+      const resp=await fetch('commando.mp4').catch(()=>null);
+      if(resp && resp.ok){
+        const blob=await resp.blob();
+        const file=new File([blob],`${name}-auratag.mp4`,{type:'video/mp4'});
+        if(navigator.canShare && navigator.canShare({files:[file]})){
+          await navigator.share({files:[file],title:`${name} — GUNSnLASERS`,text});
+          return;
+        }
+      }
+      await navigator.share({title:`${name} — GUNSnLASERS`,text,url});
+    }catch(e){if(e.name!=='AbortError') icons.classList.toggle('show');}
+  } else {
+    icons.classList.toggle('show');
+  }
+}
+
+function dlVideo(){
+  const a=document.createElement('a');
+  a.href='commando.mp4'; a.download='commando-auratag.mp4'; a.click();
+}
+
+/* ── INIT ── */
+buildS1(); buildS2();
+
+// admin link helper (call from Next.js admin panel)
+window.openAdminInfo=()=>go(4);
+</script>
+</body>
+</html>
