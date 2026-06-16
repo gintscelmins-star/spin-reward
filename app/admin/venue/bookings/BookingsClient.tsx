@@ -31,8 +31,17 @@ export interface BookingRpc {
 interface Activity { id: string; name: string }
 interface Staff { id: string; name: string }
 
+interface SpinStatus {
+  booking_id: string
+  has_spin: boolean
+  prize_name: string | null
+  prize_redeemed: boolean
+  review_rating: number | null
+}
+
 interface Props {
   bookings: BookingRpc[]
+  spinStatus: SpinStatus[]
   activities: Activity[]
   staff: Staff[]
   venueId: string
@@ -443,9 +452,14 @@ function DetailModal({
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export default function BookingsClient({ bookings, activities, staff, venueId, from, to }: Props) {
+export default function BookingsClient({ bookings, spinStatus, activities, staff, venueId, from, to }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
+
+  // Map booking_id to spin status for quick lookup
+  const spinStatusMap = new Map<string, SpinStatus>(
+    spinStatus.map(s => [s.booking_id, s])
+  )
 
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editing, setEditing] = useState<BookingRpc | null>(null)
@@ -575,7 +589,7 @@ export default function BookingsClient({ bookings, activities, staff, venueId, f
 
       {/* Table */}
       <div className="bg-white rounded-2xl shadow overflow-x-auto">
-        <table className="w-full text-sm min-w-[900px]">
+        <table className="w-full text-sm min-w-[1100px]">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
               <th className="text-left px-4 py-3 text-gray-500 font-medium">Laiks</th>
@@ -585,7 +599,10 @@ export default function BookingsClient({ bookings, activities, staff, venueId, f
               <th className="text-left px-4 py-3 text-gray-500 font-medium">Gadījums</th>
               <th className="text-left px-4 py-3 text-gray-500 font-medium">Avanss</th>
               <th className="text-left px-4 py-3 text-gray-500 font-medium">Statuss</th>
-              <th className="text-left px-4 py-3 text-gray-500 font-medium">Spin</th>
+              <th className="text-center px-4 py-3 text-gray-500 font-medium">Spin</th>
+              <th className="text-left px-4 py-3 text-gray-500 font-medium">Balva</th>
+              <th className="text-center px-4 py-3 text-gray-500 font-medium">Izsniegta</th>
+              <th className="text-center px-4 py-3 text-gray-500 font-medium">Atsauksme</th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
@@ -642,6 +659,43 @@ export default function BookingsClient({ bookings, activities, staff, venueId, f
                       </button>
                     )}
                   </td>
+                  <td className="px-4 py-3 text-xs">
+                    {(() => {
+                      const spinStat = spinStatusMap.get(b.booking_id)
+                      return spinStat?.prize_name ? (
+                        <span className="text-gray-700">{spinStat.prize_name}</span>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )
+                    })()}
+                  </td>
+                  <td className="px-4 py-3 text-center text-xs">
+                    {(() => {
+                      const spinStat = spinStatusMap.get(b.booking_id)
+                      return spinStat?.prize_redeemed ? (
+                        <span className="text-green-600 font-medium">✓</span>
+                      ) : spinStat?.prize_name ? (
+                        <span className="text-gray-400">✗</span>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )
+                    })()}
+                  </td>
+                  <td className="px-4 py-3 text-center text-xs">
+                    {(() => {
+                      const spinStat = spinStatusMap.get(b.booking_id)
+                      return spinStat?.review_rating != null ? (
+                        <span className={`font-bold ${
+                          spinStat.review_rating >= 4 ? 'text-green-600' :
+                          spinStat.review_rating <= 2 ? 'text-red-500' : 'text-yellow-600'
+                        }`}>
+                          {spinStat.review_rating} ★
+                        </span>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )
+                    })()}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2 justify-end">
                       <button
@@ -669,7 +723,7 @@ export default function BookingsClient({ bookings, activities, staff, venueId, f
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-10 text-center text-gray-400">
+                <td colSpan={12} className="px-4 py-10 text-center text-gray-400">
                   {bookings.length === 0 ? 'Nav rezervāciju izvēlētajā periodā' : 'Nav rezultātu ar šiem filtriem'}
                 </td>
               </tr>

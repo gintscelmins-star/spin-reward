@@ -2,14 +2,23 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { fmtDateTime } from '@/lib/fmt'
 
 type CheckResult = 'active' | 'already_redeemed' | 'expired' | 'not_found'
-type PageStatus = 'loading' | CheckResult | 'confirming' | 'redeemed'
+type PageStatus = 'loading' | CheckResult | 'confirming' | 'redeemed' | 'already_redeemed'
 
 interface CheckRow {
   result: CheckResult
   prize_name: string | null
   expires_at: string | null
+  booking_ref: string | null
+  redeemed_at: string | null
+}
+
+interface RedeemRow {
+  result: string
+  booking_ref: string | null
+  redeemed_at: string | null
 }
 
 export default function RedeemPage({
@@ -20,6 +29,8 @@ export default function RedeemPage({
   const [status, setStatus] = useState<PageStatus>('loading')
   const [prizeName, setPrizeName] = useState('')
   const [expiresAt, setExpiresAt] = useState('')
+  const [bookingRef, setBookingRef] = useState('')
+  const [redeemedAt, setRedeemedAt] = useState('')
   const [token, setToken] = useState('')
   const called = useRef(false)
 
@@ -37,6 +48,8 @@ export default function RedeemPage({
           if (!row) { setStatus('not_found'); return }
           if (row.prize_name) setPrizeName(row.prize_name)
           if (row.expires_at) setExpiresAt(row.expires_at)
+          if (row.booking_ref) setBookingRef(row.booking_ref)
+          if (row.redeemed_at) setRedeemedAt(row.redeemed_at)
           setStatus(row.result)
         })
     })
@@ -45,8 +58,14 @@ export default function RedeemPage({
   async function handleConfirm() {
     setStatus('confirming')
     const { data } = await supabase.rpc('redeem_spin', { p_qr_token: token })
-    const row = (data as { result: string }[] | null)?.[0]
-    setStatus(row?.result === 'redeemed' ? 'redeemed' : 'already_redeemed')
+    const row = (data as RedeemRow[] | null)?.[0]
+    if (row?.result === 'redeemed') {
+      if (row.booking_ref) setBookingRef(row.booking_ref)
+      if (row.redeemed_at) setRedeemedAt(row.redeemed_at)
+      setStatus('redeemed')
+    } else {
+      setStatus('already_redeemed')
+    }
   }
 
   // ---- Active: show prize + confirm button ----
@@ -94,24 +113,64 @@ export default function RedeemPage({
     )
   }
 
-  // ---- Terminal states ----
-  const STATES = {
-    redeemed:         { bg: 'bg-green-500',  text: 'text-white',       label: 'IZSNIEGT',          sub: prizeName },
-    already_redeemed: { bg: 'bg-yellow-400', text: 'text-yellow-900',  label: 'JAU IZMANTOTS',     sub: 'Šis QR kods jau ir izmantots' },
-    expired:          { bg: 'bg-gray-400',   text: 'text-white',       label: 'TERMIŅŠ BEIDZIES',  sub: 'Šī balva vairs nav derīga' },
-    not_found:        { bg: 'bg-red-500',    text: 'text-white',       label: 'NEDERĪGS KODS',     sub: 'QR kods nav atpazīts' },
-  } as const
+  // ---- Redeemed: persistent confirmation ----
+  if (status === 'redeemed') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-green-500 px-8 gap-6">
+        <div className="text-white text-center">
+          <p className="text-8xl font-black mb-4">✓</p>
+          <p className="text-5xl font-black mb-6">IZSNIEGTS</p>
+          <p className="text-3xl font-bold mb-4">{prizeName}</p>
+          {redeemedAt && (
+            <div className="bg-white/20 rounded-xl px-4 py-3 inline-block mb-4">
+              <p className="text-sm opacity-90">Izsniegts: {fmtDateTime(redeemedAt)}</p>
+              {bookingRef && <p className="text-sm opacity-90">Rēf: {bookingRef}</p>}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
 
-  const cfg = STATES[status as keyof typeof STATES]
+  // ---- Already redeemed ----
+  if (status === 'already_redeemed') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-yellow-400 text-yellow-900 px-8 gap-6">
+        <div className="text-center">
+          <p className="text-8xl font-black mb-4">⚠</p>
+          <p className="text-4xl font-black mb-6">JAU IZSNIEGTS</p>
+          {redeemedAt && (
+            <div className="bg-white/30 rounded-xl px-4 py-3 inline-block">
+              <p className="text-sm font-semibold">Izsniegts: {fmtDateTime(redeemedAt)}</p>
+              {bookingRef && <p className="text-sm">{bookingRef}</p>}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
 
-  return (
-    <div className={`min-h-screen flex flex-col items-center justify-center ${cfg.bg} ${cfg.text} px-8 gap-4`}>
-      <p className="text-6xl font-black tracking-tight text-center leading-none">
-        {cfg.label}
-      </p>
-      {cfg.sub && (
-        <p className="text-2xl font-semibold text-center opacity-90">{cfg.sub}</p>
-      )}
-    </div>
-  )
+  // ---- Expired ----
+  if (status === 'expired') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-400 text-white px-8 gap-4">
+        <p className="text-8xl font-black">⌛</p>
+        <p className="text-5xl font-black">TERMIŅŠ BEIDZIES</p>
+        <p className="text-2xl opacity-90">Šī balva vairs nav derīga</p>
+      </div>
+    )
+  }
+
+  // ---- Not found ----
+  if (status === 'not_found') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-red-500 text-white px-8 gap-4">
+        <p className="text-8xl font-black">❌</p>
+        <p className="text-5xl font-black">NEDERĪGS KODS</p>
+        <p className="text-2xl opacity-90">QR kods nav atpazīts</p>
+      </div>
+    )
+  }
+
+  return null
 }

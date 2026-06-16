@@ -43,10 +43,11 @@ export default async function BookingsPage({
   const from = params.from ?? defaultBounds.from
   const to = params.to ?? defaultBounds.to
 
-  const [bookingsRes, activitiesRes, staffRes] = await Promise.all([
+  const [bookingsRes, activitiesRes, staffRes, spinStatusRes] = await Promise.all([
     supabase.rpc('get_bookings', { p_venue_id: venueId, p_from: from, p_to: to }),
     supabase.from('activities').select('id, name').eq('venue_id', venueId).eq('active', true).order('name'),
     supabase.from('staff').select('id, name').eq('venue_id', venueId).eq('active', true).order('name'),
+    supabase.rpc('get_booking_spin_status', { p_venue_id: venueId, p_from: from, p_to: to }),
   ])
 
   const q = profile.role === 'super_admin' ? `?venueId=${venueId}` : ''
@@ -62,6 +63,7 @@ export default async function BookingsPage({
         </div>
         <BookingsClient
           bookings={(bookingsRes.data ?? []) as unknown as BookingRpc[]}
+          spinStatus={spinStatusRes.data ?? []}
           activities={activitiesRes.data ?? []}
           staff={staffRes.data ?? []}
           venueId={venueId}
