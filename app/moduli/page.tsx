@@ -253,7 +253,6 @@ export default function ModuliPage() {
       {/* Plans */}
       <div className="bg-gray-50 border-b border-gray-100 px-5 py-14">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-2xl font-black text-gray-900 text-center mb-8">Bundļi</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {PLANS.map(plan => (
               <div
