@@ -116,3 +116,34 @@ export async function submitStaffEvaluation(formData: FormData): Promise<void> {
   if (error) throw new Error(error.message)
   revalidatePath(`/admin/venue/staff/${staffId}`)
 }
+
+export async function submitStaffTasks(formData: FormData): Promise<void> {
+  const venueId = formData.get('venueId') as string
+  const staffId = formData.get('staffId') as string
+  const supabase = await getVenueAccess(venueId)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('403')
+
+  const tasksList = [
+    'Piedalīties apmācībās',
+    'Atjaunot QR kodu',
+    'Izlasīt feedback pārskatu',
+  ]
+
+  const completedTasks = tasksList.filter(t => formData.get(`task_${t}`) === 'on')
+  const message = (formData.get('message') as string | null)?.trim() || null
+
+  if (completedTasks.length === 0 && !message) {
+    throw new Error('Jāizvēlas vismaz viens uzdevums vai jāievada ziņa')
+  }
+
+  const { error } = await supabase.from('staff_tasks').insert({
+    staff_id: staffId,
+    venue_id: venueId,
+    admin_id: user.id,
+    completed_tasks: completedTasks,
+    message,
+  })
+  if (error) throw new Error(error.message)
+  revalidatePath(`/admin/venue/staff/${staffId}`)
+}

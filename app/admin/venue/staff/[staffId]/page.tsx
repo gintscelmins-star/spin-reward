@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { submitStaffEvaluation } from '../actions'
 import { getStaffReviewsRows } from '../queries'
 import StaffDateFilter from './StaffDateFilter'
+import TasksClient from './TasksClient'
 import { fmtDateTime } from '@/lib/fmt'
 
 interface ReviewRow {
@@ -247,36 +248,8 @@ export default async function StaffStatsPage({
           )}
         </section>
 
-        {/* Locked mockup — task checkboxes + messages to staff */}
-        <section className="relative rounded-2xl overflow-hidden">
-          <div className="bg-white border border-gray-100 p-6 opacity-40 pointer-events-none select-none">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">Uzdevumi un ziņas</p>
-            <div className="space-y-3 mb-5">
-              {['Piedalīties apmācībās', 'Atjaunot QR kodu', 'Izlasīt feedback pārskatu'].map(t => (
-                <label key={t} className="flex items-center gap-3 text-sm text-gray-600">
-                  <input type="checkbox" disabled className="w-4 h-4" />
-                  {t}
-                </label>
-              ))}
-            </div>
-            <textarea
-              disabled
-              rows={2}
-              placeholder="Ziņa darbiniekam..."
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm resize-none"
-            />
-            <button disabled className="mt-3 px-4 py-2 bg-purple-200 text-purple-300 rounded-xl text-sm font-bold">
-              Nosūtīt
-            </button>
-          </div>
-          <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-[1px] rounded-2xl">
-            <div className="text-center">
-              <p className="text-2xl mb-1">🔒</p>
-              <p className="font-bold text-gray-700 text-sm">Drīzumā</p>
-              <p className="text-xs text-gray-500 mt-0.5">Nākamajā sprintā</p>
-            </div>
-          </div>
-        </section>
+        {/* Task checkboxes + messages to staff */}
+        <TasksClient staffId={staffId} venueId={venueId} />
 
         {staff.stripe_tip_link && (
           <section className="bg-white rounded-2xl shadow p-6">
