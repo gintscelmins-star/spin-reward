@@ -25,6 +25,7 @@ export default function ResultClient({ result }: Props) {
         onClose={() => setSheetOpen(false)}
         token={result.share_token}
         callsign={result.callsign}
+        topClass={result.top_class ?? 'WARRIOR'}
         shareUrl={shareUrl}
         videoUrl={videoUrl}
         posterUrl={media.poster}

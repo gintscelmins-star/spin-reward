@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import LogoutButton from '@/components/LogoutButton'
 import ModulesSection from './ModulesSection'
+import LaserstatsBanner from '@/components/admin/LaserstatsBanner'
 
 export default async function ClientAdminVenuePage({
   searchParams,
@@ -45,6 +46,7 @@ export default async function ClientAdminVenuePage({
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-3xl mx-auto space-y-6">
+        <LaserstatsBanner />
         <div className="flex items-center justify-between">
           <div>
             {profile.role === 'super_admin' && (

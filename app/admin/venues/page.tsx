@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getAdmin } from '@/lib/supabase/admin'
 import { toggleVenueActive } from './actions'
 import VenueRowActions from './VenueRowActions'
+import LaserstatsBanner from '@/components/admin/LaserstatsBanner'
 
 interface VenueOverview {
   id: string
@@ -52,6 +53,8 @@ export default async function VenuesPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
+
+        <LaserstatsBanner />
 
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div className="flex items-center gap-4">

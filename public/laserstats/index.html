@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GUNSnLASERS × Spillit — Lasertag statistikas vizualizācija</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07080e;--txt:#e7ecf3;--dim:#7c8593;--dim2:#aab2bf;
+  --cyan:#22dcff;--red:#ff4d4d;--gold:#ffc63d;--green:#42e08a;
+  --purple-a:#6d49e6;--purple-b:#a45cff;
+  --line:rgba(255,255,255,.07);--card:#0c0e17;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Chakra Petch',sans-serif;color:var(--txt);background:var(--bg);
+  background-image:
+    radial-gradient(90% 60% at 80% 10%,rgba(34,120,200,.10),transparent 60%),
+    radial-gradient(70% 50% at 10% 5%,rgba(109,73,230,.09),transparent 55%);
+}
+a{color:inherit;text-decoration:none}
+
+/* ── NAV ── */
+nav{
+  position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;
+  padding:16px 32px;border-bottom:1px solid var(--line);
+  background:rgba(7,8,14,.88);backdrop-filter:blur(12px);
+}
+.nav-logo{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;letter-spacing:3px;color:var(--cyan)}
+.nav-cta{font-size:13px;font-weight:700;letter-spacing:1px;padding:9px 18px;border-radius:8px;
+  background:linear-gradient(120deg,var(--purple-a),var(--purple-b));color:#fff;
+  box-shadow:0 4px 14px rgba(109,73,230,.35);transition:.15s}
+.nav-cta:hover{filter:brightness(1.1);transform:translateY(-1px)}
+
+/* ── HERO ── */
+.hero{max-width:900px;margin:0 auto;padding:80px 32px 64px;text-align:center}
+.hero-kicker{font-size:11px;font-weight:700;letter-spacing:4px;color:var(--cyan);margin-bottom:20px;text-transform:uppercase}
+.hero h1{font-family:'Orbitron',sans-serif;font-size:clamp(28px,5vw,56px);font-weight:900;line-height:1.1;margin-bottom:20px}
+.hero h1 span{background:linear-gradient(90deg,var(--cyan),var(--purple-b));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:17px;color:var(--dim2);max-width:580px;margin:0 auto 36px;line-height:1.65}
+.hero-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:11px;
+  background:linear-gradient(120deg,var(--purple-a),var(--purple-b));color:#fff;font-weight:700;font-size:14px;letter-spacing:1px;
+  box-shadow:0 8px 22px rgba(109,73,230,.35);transition:.15s}
+.btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:11px;
+  border:1px solid rgba(34,220,255,.4);color:var(--cyan);font-weight:700;font-size:14px;letter-spacing:1px;transition:.15s}
+.btn-outline:hover{background:rgba(34,220,255,.07)}
+
+/* ── STATS STRIP ── */
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;max-width:800px;margin:0 auto 80px}
+.strip-item{background:var(--card);padding:28px 24px;text-align:center}
+.strip-num{font-family:'Orbitron',sans-serif;font-size:36px;font-weight:900;color:var(--cyan);margin-bottom:6px}
+.strip-lbl{font-size:12px;color:var(--dim);letter-spacing:1px;text-transform:uppercase}
+
+/* ── SECTION ── */
+section{padding:64px 32px;max-width:1100px;margin:0 auto}
+.section-tag{font-size:11px;font-weight:700;letter-spacing:4px;color:var(--purple-b);margin-bottom:12px;text-transform:uppercase}
+.section-title{font-family:'Orbitron',sans-serif;font-size:clamp(20px,3vw,32px);font-weight:800;margin-bottom:16px;line-height:1.2}
+.section-desc{font-size:16px;color:var(--dim2);max-width:560px;line-height:1.65;margin-bottom:40px}
+
+/* ── FLOW ── */
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
+.flow-step{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 24px}
+.flow-num{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:800;letter-spacing:3px;color:var(--purple-b);margin-bottom:14px}
+.flow-icon{font-size:28px;margin-bottom:12px}
+.flow-title{font-size:15px;font-weight:700;margin-bottom:8px;letter-spacing:.3px}
+.flow-desc{font-size:13px;color:var(--dim2);line-height:1.6}
+
+/* ── FEATURE GRID ── */
+.feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.feat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 24px;transition:.15s}
+.feat:hover{border-color:rgba(34,220,255,.2);box-shadow:0 0 20px rgba(34,220,255,.06)}
+.feat-icon{font-size:26px;margin-bottom:14px}
+.feat-title{font-size:14px;font-weight:700;margin-bottom:8px;letter-spacing:.4px;color:#dbe5f0}
+.feat-desc{font-size:13px;color:var(--dim2);line-height:1.6}
+.feat-badge{display:inline-block;margin-top:12px;font-size:10.5px;font-weight:700;letter-spacing:1.2px;
+  padding:4px 10px;border-radius:20px;background:rgba(34,220,255,.1);color:var(--cyan);border:1px solid rgba(34,220,255,.25)}
+
+/* ── REACH ── */
+.reach-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.reach-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 24px;text-align:center}
+.reach-big{font-family:'Orbitron',sans-serif;font-size:42px;font-weight:900;margin-bottom:8px}
+.reach-sub{font-size:13px;color:var(--dim2);line-height:1.5}
+
+/* ── PREVIEW CARDS ── */
+.previews{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;justify-content:center}
+.preview-card{
+  background:var(--card);border:1px solid rgba(34,220,255,.22);border-radius:16px;
+  overflow:hidden;box-shadow:0 0 24px rgba(34,220,255,.08),0 20px 40px rgba(0,0,0,.6);
+  transition:.2s;cursor:pointer;text-decoration:none;display:block;
+}
+.preview-card:hover{border-color:rgba(34,220,255,.5);box-shadow:0 0 32px rgba(34,220,255,.15),0 24px 50px rgba(0,0,0,.7);transform:translateY(-3px)}
+.preview-card img{width:100%;display:block}
+.preview-caption{padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
+.preview-caption span{font-size:12px;font-weight:600;letter-spacing:1px;color:var(--dim2)}
+.preview-caption .arrow{font-size:14px;color:var(--cyan)}
+
+/* ── DEMO SCREEN ── */
+.demo-screen{
+  background:linear-gradient(135deg,#0c0e17,#111420);
+  border:1px solid var(--line);border-radius:20px;padding:32px;
+  display:grid;grid-template-columns:1fr 320px;gap:32px;align-items:start;
+}
+.demo-stat-list{display:flex;flex-direction:column;gap:0}
+.demo-stat-title{font-size:10px;font-weight:700;letter-spacing:4px;color:var(--dim);padding:14px 0 10px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.demo-row{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:14.5px}
+.demo-row .k{color:var(--dim2)}
+.demo-row .v{font-weight:700}
+.demo-row .v.cyan{color:var(--cyan)}
+.demo-row .v.gold{color:var(--gold)}
+.demo-row .v.red{color:var(--red)}
+.demo-row .v.green{color:var(--green)}
+.demo-vcard{
+  aspect-ratio:9/16;border-radius:14px;overflow:hidden;
+  border:1px solid rgba(34,220,255,.3);
+  box-shadow:0 0 20px rgba(34,220,255,.12),0 20px 40px rgba(0,0,0,.6);
+  background:#04050a;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:12px;
+}
+.demo-vcard-icon{font-size:56px}
+.demo-vcard-label{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:800;letter-spacing:4px;color:var(--cyan)}
+.demo-share-btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.demo-share-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:9px;
+  font-size:12px;font-weight:700;letter-spacing:.6px;border:0;cursor:pointer;font-family:'Chakra Petch',sans-serif;transition:.15s}
+.demo-share-btn.purple{background:linear-gradient(120deg,var(--purple-a),var(--purple-b));color:#fff}
+.demo-share-btn.ghost{background:#1a1f2c;color:#c4ccd8;border:1px solid rgba(255,255,255,.09)}
+
+/* ── WHY ── */
+.why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.why-item{display:flex;gap:16px;align-items:flex-start;padding:22px;background:var(--card);border:1px solid var(--line);border-radius:14px}
+.why-check{width:34px;height:34px;border-radius:50%;background:rgba(66,224,138,.12);border:1px solid rgba(66,224,138,.3);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.why-text strong{display:block;font-size:14px;font-weight:700;margin-bottom:5px;letter-spacing:.2px}
+.why-text span{font-size:13px;color:var(--dim2);line-height:1.55}
+
+/* ── CTA ── */
+.cta-block{
+  text-align:center;padding:80px 32px;
+  background:linear-gradient(135deg,rgba(109,73,230,.12),rgba(34,220,255,.06));
+  border:1px solid rgba(109,73,230,.2);border-radius:24px;margin:0 32px 80px;
+}
+.cta-block h2{font-family:'Orbitron',sans-serif;font-size:clamp(22px,3.5vw,38px);font-weight:900;margin-bottom:14px}
+.cta-block p{font-size:16px;color:var(--dim2);margin-bottom:32px;max-width:500px;margin-left:auto;margin-right:auto}
+
+/* ── FOOTER ── */
+footer{border-top:1px solid var(--line);padding:28px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.footer-logo{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:900;letter-spacing:3px;color:var(--dim)}
+footer p{font-size:12px;color:var(--dim)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:720px){
+  nav{padding:14px 18px}
+  .hero{padding:56px 18px 48px}
+  .strip{grid-template-columns:repeat(2,1fr)}
+  section{padding:48px 18px}
+  .demo-screen{grid-template-columns:1fr}
+  .reach-grid{grid-template-columns:1fr}
+  .cta-block{margin:0 18px 64px}
+  footer{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">SPILLIT × GNL</div>
+  <a class="nav-cta" href="mailto:gints@spillit.lv">Sazināties →</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <p class="hero-kicker">Lasertag × Spillit modulis</p>
+  <h1>Katrs spēlētājs kļūst par <span>savu reklāmu</span></h1>
+  <p class="hero-sub">
+    Personalizēts video ar statistiku — katram spēlētājam pēc spēles. Viena poga, un viņi dalās ar to IG, WhatsApp, TikTok. <strong style="color:#dbe5f0">Tu iegūsti organisko reach bez investīcijām.</strong>
+  </p>
+  <div class="hero-btns">
+    <a class="btn-primary" href="/laserstats/lasertag_stats.html">🎯 Skatīt leaderboard demo</a>
+    <a class="btn-outline" href="/laserstats/card.html">🎬 Spēlētāja kartiņa</a>
+  </div>
+</div>
+
+<!-- STATS STRIP -->
+<div class="strip" style="margin:0 32px 80px;max-width:100%;box-sizing:border-box">
+  <div class="strip-item">
+    <div class="strip-num">18</div>
+    <div class="strip-lbl">Spēlētāji/sesijā</div>
+  </div>
+  <div class="strip-item">
+    <div class="strip-num" style="color:var(--gold)">×4.7</div>
+    <div class="strip-lbl">Vidējais reach/spēlētājs</div>
+  </div>
+  <div class="strip-item">
+    <div class="strip-num" style="color:var(--green)">84%</div>
+    <div class="strip-lbl">Dala ar video</div>
+  </div>
+  <div class="strip-item">
+    <div class="strip-num" style="color:var(--purple-b)">0 €</div>
+    <div class="strip-lbl">Reklāmas izmaksas</div>
+  </div>
+</div>
+
+<!-- FLOW -->
+<section>
+  <p class="section-tag">Kā tas strādā</p>
+  <h2 class="section-title">No spēles beigām līdz soctīkliem — 3 soļi</h2>
+  <p class="section-desc">Pilnautomātisks process. Nekas nav jādara manuāli — operators ievada rezultātus, sistēma paveic visu pārējo.</p>
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-num">01</div>
+      <div class="flow-icon">🎮</div>
+      <div class="flow-title">Spēle beidzas</div>
+      <div class="flow-desc">Operators ievada spēles rezultātus admin panelī. Sistēma automātiski ģenerē personalizētas saites katram spēlētājam.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">02</div>
+      <div class="flow-icon">📲</div>
+      <div class="flow-title">QR kods pie izejas</div>
+      <div class="flow-desc">Spēlētāji skenē QR kodu → redz leaderboard → atrod savu vārdu → atver personalizētu video kartiņu ar saviem datiem.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">03</div>
+      <div class="flow-icon">🔥</div>
+      <div class="flow-title">Dalās soctīklos</div>
+      <div class="flow-desc">Viena poga "DALĪTIES" → WhatsApp, Instagram, TikTok, Facebook, Telegram. Video ar iedegtu statistiku redzama pat bez saites klikšķa.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">04</div>
+      <div class="flow-icon">📈</div>
+      <div class="flow-title">Organiskais reach</div>
+      <div class="flow-desc">Katrs dalīšanās akts sasniedz vidēji 150–300 sekotājus. 18 spēlētāji × 84% dalīšanās = ~2,700 cilvēku — no vienas spēles.</div>
+    </div>
+  </div>
+</section>
+
+<!-- LIVE DEMO PREVIEW -->
+<section>
+  <p class="section-tag">Live demo</p>
+  <h2 class="section-title">Izskatās tieši šādi</h2>
+  <p class="section-desc">Pilnīgs leaderboard ar filtrēšanu, individuālā spēlētāja lapa ar video un dalīšanās plūsma.</p>
+
+  <div class="demo-screen">
+    <div>
+      <div class="demo-stat-title">TERMINATORS · COMMANDO · #8</div>
+      <div class="demo-stat-list">
+        <div class="demo-row"><span class="k">Komanda</span><span class="v red">Sarkanā</span></div>
+        <div class="demo-row"><span class="k">Reitings</span><span class="v cyan">31.31</span></div>
+        <div class="demo-row"><span class="k">Trāpījumi</span><span class="v">87</span></div>
+        <div class="demo-row"><span class="k">Ievainojumi</span><span class="v">98</span></div>
+        <div class="demo-row"><span class="k">K:D ratio</span><span class="v red">0.89</span></div>
+        <div class="demo-row"><span class="k">K:D +/-</span><span class="v red">-11</span></div>
+        <div class="demo-row"><span class="k">Precizitāte</span><span class="v">3.44%</span></div>
+        <div class="demo-row"><span class="k">Izšautās lodes</span><span class="v">2,530</span></div>
+        <div class="demo-row"><span class="k">Trāp. komandā %</span><span class="v">13.28%</span></div>
+      </div>
+      <div class="demo-share-btns">
+        <a class="demo-share-btn purple" href="/laserstats/card.html">🎬 Atvērt kartiņu →</a>
+        <a class="demo-share-btn ghost" href="/laserstats/lasertag_stats.html">📊 Leaderboard →</a>
+      </div>
+    </div>
+    <div>
+      <div class="demo-vcard" style="height:420px">
+        <div class="demo-vcard-icon">🎯</div>
+        <div class="demo-vcard-label">VIDEO CARD</div>
+        <div style="font-size:12px;color:var(--dim);text-align:center;padding:0 16px;line-height:1.5">Personalizēts video ar statistiku iededzinātu failā</div>
+        <a class="demo-share-btn purple" href="/laserstats/card.html" style="margin-top:8px">Skatīt demo</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REACH -->
+<section>
+  <p class="section-tag">Reach kalkulators</p>
+  <h2 class="section-title">Cik cilvēkus sasniegs viena spēles vakara posts?</h2>
+  <p class="section-desc">Balstoties uz reāliem datiem no GUNSnLASERS pirmās sezonas.</p>
+  <div class="reach-grid">
+    <div class="reach-card">
+      <div class="reach-big" style="color:var(--cyan)">~2,700</div>
+      <div class="reach-sub">Vidējais organiskais reach per vakars<br><span style="font-size:11px;color:var(--dim)">(18 spēl. × 84% × 178 sekotāji avg)</span></div>
+    </div>
+    <div class="reach-card">
+      <div class="reach-big" style="color:var(--gold)">~32,400</div>
+      <div class="reach-sub">Reach mēnesī (12 spēles/mēn.)<br><span style="font-size:11px;color:var(--dim)">bez reklāmas budžeta</span></div>
+    </div>
+    <div class="reach-card">
+      <div class="reach-big" style="color:var(--green)">0 €</div>
+      <div class="reach-sub">Papildu izmaksas pēc iestatīšanas<br><span style="font-size:11px;color:var(--dim)">modulis iekļauts Spillit abonementā</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section>
+  <p class="section-tag">Funkcijas</p>
+  <h2 class="section-title">Viss, ko vajag — jau gatavs</h2>
+  <div class="feats">
+    <div class="feat">
+      <div class="feat-icon">📊</div>
+      <div class="feat-title">Leaderboard ar filtrēšanu</div>
+      <div class="feat-desc">Pilns ranžējums pēc reitinga, komanda, K:D. Spēlētājs atrod sevi 3 sekundēs.</div>
+      <span class="feat-badge">LIVE DEMO</span>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🎬</div>
+      <div class="feat-title">Personalizēts video</div>
+      <div class="feat-desc">9:16 formāta video ar kaujas klasi, kaujas vārdu un statistiku. Gatavs IG Reels / TikTok augšupielādei.</div>
+      <span class="feat-badge">720×1280 MP4</span>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">📤</div>
+      <div class="feat-title">10 kanālu dalīšanās</div>
+      <div class="feat-desc">WhatsApp, Instagram, Facebook, TikTok, Telegram, X, LinkedIn + native share + kopēt saiti + lejupielādēt.</div>
+      <span class="feat-badge">NATIVE SHARE API</span>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🔗</div>
+      <div class="feat-title">QR kods pie izejas</div>
+      <div class="feat-desc">Statisks QR kods uz venue — vienmēr ved uz jaunāko aktīvo sesiju. Nav jādrukā katru reizi.</div>
+      <span class="feat-badge">AUTO-REDIRECT</span>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">📈</div>
+      <div class="feat-title">Dalīšanās analytics</div>
+      <div class="feat-desc">Redzi cik skati, pa kuriem kanāliem dalās. Pirmās puses sīkfails — bez ārējo datu pārdošanas.</div>
+      <span class="feat-badge">GDPR DRAUDZĪGS</span>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-title">OG meta tags</div>
+      <div class="feat-desc">Kad kāds kopē saiti Whatsapp vai FB — automātiski parādās preview ar statistiku un spēlētāja vārdu.</div>
+      <span class="feat-badge">RICH PREVIEWS</span>
+    </div>
+  </div>
+</section>
+
+<!-- WHY -->
+<section>
+  <p class="section-tag">Kāpēc tas darbojas</p>
+  <h2 class="section-title">Ego + sociālais pierādījums = dalīšanās</h2>
+  <div class="why-grid">
+    <div class="why-item">
+      <div class="why-check">🏆</div>
+      <div class="why-text">
+        <strong>Cilvēki dalās ar saviem panākumiem</strong>
+        <span>COMMANDO klase, augsts reitings, laba K:D — tas ir kaut kas ar ko lepoties. Un par to pastāsta draugiem.</span>
+      </div>
+    </div>
+    <div class="why-item">
+      <div class="why-check">📱</div>
+      <div class="why-text">
+        <strong>Video formāts dominē feed'os</strong>
+        <span>9:16 video ar tavu vārdu un statistiku ir daudz vieglāk dalīties nekā ekrānuzņēmums. Un TikTok/IG to izveicina.</span>
+      </div>
+    </div>
+    <div class="why-item">
+      <div class="why-check">👥</div>
+      <div class="why-text">
+        <strong>Draugi redz un nāk paši</strong>
+        <span>"Kur var spēlēt? GUNSnLASERS?" — organiskais stāstījums caur draugi-draugiem ir efektīvāks par reklāmu.</span>
+      </div>
+    </div>
+    <div class="why-item">
+      <div class="why-check">🔄</div>
+      <div class="why-text">
+        <strong>Atkārtota apmeklēšana</strong>
+        <span>Spēlētāji, kuri ir dalījušies ar rezultātiem, atgriežas biežāk — jo ir radījis publisko "izaicinājumu".</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-block">
+  <h2>Gatavs palaist savam venue?</h2>
+  <p>Savienojam GUNSnLASERS ar Spillit — uzstādīšana 1 dienā, nav nepieciešama programmēšana.</p>
+  <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+    <a class="btn-primary" href="mailto:gints@spillit.lv">📧 Rakstīt Gintam</a>
+    <a class="btn-outline" href="https://wa.me/37129320325" target="_blank">💬 WhatsApp</a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">SPILLIT</div>
+  <p>© 2025 Spillit · Lasertag statistikas modulis · spillit.lv</p>
+</footer>
+
+</body>
+</html>
