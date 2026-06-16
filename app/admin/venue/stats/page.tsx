@@ -370,7 +370,7 @@ export default async function StatsPage({
                     )}
                   </div>
                   <span className="flex-shrink-0 text-xs text-gray-300">
-                    {new Date(r.created_at).toLocaleDateString('lv-LV', { day: '2-digit', month: '2-digit' })}
+                    {new Date(r.created_at).toLocaleDateString('lv-LV', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                   </span>
                 </div>
               ))}
@@ -397,7 +397,7 @@ export default async function StatsPage({
                     </p>
                     {e.notes && <p className="text-gray-500 text-xs mt-0.5 leading-relaxed">{e.notes}</p>}
                     <p className="text-gray-300 text-xs mt-1">
-                      {new Date(e.created_at).toLocaleDateString('lv-LV', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                      {new Date(e.created_at).toLocaleDateString('lv-LV', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                     </p>
                   </div>
                 </div>

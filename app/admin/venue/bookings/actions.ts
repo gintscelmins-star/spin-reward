@@ -25,33 +25,46 @@ export async function upsertBooking(
   const venueId = formData.get('venueId') as string
   const supabase = await getVenueAccess(venueId)
   const id = (formData.get('id') as string) || null
+
   const customer_name = (formData.get('customer_name') as string).trim()
-  const customer_phone = (formData.get('customer_phone') as string).trim() || null
+  const customer_phone = (formData.get('customer_phone') as string)?.trim() || null
   const activity_id = (formData.get('activity_id') as string) || null
+  const staff_id = (formData.get('staff_id') as string) || null
   const starts_at = formData.get('starts_at') as string
   const ends_at = (formData.get('ends_at') as string) || null
+
+  const player_count_str = formData.get('player_count') as string
+  const player_count = player_count_str ? parseInt(player_count_str, 10) || null : null
+  const player_age_group = (formData.get('player_age_group') as string) || null
+  const occasion = (formData.get('occasion') as string) || null
+  const advance_paid = formData.get('advance_paid') === 'on'
+  const advance_amount_str = formData.get('advance_amount') as string
+  const advance_amount = advance_amount_str ? parseFloat(advance_amount_str) || null : null
+  const notes = (formData.get('notes') as string)?.trim() || null
+  const status = (formData.get('status') as string) || 'pending'
 
   if (!customer_name) return { error: 'Klienta vārds ir obligāts' }
   if (!starts_at) return { error: 'Sākuma laiks ir obligāts' }
 
+  const fields = {
+    customer_name, customer_phone, activity_id, staff_id,
+    starts_at, ends_at,
+    player_count, player_age_group, occasion,
+    advance_paid, advance_amount, notes, status,
+  }
+
   if (id) {
-    const { error } = await supabase
-      .from('bookings')
-      .update({ customer_name, customer_phone, activity_id, starts_at, ends_at })
-      .eq('id', id)
+    const { error } = await supabase.from('bookings').update(fields).eq('id', id)
     if (error) return { error: error.message }
   } else {
     const { error } = await supabase.from('bookings').insert({
       venue_id: venueId,
-      customer_name,
-      customer_phone,
-      activity_id,
-      starts_at,
-      ends_at,
       source: 'manual',
+      ...fields,
     })
     if (error) return { error: error.message }
   }
+
   revalidatePath('/admin/venue/bookings')
   return { success: true }
 }
@@ -83,15 +96,10 @@ export async function importBookingsCsv(
 
   const supabase = await getVenueAccess(venueId)
   const { data: activities } = await supabase
-    .from('activities')
-    .select('id, name')
-    .eq('venue_id', venueId)
-    .eq('active', true)
+    .from('activities').select('id, name').eq('venue_id', venueId).eq('active', true)
 
   const activityMap = new Map<string, string>()
-  for (const a of activities ?? []) {
-    activityMap.set(a.name.toLowerCase(), a.id)
-  }
+  for (const a of activities ?? []) activityMap.set(a.name.toLowerCase(), a.id)
 
   let imported = 0
   let errors = 0
@@ -105,17 +113,11 @@ export async function importBookingsCsv(
     const activityRaw = (row['aktivitate'] ?? row['activity'] ?? '').trim()
     const startsAtRaw = (row['sakums'] ?? row['starts_at'] ?? row['datums'] ?? row['datetime'] ?? '').trim()
     const endsAtRaw = (row['beigas'] ?? row['ends_at'] ?? '').trim() || null
+    const playerCountRaw = (row['speletaji'] ?? row['spēlētāji'] ?? row['player_count'] ?? '').trim()
+    const player_count = playerCountRaw ? parseInt(playerCountRaw, 10) || null : null
 
-    if (!name) {
-      errors++
-      errorDetails.push(`Rinda ${rowNum}: trūkst vārda`)
-      continue
-    }
-    if (!startsAtRaw) {
-      errors++
-      errorDetails.push(`Rinda ${rowNum}: trūkst sākuma laika`)
-      continue
-    }
+    if (!name) { errors++; errorDetails.push(`Rinda ${rowNum}: trūkst vārda`); continue }
+    if (!startsAtRaw) { errors++; errorDetails.push(`Rinda ${rowNum}: trūkst sākuma laika`); continue }
 
     let starts_at: string
     try {
@@ -123,7 +125,6 @@ export async function importBookingsCsv(
       if (isNaN(d.getTime())) throw new Error('invalid')
       starts_at = d.toISOString()
     } catch {
-      // try combining with current date
       const combined = new Date(`${date}T${startsAtRaw}`)
       if (isNaN(combined.getTime())) {
         errors++
@@ -138,14 +139,10 @@ export async function importBookingsCsv(
       try {
         const d = new Date(endsAtRaw)
         ends_at = isNaN(d.getTime()) ? new Date(`${date}T${endsAtRaw}`).toISOString() : d.toISOString()
-      } catch {
-        ends_at = null
-      }
+      } catch { ends_at = null }
     }
 
-    const activity_id = activityRaw
-      ? (activityMap.get(activityRaw.toLowerCase()) ?? null)
-      : null
+    const activity_id = activityRaw ? (activityMap.get(activityRaw.toLowerCase()) ?? null) : null
 
     const { error } = await supabase.from('bookings').insert({
       venue_id: venueId,
@@ -154,6 +151,7 @@ export async function importBookingsCsv(
       activity_id,
       starts_at,
       ends_at,
+      player_count,
       source: 'csv',
     })
 

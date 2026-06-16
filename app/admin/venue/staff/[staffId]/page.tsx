@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { submitStaffEvaluation } from '../actions'
 import StaffDateFilter from './StaffDateFilter'
+import { fmtDateTime } from '@/lib/fmt'
 
 interface ReviewRow {
   session_date: string | null
@@ -11,15 +12,6 @@ interface ReviewRow {
   activity: string | null
 }
 
-function stars(n: number | null) {
-  if (!n) return '—'
-  return '★'.repeat(n) + '☆'.repeat(Math.max(0, 5 - n))
-}
-
-function fmtDate(iso: string | null) {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('lv-LV', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
-}
 
 export default async function StaffStatsPage({
   params,
@@ -174,7 +166,7 @@ export default async function StaffStatsPage({
                   {reviewRows.map((r, i) => (
                     <tr key={i} className="border-t border-gray-50 hover:bg-gray-50/50">
                       <td className="px-4 py-2.5 text-gray-500 text-xs whitespace-nowrap">
-                        {fmtDate(r.session_date)}
+                        {fmtDateTime(r.session_date)}
                       </td>
                       <td className="px-4 py-2.5 text-gray-600 text-xs">
                         {r.activity ?? '—'}
@@ -253,7 +245,7 @@ export default async function StaffStatsPage({
                     <span className="font-bold text-purple-600 flex-shrink-0">{e.rating}★</span>
                     <div className="flex-1 min-w-0">
                       {e.notes && <p className="text-gray-700 text-xs leading-relaxed">{e.notes}</p>}
-                      <p className="text-gray-400 text-xs mt-0.5">{fmtDate(e.created_at)}</p>
+                      <p className="text-gray-400 text-xs mt-0.5">{fmtDateTime(e.created_at)}</p>
                     </div>
                   </div>
                 ))}
