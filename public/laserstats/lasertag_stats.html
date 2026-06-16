@@ -6,7 +6,7 @@
 <title>GUNSnLASERS — Spēles Statistika</title>
 <meta property="og:title" content="Māris.N — COMMANDO | GUNSnLASERS">
 <meta property="og:description" content="K/D 0.89 · Precizitāte 3.44% · 2530 lodes. Apskati savu statistiku!">
-<meta property="og:image" content="commandopict.jfif">
+<meta property="og:image" content="/auratag/commandopict.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@400;500;600;700&family=Black+Ops+One&display=swap" rel="stylesheet">
@@ -589,10 +589,10 @@ function openPlayer(name){
 
   const mediaHtml = isCommando
     ? `<video autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;object-position:top center;animation:zoomout 5s ease forwards">
-         <source src="commando.mp4" type="video/mp4">
-         <img src="commandopict.jfif" style="width:100%;height:100%;object-fit:cover">
+         <source src="/auratag/commando1.mp4" type="video/mp4">
+         <img src="/auratag/commandopict.jpg" style="width:100%;height:100%;object-fit:cover">
        </video>`
-    : `<img src="commandopict.jfif" style="width:100%;height:100%;object-fit:cover;object-position:top center;animation:zoomout 5s ease forwards;filter:hue-rotate(${p.team==='red'?'0':'180'}deg)">`;
+    : `<img src="/auratag/commandopict.jpg" style="width:100%;height:100%;object-fit:cover;object-position:top center;animation:zoomout 5s ease forwards;filter:hue-rotate(${p.team==='red'?'0':'180'}deg)">`;
 
   card.innerHTML=`
     <div class="rivet-left">${rivHtml}</div>
@@ -655,7 +655,7 @@ async function doShare(name,text,url){
   if(navigator.share){
     try{
       // try video file share first
-      const resp=await fetch('commando.mp4').catch(()=>null);
+      const resp=await fetch('/auratag/commando1.mp4').catch(()=>null);
       if(resp && resp.ok){
         const blob=await resp.blob();
         const file=new File([blob],`${name}-auratag.mp4`,{type:'video/mp4'});
@@ -673,7 +673,7 @@ async function doShare(name,text,url){
 
 function dlVideo(){
   const a=document.createElement('a');
-  a.href='commando.mp4'; a.download='commando-auratag.mp4'; a.click();
+  a.href='/auratag/commando1.mp4'; a.download='commando-auratag.mp4'; a.click();
 }
 
 /* ── INIT ── */
