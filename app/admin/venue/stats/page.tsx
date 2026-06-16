@@ -19,9 +19,10 @@ interface ReviewDetailRow {
   id: string
   created_at: string
   google_redirected: boolean
+  rating: number | null
+  comment: string | null
   staff: { name: string } | null
   activity: { name: string } | null
-  review_answers: { rating: number; comment: string | null }[]
 }
 
 interface AnswerRow {
@@ -116,7 +117,7 @@ export default async function StatsPage({
     (() => {
       const q = supabase
         .from('reviews')
-        .select('id, created_at, google_redirected, staff:staff_id(name), activity:activity_id(name), review_answers(rating, comment)')
+        .select('id, created_at, google_redirected, rating, comment, staff:staff_id(name), activity:activity_id(name)')
         .eq('venue_id', venueId)
         .order('created_at', { ascending: false })
         .limit(50)
@@ -343,42 +344,36 @@ export default async function StatsPage({
             <p className="text-gray-400 text-sm">Nav atsauksmju izvēlētajā periodā.</p>
           ) : (
             <div className="divide-y divide-gray-50">
-              {reviewDetails.map(r => {
-                const avgRating = r.review_answers.length > 0
-                  ? r.review_answers.reduce((s, a) => s + a.rating, 0) / r.review_answers.length
-                  : null
-                const comment = r.review_answers.find(a => a.comment)?.comment ?? null
-                return (
-                  <div key={r.id} className="py-3 flex items-start gap-3 text-sm">
-                    <div className="flex-shrink-0 w-10 text-center">
-                      {avgRating !== null ? (
-                        <span className="font-black text-purple-600">{avgRating.toFixed(1)}★</span>
-                      ) : (
-                        <span className="text-gray-300">—</span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-gray-700 text-xs">
-                          {r.staff?.name ?? 'Nezināms darbinieks'}
-                        </span>
-                        {r.activity?.name && (
-                          <span className="text-xs text-gray-400">· {r.activity.name}</span>
-                        )}
-                        {r.google_redirected && (
-                          <span className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded font-medium">Google</span>
-                        )}
-                      </div>
-                      {comment && (
-                        <p className="text-xs text-gray-500 mt-0.5 leading-relaxed italic">&ldquo;{comment}&rdquo;</p>
-                      )}
-                    </div>
-                    <span className="flex-shrink-0 text-xs text-gray-300">
-                      {new Date(r.created_at).toLocaleDateString('lv-LV', { day: '2-digit', month: '2-digit' })}
-                    </span>
+              {reviewDetails.map(r => (
+                <div key={r.id} className="py-3 flex items-start gap-3 text-sm">
+                  <div className="flex-shrink-0 w-10 text-center">
+                    {r.rating != null ? (
+                      <span className="font-black text-purple-600">{r.rating}★</span>
+                    ) : (
+                      <span className="text-gray-300">—</span>
+                    )}
                   </div>
-                )
-              })}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-gray-700 text-xs">
+                        {r.staff?.name ?? 'Nezināms darbinieks'}
+                      </span>
+                      {r.activity?.name && (
+                        <span className="text-xs text-gray-400">· {r.activity.name}</span>
+                      )}
+                      {r.google_redirected && (
+                        <span className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded font-medium">Google</span>
+                      )}
+                    </div>
+                    {r.comment && (
+                      <p className="text-xs text-gray-500 mt-0.5 leading-relaxed italic">&ldquo;{r.comment}&rdquo;</p>
+                    )}
+                  </div>
+                  <span className="flex-shrink-0 text-xs text-gray-300">
+                    {new Date(r.created_at).toLocaleDateString('lv-LV', { day: '2-digit', month: '2-digit' })}
+                  </span>
+                </div>
+              ))}
             </div>
           )}
         </section>
