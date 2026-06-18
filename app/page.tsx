@@ -1,4 +1,9 @@
+import type { ComponentType } from 'react'
 import Link from 'next/link'
+import {
+  RotateCcw, Star, Heart, Search, Megaphone, ClipboardList,
+  Bell, CreditCard, CalendarDays, GraduationCap,
+} from 'lucide-react'
 import ContactForm from '@/components/ContactForm'
 import ClientTypeSection from '@/components/ClientTypeSection'
 
@@ -6,17 +11,19 @@ const YEAR = new Date().getFullYear()
 // TODO: Nākamajā sprintā — pašreģistrācija + paroles atiestatīšana. Pagaidām ved uz /login.
 const WA_LINK = 'https://wa.me/37129320325?text=Sveiki!%20Interesē%20Spillit'
 
-const MODULES = [
-  { icon: '🎡', name: 'Spin Reward',                 price: null,          free: true,  desc: 'Laimes rats pēc katras vizītes — automātisks WOW moments ar balvām.' },
-  { icon: '⭐', name: 'Darbinieku novērtējums',       price: null,          free: true,  desc: 'Privātas atsauksmes + darbinieka reitings pa sesijām. Uzlabot pirms tas nonāk Google.' },
-  { icon: '💛', name: 'Tips',                         price: 'no €9/mēn',  free: false, desc: 'Digitālā dzeramnauda ar Revolut/Stripe. Klients pateicas viegli.' },
-  { icon: '🔍', name: 'Google atgādinājums',          price: 'no €11/mēn', free: false, desc: 'Auto-piedāvājums atstāt Google atsauksmi tikai pēc labas pieredzes.' },
-  { icon: '📣', name: 'Spin+Meta',                    price: 'no €11/mēn', free: false, desc: 'Meta pikselis laimes ratā. Retargetē faktiskos apmeklētājus.' },
-  { icon: '📋', name: 'Lead Capture',                 price: 'no €7/mēn',  free: false, desc: 'Klients atstāj e-pastu apmaiņā pret balvu. Sava kontaktu bāze.' },
-  { icon: '🎂', name: 'Leads sildīšana',              price: 'no €7/mēn',  free: false, desc: 'Atzīmē klienta dzimšanas dienu → nākamgad automātisks SMS ar atlaidi.' },
-  { icon: '🎫', name: 'Digital Stamps',               price: 'no €10/mēn', free: false, desc: 'Digitālā lojalitātes kartīte. 10 apmeklējumi = bezmaksas balva.' },
-  { icon: '📅', name: 'Maiņu grafiks',                price: 'no €25/mēn', free: false, desc: 'Plūstošas maiņas un WhatsApp čeklists darbinieku paveiktajam.' },
-  { icon: '🎓', name: 'Onboarding',                   price: 'individuāli',free: false, desc: 'Kursi, testi un vadītāja pārskats jauniem darbiniekiem.' },
+type LucideIcon = ComponentType<{ size?: number; className?: string }>
+
+const MODULES: { Icon: LucideIcon; name: string; price: string | null; free: boolean; desc: string }[] = [
+  { Icon: RotateCcw,     name: 'Spin Reward',             price: null,           free: true,  desc: 'Laimes rats pēc katras vizītes — automātisks WOW moments ar balvām.' },
+  { Icon: Star,          name: 'Darbinieku novērtējums',  price: null,           free: true,  desc: 'Privātas atsauksmes + darbinieka reitings pa sesijām. Uzlabot pirms tas nonāk Google.' },
+  { Icon: Heart,         name: 'Tips',                    price: 'no €9/mēn',   free: false, desc: 'Digitālā dzeramnauda ar Revolut/Stripe. Klients pateicas viegli.' },
+  { Icon: Search,        name: 'Google atgādinājums',     price: 'no €11/mēn',  free: false, desc: 'Auto-piedāvājums atstāt Google atsauksmi tikai pēc labas pieredzes.' },
+  { Icon: Megaphone,     name: 'Spin+Meta',               price: 'no €11/mēn',  free: false, desc: 'Meta pikselis laimes ratā. Retargetē faktiskos apmeklētājus.' },
+  { Icon: ClipboardList, name: 'Lead Capture',            price: 'no €7/mēn',   free: false, desc: 'Klients atstāj e-pastu apmaiņā pret balvu. Sava kontaktu bāze.' },
+  { Icon: Bell,          name: 'Leads sildīšana',         price: 'no €7/mēn',   free: false, desc: 'Atzīmē klienta dzimšanas dienu → nākamgad automātisks SMS ar atlaidi.' },
+  { Icon: CreditCard,    name: 'Digital Stamps',          price: 'no €10/mēn',  free: false, desc: 'Digitālā lojalitātes kartīte. 10 apmeklējumi = bezmaksas balva.' },
+  { Icon: CalendarDays,  name: 'Maiņu grafiks',           price: 'no €25/mēn',  free: false, desc: 'Plūstošas maiņas un WhatsApp čeklists darbinieku paveiktajam.' },
+  { Icon: GraduationCap, name: 'Onboarding',              price: 'individuāli', free: false, desc: 'Kursi, testi un vadītāja pārskats jauniem darbiniekiem.' },
 ]
 
 const AUDIENCE = [
@@ -152,8 +159,16 @@ export default function LandingPage() {
                 key={m.name}
                 className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-2"
               >
-                <div className="flex items-start justify-between gap-1">
-                  <span className="text-2xl">{m.icon}</span>
+                <div className="flex items-start justify-between gap-1 mb-1">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    m.free
+                      ? 'bg-green-50 border border-green-100 text-green-700'
+                      : m.price === 'individuāli'
+                      ? 'bg-amber-50 border border-amber-100 text-amber-700'
+                      : 'bg-indigo-50 border border-indigo-100 text-indigo-600'
+                  }`}>
+                    <m.Icon size={18} />
+                  </div>
                   <span
                     className={`text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0 mt-1 ${
                       m.free

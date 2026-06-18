@@ -1,12 +1,18 @@
 'use client'
 
 import { useState } from 'react'
+import type { ReactElement } from 'react'
+import {
+  Crosshair, Lock, Activity, Gamepad2, Circle, Users, Gauge, Dumbbell,
+  Check, Plus,
+  RotateCcw, Star, Heart, Search, Megaphone, ClipboardList,
+  Bell, CreditCard, CalendarDays, GraduationCap, Zap,
+} from 'lucide-react'
 
 type Lang = 'lv' | 'en'
 
 interface ClientType {
   id: string
-  icon: string
   label: string
   tagline: string
   benefits: string[]
@@ -14,11 +20,56 @@ interface ClientType {
   extra: string[]
 }
 
+// Venue type → Lucide icon
+const VENUE_ICONS: Record<string, ReactElement> = {
+  lazertags:  <Crosshair size={15} />,
+  escape:     <Lock size={15} />,
+  trampolins: <Activity size={15} />,
+  vr:         <Gamepad2 size={15} />,
+  boulings:   <Circle size={15} />,
+  family:     <Users size={15} />,
+  kartings:   <Gauge size={15} />,
+  sports:     <Dumbbell size={15} />,
+}
+
+// Module keyword → icon
+const MODULE_ICON_MAP: [string, ReactElement][] = [
+  ['Spin Reward',             <RotateCcw size={14} />],
+  ['Darbinieku novērtējums',  <Star size={14} />],
+  ['Staff rating',            <Star size={14} />],
+  ['Tips',                    <Heart size={14} />],
+  ['Google atgādinājums',     <Search size={14} />],
+  ['Google reminder',         <Search size={14} />],
+  ['Spin+Meta',               <Megaphone size={14} />],
+  ['Lead Capture',            <ClipboardList size={14} />],
+  ['Leads sildīšana',         <Bell size={14} />],
+  ['Lead nurturing',          <Bell size={14} />],
+  ['Digital Stamps',          <CreditCard size={14} />],
+  ['Maiņu grafiks',           <CalendarDays size={14} />],
+  ['Shift schedule',          <CalendarDays size={14} />],
+  ['Rezervāciju sistēma',     <CalendarDays size={14} />],
+  ['Booking system',          <CalendarDays size={14} />],
+  ['AuraTag',                 <Zap size={14} />],
+  ['Onboarding',              <GraduationCap size={14} />],
+]
+
+function stripEmoji(s: string): string {
+  const idx = s.indexOf(' ')
+  return idx > 0 ? s.slice(idx + 1) : s
+}
+
+function getModuleIcon(text: string): ReactElement | null {
+  const clean = stripEmoji(text)
+  for (const [key, icon] of MODULE_ICON_MAP) {
+    if (clean.includes(key)) return icon
+  }
+  return null
+}
+
 const DATA: Record<Lang, ClientType[]> = {
   lv: [
     {
       id: 'lazertags',
-      icon: '🎯',
       label: 'Lāzertags',
       tagline: 'Pārvērt katru spēli iemeslā atgriezties',
       benefits: [
@@ -38,7 +89,6 @@ const DATA: Record<Lang, ClientType[]> = {
     },
     {
       id: 'escape',
-      icon: '🔐',
       label: 'Escape Room',
       tagline: 'Emocija pēc spēles = labākais brīdis atsauksmei',
       benefits: [
@@ -57,7 +107,6 @@ const DATA: Record<Lang, ClientType[]> = {
     },
     {
       id: 'trampolins',
-      icon: '🤸',
       label: 'Batutu parks',
       tagline: 'No vienreizējas ballītes uz atkārtotu ģimenes apmeklējumu',
       benefits: [
@@ -77,7 +126,6 @@ const DATA: Record<Lang, ClientType[]> = {
     },
     {
       id: 'vr',
-      icon: '🥽',
       label: 'VR / Arcade',
       tagline: 'No spontāna apmeklējuma uz mērķauditoriju Meta reklāmās',
       benefits: [
@@ -96,7 +144,6 @@ const DATA: Record<Lang, ClientType[]> = {
     },
     {
       id: 'boulings',
-      icon: '🎳',
       label: 'Boulings / Minigolfs',
       tagline: 'Papildu konversija tieši pēc labas spēles',
       benefits: [
@@ -116,7 +163,6 @@ const DATA: Record<Lang, ClientType[]> = {
     },
     {
       id: 'family',
-      icon: '👨‍👩‍👧',
       label: 'Family Entertainment',
       tagline: 'Viena platforma visam — no booking līdz lojalitātei',
       benefits: [
@@ -137,7 +183,6 @@ const DATA: Record<Lang, ClientType[]> = {
     },
     {
       id: 'kartings',
-      icon: '🏎️',
       label: 'Kartings',
       tagline: 'Adrenalīns pēc finiša = ideāls brīdis atsauksmei',
       benefits: [
@@ -157,7 +202,6 @@ const DATA: Record<Lang, ClientType[]> = {
     },
     {
       id: 'sports',
-      icon: '🏋️',
       label: 'Sporta centrs',
       tagline: 'No vienreizējas treniņa uz regulāru klientu',
       benefits: [
@@ -180,7 +224,6 @@ const DATA: Record<Lang, ClientType[]> = {
   en: [
     {
       id: 'lazertags',
-      icon: '🎯',
       label: 'Laser Tag',
       tagline: 'Turn every game into a reason to come back',
       benefits: [
@@ -200,7 +243,6 @@ const DATA: Record<Lang, ClientType[]> = {
     },
     {
       id: 'escape',
-      icon: '🔐',
       label: 'Escape Room',
       tagline: 'The emotion after the game = the best moment for a review',
       benefits: [
@@ -219,7 +261,6 @@ const DATA: Record<Lang, ClientType[]> = {
     },
     {
       id: 'trampolins',
-      icon: '🤸',
       label: 'Trampoline Park',
       tagline: 'From a one-time party to repeated family visits',
       benefits: [
@@ -239,7 +280,6 @@ const DATA: Record<Lang, ClientType[]> = {
     },
     {
       id: 'vr',
-      icon: '🥽',
       label: 'VR / Arcade',
       tagline: 'From spontaneous visit to Meta retargeting audience',
       benefits: [
@@ -258,7 +298,6 @@ const DATA: Record<Lang, ClientType[]> = {
     },
     {
       id: 'boulings',
-      icon: '🎳',
       label: 'Bowling / Mini Golf',
       tagline: 'Extra conversion right after a great game',
       benefits: [
@@ -278,7 +317,6 @@ const DATA: Record<Lang, ClientType[]> = {
     },
     {
       id: 'family',
-      icon: '👨‍👩‍👧',
       label: 'Family Entertainment',
       tagline: 'One platform for everything — from booking to loyalty',
       benefits: [
@@ -299,7 +337,6 @@ const DATA: Record<Lang, ClientType[]> = {
     },
     {
       id: 'kartings',
-      icon: '🏎️',
       label: 'Karting',
       tagline: 'Adrenaline after the finish = perfect moment for a review',
       benefits: [
@@ -319,7 +356,6 @@ const DATA: Record<Lang, ClientType[]> = {
     },
     {
       id: 'sports',
-      icon: '🏋️',
       label: 'Sports Centre',
       tagline: 'From a one-time workout to a regular client',
       benefits: [
@@ -386,19 +422,13 @@ export default function ClientTypeSection() {
   function handleSelect(id: string) {
     if (id === active) return
     setVisible(false)
-    setTimeout(() => {
-      setActive(id)
-      setVisible(true)
-    }, 120)
+    setTimeout(() => { setActive(id); setVisible(true) }, 120)
   }
 
   function handleLang(l: Lang) {
     if (l === lang) return
     setVisible(false)
-    setTimeout(() => {
-      setLang(l)
-      setVisible(true)
-    }, 120)
+    setTimeout(() => { setLang(l); setVisible(true) }, 120)
   }
 
   return (
@@ -407,23 +437,19 @@ export default function ClientTypeSection() {
 
         {/* Header */}
         <div className="relative text-center mb-10">
-          {/* LV / EN toggle */}
           <div className="absolute right-0 top-0 flex items-center gap-0.5 bg-gray-100 rounded-full p-0.5">
             {(['lv', 'en'] as Lang[]).map(l => (
               <button
                 key={l}
                 onClick={() => handleLang(l)}
                 className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
-                  lang === l
-                    ? 'bg-white text-purple-700 shadow-sm'
-                    : 'text-gray-400 hover:text-gray-600'
+                  lang === l ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'
                 }`}
               >
                 {l.toUpperCase()}
               </button>
             ))}
           </div>
-
           <p className="text-sm font-semibold text-purple-500 uppercase tracking-widest mb-2">
             {ui.sectionLabel}
           </p>
@@ -433,45 +459,48 @@ export default function ClientTypeSection() {
 
         {/* Type buttons */}
         <div className="flex flex-wrap justify-center gap-2 mb-10">
-          {types.map(type => (
-            <button
-              key={type.id}
-              onClick={() => handleSelect(type.id)}
-              className={`px-4 py-2 rounded-full text-sm font-bold transition-all active:scale-95 ${
-                active === type.id
-                  ? 'text-purple-950 shadow-md'
-                  : 'bg-white border border-gray-200 text-gray-700 hover:border-purple-300'
-              }`}
-              style={active === type.id ? { background: 'linear-gradient(135deg,#FFD700,#FF8C00)' } : {}}
-            >
-              {type.icon} {type.label}
-            </button>
-          ))}
+          {types.map(type => {
+            const isActive = active === type.id
+            return (
+              <button
+                key={type.id}
+                onClick={() => handleSelect(type.id)}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm transition-all duration-150 cursor-pointer ${
+                  isActive
+                    ? 'bg-purple-950 text-white border border-purple-950 font-semibold shadow-sm'
+                    : 'bg-white border border-gray-200 text-gray-600 font-medium hover:border-gray-400 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                {VENUE_ICONS[type.id]}
+                {type.label}
+              </button>
+            )
+          })}
         </div>
 
         {/* Content block */}
         {activeData && (
           <div
-            className={`bg-gray-50 border border-gray-100 rounded-2xl p-6 sm:p-8 transition-all duration-150 ${
+            className={`bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-150 ${
               visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
             }`}
           >
             {/* Tagline */}
-            <p className="text-center text-base font-bold text-gray-700 mb-8">
-              {activeData.icon} {activeData.tagline}
+            <p className="text-center text-sm font-medium text-gray-500 mb-8 max-w-lg mx-auto">
+              {activeData.tagline}
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
 
               {/* Column 1 — Benefits */}
               <div>
-                <p className="text-xs font-semibold text-purple-500 uppercase tracking-widest mb-3">
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-4">
                   {ui.colBenefits}
                 </p>
-                <ul className="flex flex-col gap-2">
+                <ul className="flex flex-col gap-2.5">
                   {activeData.benefits.map((b, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                      <span className="text-green-500 mt-0.5 flex-shrink-0">✓</span>
+                    <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600 leading-snug">
+                      <Check size={14} strokeWidth={2.5} className="text-emerald-500 mt-0.5 flex-shrink-0" />
                       {b}
                     </li>
                   ))}
@@ -480,30 +509,38 @@ export default function ClientTypeSection() {
 
               {/* Column 2 — Recommended modules */}
               <div>
-                <p className="text-xs font-semibold text-purple-500 uppercase tracking-widest mb-3">
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-4">
                   {ui.colRecommended}
                 </p>
                 <ul className="flex flex-col gap-2">
-                  {activeData.recommended.map((m, i) => (
-                    <li
-                      key={i}
-                      className="bg-white border border-gray-100 rounded-xl px-3 py-2 text-sm font-medium text-gray-800 shadow-sm"
-                    >
-                      {m}
-                    </li>
-                  ))}
+                  {activeData.recommended.map((m, i) => {
+                    const icon = getModuleIcon(m)
+                    const text = stripEmoji(m)
+                    return (
+                      <li
+                        key={i}
+                        className="flex items-center gap-2.5 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2.5"
+                      >
+                        {icon && (
+                          <span className="text-gray-500 flex-shrink-0">{icon}</span>
+                        )}
+                        <span className="text-sm text-gray-700 font-medium">{text}</span>
+                      </li>
+                    )
+                  })}
                 </ul>
               </div>
 
               {/* Column 3 — Extra + CTA */}
               <div>
-                <p className="text-xs font-semibold text-purple-500 uppercase tracking-widest mb-3">
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-4">
                   {ui.colExtra}
                 </p>
                 <ul className="flex flex-col gap-2 mb-6">
                   {activeData.extra.map((e, i) => (
-                    <li key={i} className="text-sm text-gray-500 flex items-center gap-2">
-                      <span className="text-indigo-300">+</span> {e}
+                    <li key={i} className="flex items-center gap-2 text-sm text-gray-400">
+                      <Plus size={13} className="text-gray-300 flex-shrink-0" />
+                      <span>{stripEmoji(e)}</span>
                     </li>
                   ))}
                 </ul>
