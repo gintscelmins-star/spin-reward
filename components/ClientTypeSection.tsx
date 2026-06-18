@@ -425,6 +425,7 @@ export default function ClientTypeSection({ lang: langProp }: Props) {
   const types = DATA[lang]
   const ui = UI[lang]
   const activeData = types.find(t => t.id === active)
+  const demoHref = lang === 'en' ? '/demo/dashboard?lang=en' : '/demo/dashboard'
 
   function handleSelect(id: string) {
     if (id === active) return
@@ -554,7 +555,7 @@ export default function ClientTypeSection({ lang: langProp }: Props) {
                   ))}
                 </ul>
                 <a
-                  href="/demo/dashboard"
+                  href={demoHref}
                   className="inline-flex items-center justify-center w-full px-5 py-3 rounded-xl text-sm font-black text-purple-950 transition-all active:scale-95"
                   style={{
                     background: 'linear-gradient(135deg,#FFD700,#FF8C00)',

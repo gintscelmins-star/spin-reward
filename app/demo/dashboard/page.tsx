@@ -2,44 +2,91 @@ import Link from 'next/link'
 import { getAdmin } from '@/lib/supabase/admin'
 
 const DEMO_VENUE_ID = '11111111-1111-1111-1111-111111111111'
-const WA_LINK = 'https://wa.me/37129320325?text=Sveiki!%20Interesē%20Spillit%20%E2%80%94%20redzēju%20demo'
+const WA_LV = 'https://wa.me/37129320325?text=Sveiki!%20Interesē%20Spillit%20—%20redzēju%20demo'
+const WA_EN = 'https://wa.me/37129320325?text=Hi!%20Interested%20in%20Spillit%20—%20saw%20the%20demo'
+
+type Lang = 'lv' | 'en'
+
+const T = {
+  lv: {
+    demoBadge: 'Demo',
+    bannerText: 'Šis ir Melnie Lāči — demo venue ar fiktīviem datiem. Tāds izskatās tavs admin panelis.',
+    startCta: 'Sākt ar savu venue →',
+    waBtn: '💬 WhatsApp',
+    subheading: 'Demo admin panelis · fiktīvi dati',
+    plan: { free: 'Bezmaksas', starter: 'Starter', growth: 'Growth', multi: 'Multi' },
+    billing: { trial: 'Izmēģinājums', active: 'Aktīvs', suspended: 'Apturēts', cancelled: 'Atcelts' },
+    staffBadge: (n: number) => `${n} darbinieki`,
+    statLabels: ['Spini (30d)', 'Izpirkti', 'Atsauksmes', 'Vidējais'],
+    recentSpins: 'Pēdējie spini',
+    colDate: 'Datums', colPrize: 'Balva', colStaff: 'Darbinieks', colStatus: 'Statuss',
+    statusMap: { redeemed: 'Izpirkts', expired: 'Beidzies', active: 'Aktīvs' } as Record<string, string>,
+    prizeBreakdown: 'Balvu sadalījums (30d)',
+    staffSection: 'Darbinieku statistika',
+    colName: 'Darbinieks', colRole: 'Loma', colSpins: 'Spini (30d)', colRating: 'Novērtējums', colActiveHdr: 'Statuss',
+    staffActive: 'Aktīvs', staffInactive: 'Neaktīvs',
+    reviewsSection: 'Pēdējās atsauksmes',
+    toGoogle: '→ Google',
+    avgLabel: 'Vidēji',
+    sectionsTitle: 'Admin paneļa sadaļas',
+    sectionItems: [
+      { label: 'Balvas', icon: '🎁' },
+      { label: 'Krājumu virsgrāmata', icon: '📦' },
+      { label: 'Personāls', icon: '👥' },
+      { label: 'Statistika', icon: '📊' },
+      { label: 'Rezervācijas', icon: '📅' },
+      { label: 'Šodienas sesijas', icon: '⚡' },
+    ],
+    ctaTitle: 'Gatavs sākt ar savu venue?',
+    ctaSub: 'Bezmaksas sākums — Spin Reward + darbinieku novērtējums.',
+    ctaContact: 'Sazināties →',
+  },
+  en: {
+    demoBadge: 'Demo',
+    bannerText: 'This is Melnie Lāči — a demo venue with sample data. This is what your admin panel looks like.',
+    startCta: 'Start with your venue →',
+    waBtn: '💬 WhatsApp',
+    subheading: 'Demo admin panel · sample data',
+    plan: { free: 'Free', starter: 'Starter', growth: 'Growth', multi: 'Multi' },
+    billing: { trial: 'Trial', active: 'Active', suspended: 'Suspended', cancelled: 'Cancelled' },
+    staffBadge: (n: number) => `${n} staff`,
+    statLabels: ['Spins (30d)', 'Redeemed', 'Reviews', 'Avg rating'],
+    recentSpins: 'Recent spins',
+    colDate: 'Date', colPrize: 'Prize', colStaff: 'Staff', colStatus: 'Status',
+    statusMap: { redeemed: 'Redeemed', expired: 'Expired', active: 'Active' } as Record<string, string>,
+    prizeBreakdown: 'Prize breakdown (30d)',
+    staffSection: 'Staff performance',
+    colName: 'Staff member', colRole: 'Role', colSpins: 'Spins (30d)', colRating: 'Rating', colActiveHdr: 'Status',
+    staffActive: 'Active', staffInactive: 'Inactive',
+    reviewsSection: 'Recent reviews',
+    toGoogle: '→ Google',
+    avgLabel: 'Average',
+    sectionsTitle: 'Admin panel sections',
+    sectionItems: [
+      { label: 'Prizes', icon: '🎁' },
+      { label: 'Inventory ledger', icon: '📦' },
+      { label: 'Staff', icon: '👥' },
+      { label: 'Statistics', icon: '📊' },
+      { label: 'Bookings', icon: '📅' },
+      { label: "Today's sessions", icon: '⚡' },
+    ],
+    ctaTitle: 'Ready to start with your venue?',
+    ctaSub: 'Free to start — Spin Reward + staff rating.',
+    ctaContact: 'Get in touch →',
+  },
+}
 
 interface SpinRow {
-  id: string
-  status: string
-  spun_at: string
-  staff_id: string | null
-  prizes: { name: string } | null
-  staff: { name: string } | null
+  id: string; status: string; spun_at: string; staff_id: string | null
+  prizes: { name: string } | null; staff: { name: string } | null
 }
-
 interface ReviewRow {
-  id: string
-  rating: number
-  comment: string | null
-  google_redirected: boolean
-  created_at: string
-  staff_id: string | null
+  id: string; rating: number; comment: string | null
+  google_redirected: boolean; created_at: string; staff_id: string | null
 }
-
-interface EvalRow {
-  staff_id: string
-  rating: number | null
-}
-
-interface StaffRow {
-  id: string
-  name: string
-  role: string | null
-  active: boolean
-}
-
-interface PrizeRow {
-  id: string
-  name: string
-  probability_weight: number
-  active: boolean
-}
+interface EvalRow { staff_id: string; rating: number | null }
+interface StaffRow { id: string; name: string; role: string | null; active: boolean }
+interface PrizeRow { id: string; name: string; probability_weight: number; active: boolean }
 
 function fmtDate(iso: string): string {
   const d = new Date(iso)
@@ -52,13 +99,17 @@ function statusBadge(status: string) {
   return 'bg-blue-100 text-blue-700'
 }
 
-const STATUS_LV: Record<string, string> = {
-  redeemed: 'Izpirkts',
-  expired: 'Beidzies',
-  active: 'Aktīvs',
-}
+export default async function DemoDashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{ lang?: string }>
+}) {
+  const { lang: langParam } = await searchParams
+  const lang: Lang = langParam === 'en' ? 'en' : 'lv'
+  const t = T[lang]
+  const waLink = lang === 'en' ? WA_EN : WA_LV
+  const contactHref = lang === 'en' ? '/?lang=en#kontakts' : '/#kontakts'
 
-export default async function DemoDashboard() {
   const admin = getAdmin()
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
@@ -101,9 +152,12 @@ export default async function DemoDashboard() {
     if (sp.prize_id) prizeCountMap.set(sp.prize_id as string, (prizeCountMap.get(sp.prize_id as string) ?? 0) + 1)
   })
 
-  const PLAN_LV: Record<string, string> = {
-    free: 'Bezmaksas', starter: 'Starter', growth: 'Growth', multi: 'Multi',
-  }
+  const statValues = [
+    { value: totalSpins, color: 'text-purple-700' },
+    { value: redeemedSpins, color: 'text-green-600' },
+    { value: totalReviews, color: 'text-blue-600' },
+    { value: avgRating ? `${avgRating} ★` : '—', color: 'text-yellow-500' },
+  ]
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -113,26 +167,24 @@ export default async function DemoDashboard() {
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3 text-sm">
             <span className="bg-yellow-400 text-purple-950 px-2 py-0.5 rounded text-xs font-black uppercase tracking-wide flex-shrink-0">
-              Demo
+              {t.demoBadge}
             </span>
-            <span className="text-white/80">
-              Šis ir <strong className="text-white">Melnie Lāči</strong> — demo venue ar fiktīviem datiem. Tāds izskatās tavs admin panelis.
-            </span>
+            <span className="text-white/80">{t.bannerText}</span>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <Link
-              href="/#kontakts"
+              href={contactHref}
               className="bg-white text-purple-950 font-bold text-xs px-3 py-2 rounded-lg hover:bg-yellow-50 transition-colors"
             >
-              Sākt ar savu venue →
+              {t.startCta}
             </Link>
             <a
-              href={WA_LINK}
+              href={waLink}
               target="_blank"
               rel="noreferrer"
               className="bg-white/10 border border-white/20 text-white font-semibold text-xs px-3 py-2 rounded-lg hover:bg-white/15 transition-colors"
             >
-              💬 WhatsApp
+              {t.waBtn}
             </a>
           </div>
         </div>
@@ -144,32 +196,27 @@ export default async function DemoDashboard() {
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-black text-gray-900">{venue?.name ?? 'Melnie Lāči'}</h1>
-            <p className="text-sm text-gray-400 mt-0.5">Demo admin panelis · fiktīvi dati</p>
+            <p className="text-sm text-gray-400 mt-0.5">{t.subheading}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
-              {PLAN_LV[venue?.plan ?? ''] ?? 'Growth'}
+              {t.plan[venue?.plan as keyof typeof t.plan] ?? 'Growth'}
             </span>
             <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-              Aktīvs
+              {t.billing['active']}
             </span>
             <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
-              {staffList?.filter(s => (s as StaffRow).active).length ?? 0} darbinieki
+              {t.staffBadge(staffList?.filter(s => (s as StaffRow).active).length ?? 0)}
             </span>
           </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: 'Spini (30d)', value: totalSpins, color: 'text-purple-700' },
-            { label: 'Izpirkti', value: redeemedSpins, color: 'text-green-600' },
-            { label: 'Atsauksmes', value: totalReviews, color: 'text-blue-600' },
-            { label: 'Vidējais', value: avgRating ? `${avgRating} ★` : '—', color: 'text-yellow-500' },
-          ].map(stat => (
-            <div key={stat.label} className="bg-white rounded-2xl shadow-sm p-5 text-center">
+          {statValues.map((stat, i) => (
+            <div key={i} className="bg-white rounded-2xl shadow-sm p-5 text-center">
               <p className={`text-3xl font-black ${stat.color}`}>{stat.value}</p>
-              <p className="text-xs text-gray-400 mt-1">{stat.label}</p>
+              <p className="text-xs text-gray-400 mt-1">{t.statLabels[i]}</p>
             </div>
           ))}
         </div>
@@ -178,16 +225,15 @@ export default async function DemoDashboard() {
           {/* Recent spins */}
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-50">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Pēdējie spini</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">{t.recentSpins}</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="text-left px-4 py-2.5 text-gray-400 font-medium text-xs">Datums</th>
-                    <th className="text-left px-4 py-2.5 text-gray-400 font-medium text-xs">Balva</th>
-                    <th className="text-left px-4 py-2.5 text-gray-400 font-medium text-xs">Darbinieks</th>
-                    <th className="text-left px-4 py-2.5 text-gray-400 font-medium text-xs">Statuss</th>
+                    {[t.colDate, t.colPrize, t.colStaff, t.colStatus].map(h => (
+                      <th key={h} className="text-left px-4 py-2.5 text-gray-400 font-medium text-xs">{h}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -200,7 +246,7 @@ export default async function DemoDashboard() {
                       <td className="px-4 py-2.5 text-gray-600 text-xs whitespace-nowrap">{spin.staff?.name ?? '—'}</td>
                       <td className="px-4 py-2.5">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusBadge(spin.status)}`}>
-                          {STATUS_LV[spin.status] ?? spin.status}
+                          {t.statusMap[spin.status] ?? spin.status}
                         </span>
                       </td>
                     </tr>
@@ -213,7 +259,7 @@ export default async function DemoDashboard() {
           {/* Prize breakdown */}
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-50">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Balvu sadalījums (30d)</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">{t.prizeBreakdown}</p>
             </div>
             <div className="p-5 space-y-3">
               {(prizes as PrizeRow[] ?? []).map(prize => {
@@ -238,17 +284,15 @@ export default async function DemoDashboard() {
         {/* Staff performance */}
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Darbinieku statistika</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">{t.staffSection}</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="text-left px-5 py-2.5 text-gray-400 font-medium text-xs">Darbinieks</th>
-                  <th className="text-left px-5 py-2.5 text-gray-400 font-medium text-xs">Loma</th>
-                  <th className="text-center px-5 py-2.5 text-gray-400 font-medium text-xs">Spini (30d)</th>
-                  <th className="text-center px-5 py-2.5 text-gray-400 font-medium text-xs">Novērtējums</th>
-                  <th className="text-center px-5 py-2.5 text-gray-400 font-medium text-xs">Statuss</th>
+                  {[t.colName, t.colRole, t.colSpins, t.colRating, t.colActiveHdr].map(h => (
+                    <th key={h} className={`px-5 py-2.5 text-gray-400 font-medium text-xs ${h === t.colName || h === t.colRole ? 'text-left' : 'text-center'}`}>{h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -272,7 +316,7 @@ export default async function DemoDashboard() {
                     </td>
                     <td className="px-5 py-3 text-center">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${s.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                        {s.active ? 'Aktīvs' : 'Neaktīvs'}
+                        {s.active ? t.staffActive : t.staffInactive}
                       </span>
                     </td>
                   </tr>
@@ -285,10 +329,10 @@ export default async function DemoDashboard() {
         {/* Recent reviews */}
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Pēdējās atsauksmes</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">{t.reviewsSection}</p>
             <div className="flex items-center gap-3 text-xs text-gray-400">
-              <span>{googleRedirected} → Google</span>
-              <span>Vidēji {avgRating ?? '—'} ★</span>
+              <span>{googleRedirected} {t.toGoogle}</span>
+              <span>{t.avgLabel} {avgRating ?? '—'} ★</span>
             </div>
           </div>
           <div className="divide-y divide-gray-50">
@@ -301,7 +345,7 @@ export default async function DemoDashboard() {
                   <p className="text-sm text-gray-700 leading-snug line-clamp-2">{r.comment ?? '—'}</p>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs text-gray-400">{fmtDate(r.created_at)}</span>
-                    {r.google_redirected && <span className="text-xs text-blue-500 font-medium">→ Google</span>}
+                    {r.google_redirected && <span className="text-xs text-blue-500 font-medium">{t.toGoogle}</span>}
                   </div>
                 </div>
               </div>
@@ -309,20 +353,11 @@ export default async function DemoDashboard() {
           </div>
         </div>
 
-        {/* Locked sections preview */}
+        {/* Locked sections + CTA */}
         <div className="bg-white rounded-2xl shadow-sm p-5">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
-            Admin paneļa sadaļas
-          </p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">{t.sectionsTitle}</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-            {[
-              { label: 'Balvas', icon: '🎁' },
-              { label: 'Krājumu virsgrāmata', icon: '📦' },
-              { label: 'Personāls', icon: '👥' },
-              { label: 'Statistika', icon: '📊' },
-              { label: 'Rezervācijas', icon: '📅' },
-              { label: 'Šodienas sesijas', icon: '⚡' },
-            ].map(item => (
+            {t.sectionItems.map(item => (
               <div
                 key={item.label}
                 className="flex items-center gap-2.5 px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed select-none"
@@ -333,27 +368,26 @@ export default async function DemoDashboard() {
             ))}
           </div>
 
-          {/* CTA block */}
           <div className="bg-purple-950 rounded-xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
-              <p className="text-white font-bold text-sm">Gatavs sākt ar savu venue?</p>
-              <p className="text-white/60 text-xs mt-0.5">Bezmaksas sākums — Spin Reward + darbinieku novērtējums.</p>
+              <p className="text-white font-bold text-sm">{t.ctaTitle}</p>
+              <p className="text-white/60 text-xs mt-0.5">{t.ctaSub}</p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <Link
-                href="/#kontakts"
+                href={contactHref}
                 className="px-4 py-2.5 rounded-lg text-sm font-black text-purple-950 transition-all"
                 style={{ background: 'linear-gradient(135deg,#FFD700,#FF8C00)' }}
               >
-                Sazināties →
+                {t.ctaContact}
               </Link>
               <a
-                href={WA_LINK}
+                href={waLink}
                 target="_blank"
                 rel="noreferrer"
                 className="px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-white/10 border border-white/20 hover:bg-white/15 transition-colors"
               >
-                💬 WhatsApp
+                {t.waBtn}
               </a>
             </div>
           </div>

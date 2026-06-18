@@ -132,6 +132,7 @@ export default function LandingPage() {
   const [lang, setLang] = useState<Lang>('lv')
   const t = T[lang]
   const modules = MODULES[lang]
+  const demoHref = lang === 'en' ? '/demo/dashboard?lang=en' : '/demo/dashboard'
 
   return (
     <div className="min-h-screen bg-white">
@@ -170,7 +171,7 @@ export default function LandingPage() {
               <span>💬</span> WhatsApp
             </a>
             <Link
-              href="/demo/dashboard"
+              href={demoHref}
               className="px-5 py-2 rounded-full text-sm font-bold text-purple-950 transition-all active:scale-95 shadow-md"
               style={{ background: 'linear-gradient(135deg,#FFD700,#FF8C00)' }}
             >
@@ -208,7 +209,7 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
-              href="/demo/dashboard"
+              href={demoHref}
               className="inline-block px-9 py-4 rounded-2xl text-lg font-black text-purple-950 transition-all active:scale-95"
               style={{ background: 'linear-gradient(135deg,#FFD700,#FF8C00)', boxShadow: '0 8px 36px rgba(255,140,0,0.45)' }}
             >
@@ -322,7 +323,7 @@ export default function LandingPage() {
           <p className="text-white/55 mb-9 leading-relaxed">{t.ctaBottom.sub}</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
-              href="/demo/dashboard"
+              href={demoHref}
               className="inline-block px-9 py-4 rounded-2xl text-lg font-black text-purple-950 transition-all active:scale-95"
               style={{ background: 'linear-gradient(135deg,#FFD700,#FF8C00)', boxShadow: '0 8px 36px rgba(255,140,0,0.4)' }}
             >
