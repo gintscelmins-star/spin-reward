@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import ContactForm from '@/components/ContactForm'
+import ClientTypeSection from '@/components/ClientTypeSection'
 
 const YEAR = new Date().getFullYear()
 // TODO: Nākamajā sprintā — pašreģistrācija + paroles atiestatīšana. Pagaidām ved uz /login.
@@ -131,6 +132,8 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      <ClientTypeSection />
 
       {/* ── Moduļi ──────────────────────────────────────── */}
       <section className="bg-gray-50 border-t border-b border-gray-100 px-5 py-20">
