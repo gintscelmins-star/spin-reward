@@ -17,6 +17,7 @@
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2",
     "canvas-confetti": "^1.9.4",
+    "lucide-react": "^1.21.0",
     "next": "16.2.7",
     "qrcode": "^1.5.4",
     "react": "19.2.4",

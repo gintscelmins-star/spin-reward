@@ -1,27 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verifyDemoToken, COOKIE_NAME } from '@/lib/demo-auth'
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
-
-  // Demo dashboard — verify JWT cookie (no Supabase auth needed)
-  if (pathname.startsWith('/demo/dashboard')) {
-    const token = request.cookies.get(COOKIE_NAME)?.value
-    if (!token) {
-      return NextResponse.redirect(new URL('/demo?error=session_expired', request.url))
-    }
-    const session = await verifyDemoToken(token)
-    if (!session) {
-      const res = NextResponse.redirect(new URL('/demo?error=session_expired', request.url))
-      res.cookies.delete(COOKIE_NAME)
-      return res
-    }
-    const reqHeaders = new Headers(request.headers)
-    reqHeaders.set('x-demo-email', session.email)
-    return NextResponse.next({ request: { headers: reqHeaders } })
-  }
 
   let supabaseResponse = NextResponse.next({ request })
 
@@ -62,5 +44,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/login', '/demo/dashboard/:path*'],
+  matcher: ['/admin/:path*', '/login'],
 }
