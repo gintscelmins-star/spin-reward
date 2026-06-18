@@ -410,8 +410,15 @@ const UI: Record<Lang, {
 
 const WA_LINK = 'https://wa.me/37129320325?text=Sveiki!%20Interesē%20Spillit'
 
-export default function ClientTypeSection() {
-  const [lang, setLang] = useState<Lang>('lv')
+interface Props {
+  lang?: Lang
+}
+
+export default function ClientTypeSection({ lang: langProp }: Props) {
+  const [internalLang, setInternalLang] = useState<Lang>('lv')
+  const lang = langProp ?? internalLang
+  const controlled = langProp !== undefined
+
   const [active, setActive] = useState('lazertags')
   const [visible, setVisible] = useState(true)
 
@@ -428,7 +435,7 @@ export default function ClientTypeSection() {
   function handleLang(l: Lang) {
     if (l === lang) return
     setVisible(false)
-    setTimeout(() => { setLang(l); setVisible(true) }, 120)
+    setTimeout(() => { setInternalLang(l); setVisible(true) }, 120)
   }
 
   return (
@@ -437,19 +444,21 @@ export default function ClientTypeSection() {
 
         {/* Header */}
         <div className="relative text-center mb-10">
-          <div className="absolute right-0 top-0 flex items-center gap-0.5 bg-gray-100 rounded-full p-0.5">
-            {(['lv', 'en'] as Lang[]).map(l => (
-              <button
-                key={l}
-                onClick={() => handleLang(l)}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
-                  lang === l ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                {l.toUpperCase()}
-              </button>
-            ))}
-          </div>
+          {!controlled && (
+            <div className="absolute right-0 top-0 flex items-center gap-0.5 bg-gray-100 rounded-full p-0.5">
+              {(['lv', 'en'] as Lang[]).map(l => (
+                <button
+                  key={l}
+                  onClick={() => handleLang(l)}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                    lang === l ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  {l.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          )}
           <p className="text-sm font-semibold text-purple-500 uppercase tracking-widest mb-2">
             {ui.sectionLabel}
           </p>
