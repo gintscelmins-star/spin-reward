@@ -554,7 +554,7 @@ export default function ClientTypeSection({ lang: langProp }: Props) {
                   ))}
                 </ul>
                 <a
-                  href="/login"
+                  href="/demo/dashboard"
                   className="inline-flex items-center justify-center w-full px-5 py-3 rounded-xl text-sm font-black text-purple-950 transition-all active:scale-95"
                   style={{
                     background: 'linear-gradient(135deg,#FFD700,#FF8C00)',
