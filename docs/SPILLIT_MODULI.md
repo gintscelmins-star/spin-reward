@@ -1,7 +1,7 @@
 # Spillit — Moduļu, funkciju un savstarpējo savienojumu apraksts
 
 > Šis dokuments apraksta VISAS Spillit sistēmas darbības, moduļus un to savienojumus.
-> Tehnoloģijas: Next.js 16 (App Router), React 19, Supabase (PostgreSQL + Auth + RLS), Tailwind CSS.
+> Tehnoloģijas: Next.js 16.2.7 (App Router), React 19.2.4, Supabase (PostgreSQL + Auth + RLS), Tailwind CSS 4.
 
 ---
 
@@ -10,31 +10,48 @@
 ```
 Spillit platforma
 ├── Publiskā daļa (klientiem)
-│   ├── /              — Landing page (moduli, cenas, kontaktforma)
-│   ├── /moduli        — Detalizēts moduļu un cenu saraksts
-│   ├── /play          — Laimes rats (klienta skats)
-│   ├── /prize/[token] — Balvas QR + detaļas
-│   ├── /redeem/[token]— Kasieres apstiprināšanas ekrāns
-│   └── /r/[token]     — LaserTag spēlētāja rezultāts (share karte)
+│   ├── /                     — Landing page (moduļi, cenas, kontaktforma; LV/EN)
+│   ├── /moduli               — Detalizēts moduļu un cenu saraksts
+│   ├── /play                 — Laimes rats (klienta skats, anon)
+│   ├── /prize/[token]        — Balvas QR + detaļas
+│   ├── /redeem/[token]       — Kasieres apstiprināšanas ekrāns
+│   ├── /r/[token]            — AuraTag spēlētāja rezultāts (share karte)
+│   ├── /g/[session]          — AuraTag sesijas leaderboard
+│   ├── /w/[slug]             — Web widget lapa (embed iframe mērķis)
+│   ├── /[venueSlug]          — Venue publiskā lapa
+│   └── /demo/dashboard       — Demo admin panelis (magic-link piekļuve)
+│
+├── Widget Dashboard (client_admin / agency_admin / super_admin)
+│   ├── /dashboard/widgets          — Ratu saraksts (toggle active, basic stats)
+│   ├── /dashboard/widgets/new      — Jauna rata izveides veidlapa
+│   ├── /dashboard/widgets/[id]/segments — Segmentu (sektoru) konfigurācija
+│   ├── /dashboard/widgets/[id]/form     — Formas lauki + GDPR teksts
+│   ├── /dashboard/widgets/[id]/preview  — Rata priekšskatījums
+│   ├── /dashboard/widgets/[id]/embed    — Embed kods + QR kods
+│   ├── /dashboard/widgets/[id]/analytics — Analīze (skatījumi, leads, konversija)
+│   └── /dashboard/agency          — Aģentūras multi-venue pārskats
 │
 ├── Admin panelis (venue admins)
-│   ├── /admin/venue          — Galvenā vadības paneļa lapa
-│   ├── /admin/venue/prizes   — Balvu konfigurācija
-│   ├── /admin/venue/ledger   — Balvu grāmatvedība
-│   ├── /admin/venue/staff    — Darbinieku pārvaldība
-│   ├── /admin/venue/staff/[id] — Atsevišķa darbinieka stats
-│   ├── /admin/venue/activities — Aktivitāšu tipi
-│   ├── /admin/venue/bookings — Rezervāciju kalendārs
-│   ├── /admin/venue/stats    — Statistikas pārskats
-│   ├── /admin/venue/questions— Atsauksmju jautājumi
-│   ├── /admin/venue/texts    — UI tekstu pielāgošana
-│   ├── /admin/venue/upsell   — Moduļu papildus piedāvājums
-│   ├── /admin/today          — Šodienas/tuvāko sesiju saraksts
-│   └── /admin/session        — Aktīvā sesija (QR ģenerēšana)
+│   ├── /admin                    — Novirza pēc lomas
+│   ├── /admin/venue              — Galvenā vadības paneļa lapa
+│   ├── /admin/venue/prizes       — Balvu konfigurācija
+│   ├── /admin/venue/ledger       — Balvu grāmatvedība
+│   ├── /admin/venue/staff        — Darbinieku pārvaldība
+│   ├── /admin/venue/staff/[id]   — Atsevišķa darbinieka stats
+│   ├── /admin/venue/activities   — Aktivitāšu tipi
+│   ├── /admin/venue/bookings     — Rezervāciju kalendārs
+│   ├── /admin/venue/stats        — Statistikas pārskats
+│   ├── /admin/venue/questions    — Atsauksmju jautājumi
+│   ├── /admin/venue/texts        — UI tekstu pielāgošana
+│   ├── /admin/venue/instructions — Venue instrukcijas
+│   ├── /admin/venue/upsell       — Moduļu papildus piedāvājums
+│   ├── /admin/today              — Šodienas/tuvāko sesiju saraksts
+│   └── /admin/session            — Aktīvā sesija (QR ģenerēšana)
 │
 └── Super admin (sistēmas līmenī)
-    ├── /admin/venues         — Visu venue saraksts
-    └── /admin/venues/[id]    — Venue iestatījumi
+    ├── /admin/venues             — Visu venue saraksts
+    ├── /admin/venues/[id]        — Venue iestatījumi
+    └── /admin/venues/new         — Jauna venue izveide
 ```
 
 ---
@@ -42,28 +59,49 @@ Spillit platforma
 ## 2. AUTENTIFIKĀCIJA UN LOMAS
 
 ### Lomas (profiles.role)
+
 | Loma | Piekļuve |
 |---|---|
-| `super_admin` | Visas venue, visi dati |
-| `client_admin` | Tikai sava venue |
-| `staff` | Tikai sesiju aktivizēšana |
+| `super_admin` | Visas venue, visi dati, widget dashboard |
+| `client_admin` | Tikai sava venue; widget dashboard sava venue wheels |
+| `agency_admin` | Vairākas venues vienas organizācijas ietvaros; agency overview |
+| `staff` | Tikai sesiju aktivizēšana (admin/session, admin/today) |
+
+### Auth plūsma (server-side)
+
+```
+createClient()           ← lib/supabase/server.ts (@supabase/ssr)
+  → getUser()            ← pārbauda Supabase Auth sesiju
+  → profiles query       ← iegūst role + venue_id + organization_id
+  → role check           ← ALLOWED_ROLES = ['client_admin','agency_admin','super_admin']
+  → ja nepieciešamas DB ops bez RLS → getAdmin() (lib/supabase/admin.ts, service role)
+```
 
 ### RLS aizsardzība (Row Level Security)
+
 - Supabase RLS ar custom `auth_role()` un `auth_venue_id()` funkcijām
 - Visi RPC ir `SECURITY DEFINER` — droši no klienta puses
 - Tabulas: `reviews`, `spins`, `vouchers`, `review_answers` — aizsargātas
+- `share_events` — bez anon politikas, raksta tikai service role
 
 ---
 
 ## 3. DATUBĀZES GALVENĀS TABULAS
 
+### 3.1 Venue / Auth tabulas
+
 | Tabula | Apraksts |
 |---|---|
-| `venues` | Venue konfigurācija: nosaukums, slug, plans, billing, moduļu toggle |
-| `profiles` | Lietotāja loma un venue_id (piesaiste Supabase Auth) |
+| `venues` | Venue konfigurācija: nosaukums, slug, plans, billing, moduļu toggle, widget iestatījumi |
+| `profiles` | Lietotāja loma un venue_id / organization_id (piesaiste Supabase Auth) |
+
+### 3.2 Spin Reward tabulas
+
+| Tabula | Apraksts |
+|---|---|
 | `staff` | Darbinieki: vārds, tips karte, aktīvs/neaktīvs |
 | `activities` | Aktivitāšu tipi (piem. "Lāzertags Pro"), ar default darbinieku |
-| `bookings` | Rezervācijas ar visiem laukiem (skat. §4.5) |
+| `bookings` | Rezervācijas ar visiem laukiem |
 | `sessions` | Aktīvā spin sesija, piesaistīta booking un darbiniekam |
 | `spins` | Laimes rata griezieni: prize_id, status, qr_token, termiņš |
 | `prizes` | Balvu katalogs: vārds, weight, termiņš, atlikums |
@@ -72,17 +110,250 @@ Spillit platforma
 | `review_questions` | Konfigurējamie atsauksmju jautājumi |
 | `tips` | Tips maksājumi: amount_cents, staff_id, status |
 | `staff_evaluations` | Vadītāja novērtējumi darbiniekiem |
+| `copy_strings` | Rediģējami lokalizēti teksti (LV/EN) |
+
+### 3.3 Widget tabulas (jaunas)
+
+| Tabula | Apraksts |
+|---|---|
+| `wheels` | Web widget rata konfigurācija |
+| `wheel_segments` | Rata sektori ar balvām un krājuma kontroli |
+| `wheel_form_fields` | Pielāgoti lauki formas kolekcijai |
+| `leads` | Iesniegtie e-pasti + balvas kodi no widget |
+
+### 3.4 AuraTag tabulas
+
+| Tabula | Apraksts |
+|---|---|
+| `game_sessions` | Lāzertaga spēles sesija (vairāki spēlētāji) |
 | `game_results` | AuraTag/LaserTag spēlētāju spēles rezultāti |
-| `game_sessions` | AuraTag spēles sesija (vairāki spēlētāji) |
 | `share_events` | Izsekošana sociālo tīklu dalīšanas notikumiem |
+
+### 3.5 Demo / papildu tabulas
+
+| Tabula | Apraksts |
+|---|---|
+| `demo_magic_links` | Demo piekļuves magic links (derīgi 1 stundu) |
+| `module_inquiries` | Kontaktformas ieraksti (pieteikumi moduļiem) |
 
 ---
 
-## 4. MODUĻI
+## 4. WIDGET MODUĻI (S1–S3)
 
-### 4.1 🎡 Spin Reward — BEZMAKSAS (kodols)
+### 4.1 Web Widget embed modulis
 
-**Apraksts:** Laimes rats pēc katras apmeklējuma reizes.
+**Apraksts:** Laimes rats, ko var iegult jebkurā mājas lapā ar vienu `<script>` tagu.
+
+**Embed kods:**
+```html
+<script src="https://app.spillit.lv/widget.js" data-wheel="SLUG"></script>
+```
+
+**Trigeris:** `public/widget.js` — vanilla JS, bez atkarībām. Atbalsta:
+- `delay` — parāda pēc N sekundēm
+- `exit_intent` — parāda, kad pele atstāj logu
+- `scroll_pct` — parāda pēc N% scroll
+- `element_click` — parāda, kad klikšķina uz `[data-spillit-trigger]` elementu
+- `inline` — ievieto pie `[data-spillit-inline]` elementa
+- `direct_link` — parāda uzreiz
+
+**Popup iframe plūsma:**
+```
+widget.js (client mājaslapa)
+  → fetch /api/w/{slug}        — iegūst wheel konfigurāciju
+  → setTimeout/mouseleave/scroll
+  → izveido #spillit-overlay div + iframe
+  → iframe src = /w/{slug}?mode=popup
+  → /w/{slug} lapa (Next.js)
+  → WheelPage komponente
+  → aizpilda formu → POST /api/w/spin
+  → postMessage({type:'spillit:close'}) vai {type:'spillit:converted'}
+  → overlay aizveras; localStorage.setItem('spillit_{slug}', Date.now())
+```
+
+**Vienas puses sesija:** `localStorage` glabā, vai lietotājs jau spēlējis (`spillit_{slug}`). Ja `one_spin_per_email=true` — DB pārbaude.
+
+---
+
+### 4.2 Rata izveide (Wheel Builder)
+
+**Rata veidi:**
+- `web_widget` — iegulstams jebkurā mājaslapā
+- `campaign_lp` — atsevišķa kampaņas lapa
+
+**Vizuālie temati:** `light`, `dark`, `brand`, `festive`
+
+**Lokalizācija:** `lv`, `en`, `ru`, `lt`
+
+**`wheels` tabulas kolonnas:**
+
+| Kolonna | Tips | Apraksts |
+|---|---|---|
+| `id` | uuid | Primārā atslēga |
+| `venue_id` | uuid | Venue piesaiste (FK uz venues) |
+| `organization_id` | uuid (null) | Organizācijas piesaiste (agency) |
+| `name` | text | Rata nosaukums (admin redzams) |
+| `slug` | text unique | URL draudzīgs identifikators |
+| `type` | text | `web_widget` vai `campaign_lp` |
+| `active` | boolean | Vai rats aktīvs (public) |
+| `trigger_type` | text | `delay`, `exit_intent`, `scroll_pct`, `element_click`, `inline`, `direct_link` |
+| `trigger_value` | integer (null) | Sekundes vai % atkarībā no trigger_type |
+| `display_type` | text | `popup` vai `inline` |
+| `style_theme` | text | `light`, `dark`, `brand`, `festive` |
+| `brand_color` | text | Hex krāsa (#RRGGBB) |
+| `logo_url` | text (null) | Brenda logo URL |
+| `show_powered_by` | boolean | Rāda "Powered by Spillit" |
+| `one_spin_per_email` | boolean | Vienas spēles limits uz e-pastu |
+| `form_show_name` | boolean | Rāda vārda lauku formā |
+| `form_show_phone` | boolean | Rāda telefona lauku formā |
+| `form_require_name` | boolean | Vārds obligāts |
+| `form_require_phone` | boolean | Telefons obligāts |
+| `gdpr_text` | text (null) | GDPR piekrišanas teksts |
+| `survey_enabled` | boolean | Ieslēgt aptaujas jautājumus |
+| `webhook_url` | text (null) | Webhook URL (POST pēc katras spēles) |
+| `locale` | text | `lv`, `en`, `ru`, `lt` |
+| `total_views` | integer | Kopējie widget skatījumi (counter) |
+| `total_leads` | integer | Kopējie leads (counter) |
+| `total_spins` | integer | Kopējie spini (counter) |
+| `created_at` | timestamptz | Izveides laiks |
+| `updated_at` | timestamptz | Pēdējās izmaiņas |
+
+---
+
+### 4.3 Rata segmenti (Wheel Segments)
+
+**`wheel_segments` tabulas kolonnas:**
+
+| Kolonna | Tips | Apraksts |
+|---|---|---|
+| `id` | uuid | Primārā atslēga |
+| `wheel_id` | uuid | FK uz wheels |
+| `label` | text | Segmenta teksts uz rata |
+| `color` | text | Hex krāsa (#RRGGBB) |
+| `prize_type` | text | Balvas veids |
+| `prize_value` | integer (null) | Balvas vērtība (piem. % atlaide) |
+| `prize_description` | text (null) | Pilns balvas apraksts |
+| `prize_code` | text (null) | Manuāli ierakstīts kods |
+| `auto_code` | boolean | Ja true — ģenerē random 8 zīmju kodu |
+| `probability_weight` | integer | Svars (relatīvā varbūtība) |
+| `stock` | integer (null) | Sākotnējais krājums |
+| `remaining` | integer (null) | Atlikušais krājums |
+| `expires_days` | integer | Koda derīguma dienas |
+| `active` | boolean | Vai segments aktīvs |
+| `sort_order` | integer | Kārtošanas secība |
+| `created_at` | timestamptz | Izveides laiks |
+
+---
+
+### 4.4 Formas lauki (Wheel Form Fields)
+
+**`wheel_form_fields` tabulas kolonnas:**
+
+| Kolonna | Tips | Apraksts |
+|---|---|---|
+| `id` | uuid | Primārā atslēga |
+| `wheel_id` | uuid | FK uz wheels |
+| `field_type` | text | Lauka veids (piem. `text`, `select`, `date`) |
+| `label` | text | Lauka nosaukums lietotāja skatā |
+| `placeholder` | text (null) | Placeholder teksts |
+| `required` | boolean | Vai lauks obligāts |
+| `sort_order` | integer | Kārtošanas secība |
+| `active` | boolean | Vai lauks aktīvs |
+
+---
+
+### 4.5 Lead Capture
+
+**Spin plūsma:**
+```
+/w/{slug} → aizpilda e-pastu (+ opcionāli: vārds, telefons, custom lauki)
+  → POST /api/w/spin
+    → pārbauda one_spin_per_email
+    → izloses loģika (svērtā izloze no aktīviem segmentiem)
+    → ieraksta leads tabulu
+    → decrementē remaining (ja krājums iestatīts)
+    → inkrementē total_leads + total_spins uz wheels
+    → atgriež { segment, prize_code, segment_index }
+  → rāda balvu klientam
+```
+
+**`leads` tabulas kolonnas:**
+
+| Kolonna | Tips | Apraksts |
+|---|---|---|
+| `id` | uuid | Primārā atslēga |
+| `wheel_id` | uuid | FK uz wheels |
+| `venue_id` | uuid | FK uz venues |
+| `segment_id` | uuid | FK uz wheel_segments (uzvara) |
+| `email` | text | E-pasta adrese (lowercase) |
+| `name` | text (null) | Vārds |
+| `phone` | text (null) | Telefona numurs |
+| `form_data` | jsonb | Pielāgoto lauku vērtības |
+| `prize_code` | text (null) | Izsniegts balvas kods |
+| `locale` | text | Valoda |
+| `trigger_type` | text (null) | Kāds triggers aktivizēja widget |
+| `utm_source` | text (null) | UTM avots |
+| `utm_medium` | text (null) | UTM medijs |
+| `utm_campaign` | text (null) | UTM kampaņa |
+| `referrer_url` | text (null) | Iepriekšējā lapas URL |
+| `gdpr_consent` | boolean | GDPR piekrišana |
+| `gdpr_consent_at` | timestamptz (null) | Piekrišanas laiks |
+| `created_at` | timestamptz | Izveides laiks |
+
+---
+
+### 4.6 Webhook integrācija
+
+`wheels.webhook_url` — ja aizpildīts, pēc katras veiksmīgas spēles tiek nosūtīts POST pieprasījums uz norādīto URL ar šādiem datiem:
+
+```json
+{
+  "email": "klienta@email.lv",
+  "name": "Klienta vārds",
+  "phone": "+37129xxxxxx",
+  "prize_code": "ABCD1234",
+  "segment_label": "Segmenta nosaukums",
+  "wheel_slug": "mana-kampana"
+}
+```
+
+Konfigurācija: `dashboard/widgets/new` → "Webhook URL" lauks.
+
+---
+
+### 4.7 Analytics (Widget)
+
+**`GET /api/widget/[slug]/analytics`** — autentificēts endpoint:
+
+Atgriež:
+- `totals`: total_views, total_leads, conversion_pct, active_days
+- `daily_leads`: leads pa dienām (pēdējās 30 dienas)
+- `segment_breakdown`: cik leads kuras sektors uzvarēja
+- `utm_sources`: top 10 UTM avoti
+
+**`/dashboard/widgets/[id]/analytics`** lapa — vizuāls pārskats ar bāru diagrammu, segmentu sadalījumu, UTM tabulu un pēdējiem 10 leads (e-pasts maskēts).
+
+---
+
+### 4.8 Agency / multi-venue pārskats
+
+**`/dashboard/agency`** — pieejams `agency_admin` un `super_admin`:
+
+- Org-līmeņa kopsavilkums: venues skaits, aktīvie wheels, leads šomēnes, kopējie leads
+- Tabula ar katru venue: aktīvie wheels, kopējie leads, leads šomēnes, pēdējais lead
+- Kārto pēc leads_month (aktīvākais augšā)
+
+**Lomu atšķirība:**
+- `agency_admin` — filtrē pēc `profiles.organization_id = venues.organization_id`
+- `super_admin` — redz visu (bez filtra)
+
+---
+
+## 5. SPIN REWARD MODULIS
+
+### 5.1 Kopsavilkums
+
+Fiziskās venues klienta plūsma ar darbinieka atribūciju.
 
 **Darbības:**
 1. Admins/kasiere aktivizē sesiju → `activateBooking()` server action
@@ -98,560 +369,20 @@ sessions → spins (izveidots pēc spin) → prizes (saistīts)
 spins.status: active → redeemed / expired
 ```
 
-**Savienojumi:**
-- `bookings` → `sessions` (1:1, pēc aktivizēšanas)
-- `sessions` → `spins` (1:1)
-- `spins` → `prizes` (many:1)
-- `prizes` → `ledger` (stats agregācija)
+---
 
-**Admin funkcijas:**
-- `/admin/venue/prizes` — balvu konfigurācija (svars, derīgums, atlikums)
-- `/admin/venue/ledger` — izsniegtās/gaidošās/beigtās balvas pa mēnešiem
+### 5.2 Darbinieku novērtējums
+
+- Pielāgojami jautājumi (`review_questions` tabula)
+- Vērtējums glabājas `reviews` tabulā (rating, comment, staff_id, activity_id)
+- Detālas atbildes → `review_answers` (katrs jautājums atsevišķi)
+- Per-darbinieka stats: `/admin/venue/staff/[id]`
 
 ---
 
-### 4.2 ⭐ Darbinieku novērtējums — BEZMAKSAS
+### 5.3 Balvu Ledger
 
-**Apraksts:** Privātas atsauksmes ar 1–5 zvaigznēm + komentārs pēc sesijas.
-
-**Darbības:**
-1. Tiek ģenerēts pēc spin (tā paša sesijas flow ietvaros)
-2. Klientam rādīti pielāgojami jautājumi (`review_questions` tabula)
-3. Vērtējums glabājas `reviews` tabulā (rating, comment, staff_id, activity_id)
-4. Detālas atbildes → `review_answers` (katrs jautājums atsevišķi)
-5. Admins redz visu `/admin/venue/stats` → "Atsauksmju saraksts"
-
-**Savienojumi:**
-- `sessions` → `reviews` (1:1)
-- `reviews` → `review_answers` (1:many)
-- `reviews.staff_id` → `staff` (stats pa darbinieku)
-- `reviews.google_redirected` → Google Review modulis
-
-**Admin funkcijas:**
-- `/admin/venue/questions` — jautājumu konfigurācija
-- `/admin/venue/staff/[id]` — per-darbinieka atsauksmes pa datumu diapazoniem
-- `get_staff_reviews(venue_id, staff_id, from, to)` — RPC ar filtriem
-
----
-
-### 4.3 💛 Tips — no €9/mēn
-
-**Apraksts:** Digitālā dzeramnauda caur Revolut/Stripe saiti.
-
-**Darbības:**
-1. Pēc laimes rata rezultāta — "Pateikt paldies?" ekrāns
-2. Klientam redzams darbinieka vārds + Revolut/Stripe poga
-3. Klikšķis → novirza uz darbinieka `stripe_tip_link`
-4. Tips ieraksts → `tips` tabulā (amount_cents, status: pending/paid)
-
-**Konfigurācija:**
-- `staff.stripe_tip_link` — Revolut/Stripe URL katram darbiniekam
-- `venues.module_tips_enabled` — ieslēgt/izslēgt moduli
-- Darbiniekam jābūt aktīvam un ar aizpildītu saiti
-
-**Savienojumi:**
-- `sessions.staff_id` → `staff.stripe_tip_link`
-- `tips` → `staff` (many:1)
-- Stats: `/admin/venue/stats` → Tips sekcija
-
-**Admin funkcijas:**
-- `/admin/venue/staff/[id]` — Tips karte saites pievienošana
-
----
-
-### 4.4 🔍 Google atgādinājums — no €11/mēn
-
-**Apraksts:** Auto-piedāvājums atstāt Google atsauksmi tikai pēc labas pieredzes.
-
-**Darbības:**
-1. Pēc spin flow — ja rating ≥ slieksnis → rāda Google Review pogu
-2. `reviews.google_redirected = true` ja klients noklikšķina
-3. Admins redz % klientu kas tika novirzīti uz Google
-
-**Konfigurācija:**
-- `venues.module_google_enabled` — ieslēgts/izslēgts
-- `venues.google_place_id` — Google Places ID (ģenerē pareizo saiti)
-
-**Savienojumi:**
-- `reviews.google_redirected` → stats aprēķinos
-- `venues.google_place_id` → URL formēšana: `https://search.google.com/local/writereview?placeid=<id>`
-
----
-
-### 4.5 📅 Rezervāciju sistēma — Paplašinātā (Papildu)
-
-**Apraksts:** Pilna rezervāciju pārvaldība ar visiem laukiem, weekly skats, CSV imports.
-
-**Bookings tabulas lauki:**
-| Lauks | Tips | Apraksts |
-|---|---|---|
-| `id` | uuid | Primārā atslēga |
-| `booking_ref` | text | Auto-ģenerēts cilvēkam lasāms kods |
-| `venue_id` | uuid | Venue piesaiste |
-| `customer_name` | text | Klienta vārds |
-| `customer_phone` | text | Tālrunis |
-| `activity_id` | uuid | Aktivitātes tips |
-| `staff_id` | uuid | Piešķirtais instruktors |
-| `starts_at` | timestamptz | Sākuma laiks |
-| `ends_at` | timestamptz | Beigu laiks |
-| `player_count` | integer | Spēlētāju skaits |
-| `player_age_group` | text | Bērni / Pieaugušie / Jaukts |
-| `occasion` | text | Gadījuma tips |
-| `advance_paid` | boolean | Avanss samaksāts |
-| `advance_amount` | numeric | Avansa summa |
-| `notes` | text | Piezīmes |
-| `status` | text | pending / confirmed / cancelled / completed |
-| `source` | text | manual / csv / google_calendar / booking_system |
-
-**Gadījuma tipi (occasion):** Dzimšanas diena, Korporatīvs, Atpūta, Vecpuišu ballīte, Cits
-
-**Galvenās darbības:**
-- Nedēļas skats ar ← → navigāciju, "Šī nedēļa" poga
-- Klienta filtri: statuss, aktivitāte, instruktors, gadījums
-- `+ Pievienot` → pilns modāls ar visiem laukiem
-- `👁 Detaļas` → read-only modal ar kopējamu booking_ref
-- `▶ Spin` → `activateBooking()` tieši no tabulas rindas
-- `↑ Importēt CSV` → fails → priekšskatījums → batch insert
-
-**CSV kolonnas:** `vards, talrunis, aktivitate, sakums, beigas, speletaji`
-
-**RPC:** `get_bookings(p_venue_id, p_from, p_to)` — atgriež visus bookings ar JOIN aktivitāte+darbinieks+has_spin
-
-**Savienojumi:**
-- `bookings` → `sessions` (pēc aktivizēšanas, `booking_id` FK)
-- `sessions` → `spins` → `prizes`
-- `sessions` → `reviews`
-- `bookings.activity_id` → `activities`
-- `bookings.staff_id` → `staff`
-
----
-
-### 4.6 📦 Balvu Ledger — (Iekļauts pamatkomplektā)
-
-**Apraksts:** Grāmatvedības pārskats par izsniegtajām balvām.
-
-**Darbības:**
 - Filtrēšana pa mēnešiem ar ← → navigāciju
-- `get_prize_ledger_dated(venue_id, from, to)` RPC
-
-**Rādītāji katrai balvai:**
-| Kolonna | Apraksts |
-|---|---|
-| Izsniegtas | Redeemed spins — norakstāmas kā izmaksas |
-| Gaida | Active (termiņā) spins — saistība |
-| Beidzies | Expired spins — var norakstīt |
-| Atlikums | Fiziskais krājums (ja iestatīts) |
-| Derīgums | QR koda derīgums dienās |
-
-**Brīdinājumi:** Sarkana rinda ja `remaining < 5`
-
-**Savienojumi:**
-- `prizes` → `spins` (LEFT JOIN pa status un datumu)
-- CSV eksports grāmatvedībai
-
----
-
-### 4.7 📣 Spin+Meta — no €11/mēn
-
-**Apraksts:** Facebook/Instagram pikseļa integrācija laimes ratā.
-
-**Darbības:**
-1. Kad klients skenē QR un atver spin lapu → Meta pikselis tiek iedarbināts
-2. Klients tiek pievienots Facebook Custom Audience
-3. Retargetinga reklāmas tiek rādītas faktiskajiem apmeklētājiem
-
-**Priekšrocība pār mājaslapas pikseli:** Šis pikselis aktivizējas tikai tad, kad klients FIZISKI ir bijis vietā.
-
-**Konfigurācija:** Meta Pixel ID jāievada venues iestatījumos.
-
----
-
-### 4.8 📋 Lead Capture — no €7/mēn
-
-**Apraksts:** E-pasta vākšana apmaiņā pret bonusu.
-
-**Darbības:**
-1. Spin flow ietvaros — pēc balvas — e-pasta forma
-2. "Ievadi e-pastu → saņem papildu atlaidi/bonusu"
-3. GDPR piekrišanas checkbox
-4. Export uz Mailchimp/Brevo vai CSV
-
----
-
-### 4.9 🎂 Leads sildīšana — no €7/mēn
-
-**Apraksts:** Automātisks atgādinājums klientiem pirms nākamās gadadienas.
-
-**Darbības:**
-1. Sesijas laikā atzīmē klienta dzimšanas dienu/īpašo datumu
-2. Gadu vēlāk — automātisks SMS/e-pasts ar personalizētu piedāvājumu
-3. Pilnīgi automatizēts — bez manuālas iejaukšanās
-
----
-
-### 4.10 🎫 Digital Stamps — no €10/mēn
-
-**Apraksts:** Digitālā lojalitātes kartīte (bez fiziskas kartes).
-
-**Darbības:**
-1. Katrs apmeklējums += 1 zīmogs
-2. Pēc N apmeklējumiem → auto-balva QR kods
-3. Progress tiek rādīts klientam
-4. Analīze: aktīvie vs. neaktīvie klienti
-
----
-
-### 4.11 📅 Maiņu grafiks — no €25/mēn
-
-**Apraksts:** Elastīga maiņu pārvaldība ar WhatsApp čeklistu.
-
-**Darbības:**
-- Maiņu plānošana pa darbinieku
-- WhatsApp čeklists paveiktajam darbam
-- Darbinieka uzdevumu izpildes atskaite
-- Reāllaika pārbaude
-
----
-
-### 4.12 🎓 Onboarding — individuāli
-
-**Apraksts:** Strukturēta jauno darbinieku apmācība.
-
-**Darbības:**
-- Video + teksta + testu moduļi
-- Vadītājs seko progresam
-- Automātiskas atskaites uz e-pastu
-
----
-
-### 4.13 🏷️ AuraTag — individuāli (skat. §5 - LaserTag stats)
-
-Sīkāks apraksts atsevišķā sadaļā zemāk.
-
----
-
-## 5. LASERTAG STATS / AURATAG MODULIS — DETALIZĒTS APRAKSTS
-
-### 5.1 Kopsavilkums
-
-AuraTag ir specializēts modulis lāzertaga (un līdzīgu kontaktjunktur spēļu) operatoriem. Tas ģenerē personalizētas statistikas kartes katram spēlētājam pēc katras spēles, ko spēlētāji var dalīties sociālajos tīklos.
-
-**Divi galvenie komponenti:**
-1. **`/public/laserstats/card.html`** — statiska HTML lapa ar komandasleaderboard un video karti (prototips/template)
-2. **`/r/[token]`** — dinamiska Next.js lapa ar individuālā spēlētāja rezultātu
-
----
-
-### 5.2 Datu struktūra
-
-#### `GameResult` (lib/result.ts)
-```typescript
-interface GameResult {
-  id: string
-  session_id: string       // Spēles sesija (visi spēlētāji)
-  callsign: string         // Spēlētāja segvārds
-  team: string | null      // 'red' | 'blue' | null
-  top_class: string | null // 'COMMANDO' | 'SNIPER' | 'WARRIOR'
-  rating: number | null    // Kopsummārs reitings
-  kd_ratio: number | null  // Kills/Deaths attiecība
-  kd_plusminus: number|null// K/D +/-
-  accuracy: number | null  // Precizitāte (%)
-  shots_fired: number|null // Izšautie šāviņi
-  hits: number | null      // Trāpījumi
-  injuries: number | null  // Saņemtie trāpījumi
-  team_hit_pct: number|null// % trāpījumu uz komandu biedriem
-  share_token: string      // Unikāls koplietošanas tokens
-  share_video_url: string|null // Personalizēts MP4 (Phase 2)
-  created_at: string
-}
-```
-
-#### `SessionPlayer` — visi spēlētāji vienā sesijā
-```typescript
-interface SessionPlayer {
-  id: string
-  callsign: string
-  team: string | null
-  top_class: string | null
-  rating: number | null
-  kd_ratio: number | null
-  // ...tie paši lauki kā GameResult, bet bez share_video_url
-}
-```
-
----
-
-### 5.3 Spēlētāja klases
-
-| Klase | Apraksts |
-|---|---|
-| `COMMANDO` | Augstākais reitings — agresīvs spēlētājs |
-| `SNIPER` | Augsta precizitāte, maz izšauto šāviņu |
-| `WARRIOR` | Noklusējums — universāls spēlētājs |
-
-Katrai klasei ir:
-- Atbilstošs **promo video** (`/auratag/commando1.mp4`, u.c.)
-- **Poster attēls** (video priekšskatījums)
-- **Klases nosaukums** uz kartes
-
-Funkcija: `classMedia(topClass)` → `{ video, poster, label }`
-
----
-
-### 5.4 Komandu krāsu kodēšana
-
-| Komanda | Latviskais nosaukums | Krāsa |
-|---|---|---|
-| `red` | Sarkanā | `#ff4d4d` |
-| `blue` | Zilā | `#22dcff` |
-| cits | (oriģinālais nosaukums) | `#aeb6c2` |
-
-Funkcija: `teamLabel(team)` → `{ label, color }`
-
----
-
-### 5.5 Video ģenerēšana — divas fāzes
-
-#### Phase 1 (pašlaik aktīvs): Template fallback
-- Visi spēlētāji saņem klases video (`commando1.mp4`)
-- Nekāda personalizācija video iekšienē
-- Ātrāk, bez papildus infrastruktūras
-
-#### Phase 2 (nākotnē): Personalizēts MP4
-- `game_results.share_video_url` tiek aizpildīts ar individuālu video saiti
-- Videoklipā ir iegulti spēlētāja stats (callsign, rating, KD, precizitāte)
-- Renderēts ar Remotion (`@remotion/lambda` — konfigurēts `serverExternalPackages`)
-- Pēc renderēšanas → saglabāts kā CDN fails → ierakstīts `share_video_url`
-
-Funkcija: `resultVideo(result)` — atgriež `share_video_url` vai fallback video
-
----
-
-### 5.6 `/public/laserstats/card.html` — Leaderboard Template
-
-**Mērķis:** Statisks HTML prototips/template kurā atspoguļots:
-
-**Vizuālais dizains:**
-- Tumšs militārs temats (`--bg: #07080e`, Orbitron + Chakra Petch fonts)
-- Neon akcenti: ciānzils (`--cyan: #22dcff`), zelts (`--gold: #ffc63d`), sarkans (`--red: #ff4d4d`)
-- Responsive grid: tabula (kreisā) + video karte (labā)
-
-**Komponenti:**
-1. **Leaderboard tabula** — visi sesijas spēlētāji ar rangu, callsign, komandu, klasi, reitingu, KD, precizitāti
-2. **Tab navigācija** — pārslēgšanās starp skatiem (trophy, pulse, target, shield ikonas)
-3. **Stats bloks** — detalizēti individuālie rādītāji (izšauti šāviņi, trāpījumi, injuries, komandas hit %)
-4. **Video karte (9:16 formāts)**:
-   - Video automātiskā atskaņošana (muted autoplay)
-   - Pulzējošs atskaņošanas grozs ("breathe" animācija)
-   - Skaņas pogas toggle
-   - Video ilguma badge
-5. **Dalīšanās pogas** — Share (violetā) un Ghost (pelēkā) pogas
-
----
-
-### 5.7 `/r/[token]` — Dinamiskā Rezultātu Lapa
-
-**URL:** `https://spillit.lv/r/<share_token>`
-
-**Darbība:**
-1. Token → `get_result_by_token(p_token)` RPC → `GameResult`
-2. Ja token nav atrasts → `notFound()` (404)
-3. Renderē `ResultClient` + `ShareCard` + `ShareSheet`
-
-**Metadata dinamiskā ģenerēšana:**
-```typescript
-title: `${callsign} — ${top_class} | GUNSnLASERS`
-description: `Reitings: X.XX · K:D: X.XX · Precizitāte: X.XX%`
-og:image: /r/{token}/opengraph-image  (dinamiskais 1200×630 attēls)
-og:video: {share_video_url}           (videoklips sociālajos tīklos)
-twitter:card: 'player'                (video karte Twitter)
-```
-
-**Komponenti:**
-- `ShareCard` — galvenā karte ar stats un video
-- `ShareSheet` — dalīšanās apakšlapa (mobile bottom sheet)
-
----
-
-### 5.8 Share (Dalīšanās) Sistēma
-
-**Share URL struktūra:** `https://spillit.lv/r/<share_token>`
-
-**Dalīšanās kanāli:**
-- Facebook (OG tags → link preview ar poster attēlu)
-- Twitter/X (player card ar video)
-- WhatsApp (teksts + URL)
-- Native Web Share API (mobilajās ierīcēs)
-
-**Notikumu izsekošana** (`/api/track`):
-```typescript
-POST /api/track {
-  share_token: string
-  event: 'view' | 'share_click'
-  network: 'facebook' | 'twitter' | 'whatsapp'
-}
-```
-- Ieraksta `share_events` tabulā
-- Uzstāda 1 gadu ilgu cookie `gnl_aid` anonīmai izsekošanai
-- Ietver referreri un User-Agent
-
----
-
-### 5.9 OG Attēls — Dinamiskā Ģenerēšana
-
-**URL:** `/r/[token]/opengraph-image`
-
-Ģenerē 1200×630 PNG attēlu ar:
-- Spēlētāja callsign (liels teksts)
-- Klases nosaukums (COMMANDO / SNIPER / WARRIOR)
-- Galvenie rādītāji (Rating, K:D, Accuracy)
-- Komandas krāsa
-- GUNSnLASERS logo/zīmols
-
----
-
-### 5.10 AuraTag Savienojumi ar pārējiem moduļiem
-
-```
-AuraTag (lasertag spēle)
-    │
-    ├── game_sessions ─── venue (1 venue var būt vairākas sesijas)
-    │                          │
-    │                          └── admin izskata statistiku
-    │
-    ├── game_results ─── share_token (unikāls katram spēlētājam)
-    │        │
-    │        ├── /r/[token] ──── OG image + metadata
-    │        │                      │
-    │        │                      └── Sociālie tīkli (FB/TW/WA)
-    │        │
-    │        └── share_events (izsekošana)
-    │
-    ├── Spin Reward (post-game spin)
-    │       Pēc spēles klients var saņemt arī laimes rata QR
-    │       → /play?session=<id>
-    │
-    └── Staff Rating (iespēja)
-            Instruktora novērtēšana pēc AuraTag sesijas
-```
-
----
-
-### 5.11 AuraTag — Tehniskie Ierobežojumi un Nākotnes Plāni
-
-**Phase 1 (pašlaik):**
-- Video = klases template (visi COMMANDO saņem vienu un to pašu video)
-- Nekāda Remotion renderēšana
-
-**Phase 2 (plānots):**
-- Remotion Lambda renderē personalizētu MP4 katram spēlētājam
-- `@remotion/lambda` jau konfigurēts `serverExternalPackages`
-- `/api/render-session` route gatavs rendēšanas API
-- Personalizēts video → CDN → `game_results.share_video_url`
-
----
-
-## 6. KLIENTU PLŪSMAS
-
-### 6.1 Parastā Spin Reward plūsma
-
-```
-Kasiere/admins
-    │
-    ├─ /admin/today → redz rezervāciju sarakstu
-    │
-    ├─ Klikšķis "Aktivizēt" → activateBooking() server action
-    │     Creates: sessions row (booking_id, activity_id, staff_id, venue_id)
-    │
-    ├─ /admin/session → izvēlas darbinieku + aktivitāti
-    │     Generates: QR kods
-    │
-    └─ Drukā / parāda QR klientam
-           │
-           ▼
-    Klients skenē QR → /play?session=<id>
-           │
-           ├─ Privātums / GDPR piekrišana
-           ├─ Jautājumi (custom questions)
-           ├─ Spin animācija
-           ├─ Balvas atklāšana
-           ├─ Tips piedāvājums (ja modulis aktīvs)
-           ├─ Google review (ja rating augsts + modulis aktīvs)
-           └─ QR kods balvai
-                  │
-                  ▼
-    Kasiere skenē /redeem/<qr_token>
-           │
-           └─ APSTIPRINĀT poga → redeemed_at → zaļš ekrāns
-```
-
-### 6.2 Rezervācijas aktivizēšana no Booking saraksta
-
-```
-/admin/venue/bookings (nedēļas skats)
-    │
-    ├─ Tabulas rinda → klikšķis ▶ Spin
-    │     → activateBooking(booking_id, venueId, activity_id, staff_id)
-    │     → returns { sessionId } → router.refresh()
-    │
-    ├─ Tabulas rinda → 👁 → Detaļu modāls
-    │     → "Aktivizēt Spin" poga modālā
-    │
-    └─ Tabulas rinda → Rediģēt
-          → EditModal ar visiem laukiem
-```
-
-### 6.3 AuraTag spēlētāja plūsma
-
-```
-Lāzertaga sesija beidzas
-    │
-    └─ Sistēma ģenerē game_results (pa spēlētāju)
-           │
-           ├─ Katram spēlētājam: unikāls share_token
-           │
-           └─ SMS/ekrāna kods → /r/<share_token>
-                  │
-                  ├─ Redz savus stats + video (klases based)
-                  ├─ Sees leaderboard (pārējie sesijas spēlētāji)
-                  ├─ "DALĪTIES" → ShareSheet
-                  │     ├─ Facebook (OG image + link)
-                  │     ├─ Twitter (player card)
-                  │     ├─ WhatsApp (teksts + URL)
-                  │     └─ Native share (mobils)
-                  │
-                  └─ Notikums → /api/track → share_events
-```
-
----
-
-## 7. ADMIN STATISTIKAS PĀRSKATS
-
-### 7.1 `/admin/venue/stats` — Galvenie rādītāji
-
-**Periodi:** 7d / 30d / Viss
-
-| Sekcija | Dati |
-|---|---|
-| Spini | Kopā, Aktīvs, Izpirkts, Beidzies |
-| Balvu sadalījums | Histogramma pa balvām |
-| Atsauksmes | Kopā, Google redirect % |
-| Jautājumu vidējais | Vidējais vērtējums katram jautājumam |
-| Tips | Kopā, Summa EUR, Gaidošie |
-| Atsauksmju saraksts | Pēdējās 50 atsauksmes ar rating, staff, komentārs |
-| Vadītāja novērtējumi | Pēdējie 20 novērtējumi |
-
-### 7.2 `/admin/venue/staff/[id]` — Per-darbinieka stats
-
-- Datumu diapazons (pielāgojams, noklusējums 30 dienas)
-- Kopā sesijas, ar vērtējumu, vidējais reitings
-- Tabula: katrs datums → aktivitāte → vērtējums → komentārs
-- `get_staff_reviews(venue_id, staff_id, from, to)` RPC
-- Vadītāja novērtēšanas forma (1–5 ★ + piezīmes)
-
-### 7.3 `/admin/venue/ledger` — Balvu grāmatvedība
-
-- Mēneša navigācija (← →)
 - `get_prize_ledger_dated(venue_id, from, to)` RPC
 - Katrai balvai: izsniegtas, gaida, beidzies, atlikums, derīgums
 - Sarkana iezīmēšana ja `remaining < 5`
@@ -659,70 +390,258 @@ Lāzertaga sesija beidzas
 
 ---
 
-## 8. RPCs (Remote Procedure Calls)
+## 6. DATUBĀZES SHĒMA — PILNAIS APRAKSTS
 
-Visi RPCs ir `SECURITY DEFINER` ar `auth_role()` un `auth_venue_id()` pārbaudi.
+### `venues`
 
-| RPC | Parametri | Apraksts |
+| Kolonna | Tips | Apraksts |
 |---|---|---|
-| `get_bookings` | venue_id, from, to | Bookings ar JOIN aktivitāte+staff+has_spin |
-| `get_prize_ledger` | venue_id | Ledger bez datuma filtra (pilns) |
-| `get_prize_ledger_dated` | venue_id, from, to | Ledger ar datuma filtru |
-| `get_staff_reviews` | venue_id, staff_id, from, to | Per-darbinieka atsauksmes |
-| `get_result_by_token` | share_token | AuraTag spēlētāja rezultāts |
-| `get_session_results` | session_id | Visi sesijas spēlētāji |
-| `redeem_spin` | qr_token | Balvas apstiprināšana (maina status uz 'redeemed') |
+| `id` | uuid | Primārā atslēga |
+| `name` | text | Venue nosaukums |
+| `slug` | text unique | URL slug |
+| `active` | boolean | Vai venue aktīvs |
+| `seats` | integer | Atļautais darbinieku skaits |
+| `plan` | text | Cenu plāns |
+| `billing_status` | text | Billing statuss |
+| `wheel_theme` | text | Rata vizuālais tēma (`simple`, `elegant`, `luxury`) |
+| `google_place_id` | text (null) | Google Places ID |
+| `meta_pixel_id` | text (null) | Meta Pixel ID |
+| `is_demo` | boolean | Vai demonstrācijas venue |
+| `logo_url` | text (null) | Logo attēla URL |
+| `organization_id` | uuid (null) | FK uz organizāciju (agency) |
+| moduļu toggle kolonnas | boolean | `module_tips_enabled`, `module_google_enabled`, u.c. |
+
+### `profiles`
+
+| Kolonna | Tips | Apraksts |
+|---|---|---|
+| `id` | uuid | FK uz auth.users |
+| `role` | text | `super_admin`, `client_admin`, `agency_admin`, `staff` |
+| `venue_id` | uuid (null) | Venue piesaiste (null super_admin) |
+| `organization_id` | uuid (null) | Organizācijas piesaiste (agency_admin) |
+| `full_name` | text | Pilns vārds |
+| `active` | boolean | Aktīvs |
+
+### `game_sessions`
+
+| Kolonna | Tips | Apraksts |
+|---|---|---|
+| `id` | uuid | Primārā atslēga |
+| `venue_id` | uuid | FK uz venues |
+| `started_at` | timestamptz | Sākuma laiks |
+| `ended_at` | timestamptz (null) | Beigu laiks |
+| `status` | text | `active` vai `closed` |
+
+### `game_results`
+
+| Kolonna | Tips | Apraksts |
+|---|---|---|
+| `id` | uuid | Primārā atslēga |
+| `session_id` | uuid | FK uz game_sessions |
+| `callsign` | text | Spēlētāja segvārds |
+| `team` | text (null) | `red` vai `blue` |
+| `top_class` | text (null) | `COMMANDO`, `SNIPER`, `WARRIOR` |
+| `rating` | numeric(6,2) (null) | Kopsummārs reitings |
+| `kd_ratio` | numeric(6,2) (null) | Kills/Deaths attiecība |
+| `kd_plusminus` | integer (null) | K/D +/- |
+| `accuracy` | numeric(6,2) (null) | Precizitāte (%) |
+| `shots_fired` | integer (null) | Izšautie šāviņi |
+| `hits` | integer (null) | Trāpījumi |
+| `injuries` | integer (null) | Saņemtie trāpījumi |
+| `team_hit_pct` | numeric(6,2) (null) | % trāpījumu uz komandu biedriem |
+| `share_token` | text unique | Unikāls koplietošanas tokens (8-byte hex) |
+| `share_video_url` | text (null) | Personalizēts MP4 (Remotion Phase 2) |
+| `created_at` | timestamptz | Izveides laiks |
+
+### `share_events`
+
+| Kolonna | Tips | Apraksts |
+|---|---|---|
+| `id` | uuid | Primārā atslēga |
+| `share_token` | text | Saistīts ar game_results.share_token |
+| `event_type` | text | `view` vai `share_click` |
+| `network` | text (null) | `facebook`, `twitter`, `whatsapp`, u.c. |
+| `anon_id` | text (null) | `gnl_aid` cookie vērtība |
+| `referer` | text (null) | HTTP Referer |
+| `ua` | text (null) | User-Agent |
+| `created_at` | timestamptz | Notikuma laiks |
+
+### `demo_magic_links`
+
+| Kolonna | Tips | Apraksts |
+|---|---|---|
+| `id` | uuid | Primārā atslēga |
+| `email` | text | E-pasta adrese |
+| `token` | text unique | UUID-UUID formāts |
+| `created_at` | timestamptz | Izveides laiks |
+| `expires_at` | timestamptz | Derīguma laiks (1 stunda) |
+| `used_at` | timestamptz (null) | Izlietošanas laiks |
+| `ip_address` | text (null) | Pieprasītāja IP |
 
 ---
 
-## 9. API MARŠRUTI
+## 7. API MARŠRUTI
+
+### 7.1 Publiskie API (bez auth)
 
 | Maršruts | Metode | Apraksts |
 |---|---|---|
-| `/api/inquiry` | POST | Moduļu pieteikumu forma (nosūta e-pastu ar Resend) |
-| `/api/track` | POST | AuraTag share notikumu izsekošana |
-| `/api/redeem` | POST | Balvas apstiprināšana (alternatīva serverAction) |
-| `/api/render-session` | POST | Remotion video renderēšanas iedarbināšana (Phase 2) |
+| `/api/w/[slug]` | GET | Widget konfigurācija (publisks). Inkrementē total_views. `X-Spillit-Counted: 1` galvene novērš dubultskaitīšanu. |
+| `/api/w/[slug]` | OPTIONS | CORS preflight |
+| `/api/w/spin` | POST | Izlozes veikšana. Pieņem `{slug, email, name?, phone?, form_data?, gdpr_consent?, locale?, trigger_type?, utm_source?, utm_medium?, utm_campaign?, referrer_url?}`. Atgriež `{segment, prize_code, segment_index}`. |
+| `/api/track` | POST | AuraTag share notikumu izsekošana. Pieņem `{token, event, network?}`. Raksta `share_events`. |
+
+### 7.2 Autentificētie API
+
+| Maršruts | Metode | Auth | Apraksts |
+|---|---|---|---|
+| `/api/inquiry` | POST | Nav | Moduļu pieteikumu forma. Glabā `module_inquiries`, sūta e-pastu uz gints@spillit.lv ar Resend. |
+| `/api/redeem` | POST | Nav | Balvas apstiprināšana (alternatīva server action). |
+| `/api/render-session` | POST | Supabase Auth | Remotion Lambda video renderēšana (Phase 2). Pieņem `{session_id}`. Renderē visus sesijas spēlētājus paralēli. |
+| `/api/widget/[slug]/analytics` | GET | Supabase Auth + role check | Widget analītika. Atgriež totals, daily_leads, segment_breakdown, utm_sources. |
+
+### 7.3 Demo API
+
+| Maršruts | Metode | Apraksts |
+|---|---|---|
+| `/api/demo/request-access` | POST | Pieņem `{email}`, izveido magic link (derīgs 1 stundu), sūta demo e-pastu ar Resend. Rate limit: 3 pieprasījumi/24h uz e-pastu. |
+| `/api/demo/verify` | POST | Verificē demo token. |
+| `/demo/access` | GET | Route handler — novirza pēc token verifikācijas. |
+| `/scan` | GET | Route handler — AuraTag QR skenēšana, novirza uz aktīvo sesiju. |
 
 ---
 
-## 10. CENU PLĀNI
+## 8. DASHBOARD LAPAS — PILNS SARAKSTS
+
+### 8.1 Widget Builder (`/dashboard/`)
+
+| Lapa | Pieejams | Apraksts |
+|---|---|---|
+| `/dashboard/widgets` | client_admin, agency_admin, super_admin | Ratu saraksts ar toggle active, leads skaitu, ātrās saites |
+| `/dashboard/widgets/new` | client_admin, agency_admin, super_admin | Jauna rata izveide: nosaukums, tips, locale, tēma, trigeris, display, webhook URL |
+| `/dashboard/widgets/[id]/segments` | client_admin, agency_admin, super_admin | Segmentu pārvaldība: pievienot/rediģēt/dzēst sektorus, svari, balvas kodi, krājums |
+| `/dashboard/widgets/[id]/form` | client_admin, agency_admin, super_admin | Formas konfigurācija: vārds/telefons toggle, GDPR teksts, pielāgotie lauki |
+| `/dashboard/widgets/[id]/preview` | client_admin, agency_admin, super_admin | Tiešraides priekšskatījums (pilna rata darba demonstrācija) |
+| `/dashboard/widgets/[id]/embed` | client_admin, agency_admin, super_admin | Embed kods (`<script>`) + tiešās URL saite + QR kods (qrcode npm) |
+| `/dashboard/widgets/[id]/analytics` | client_admin, agency_admin, super_admin | Analīze: skatījumi, leads, konversija %, bāru diagramma, segmentu sadalījums, UTM, pēdējie leads |
+| `/dashboard/agency` | agency_admin, super_admin | Multi-venue pārskats: leads pa venues, aktīvie wheels |
+
+### 8.2 Admin panelis (`/admin/`)
+
+| Lapa | Pieejams | Apraksts |
+|---|---|---|
+| `/admin` | Visi autorizēti | Novirza pēc lomas |
+| `/admin/venue` | client_admin, super_admin | Galvenā vadības lapa |
+| `/admin/venue/prizes` | client_admin, super_admin | Balvu CRUD ar svaru un derīgumu |
+| `/admin/venue/ledger` | client_admin, super_admin | Balvu grāmatvedība pa mēnešiem + CSV eksports |
+| `/admin/venue/staff` | client_admin, super_admin | Darbinieku CRUD + tips saite |
+| `/admin/venue/staff/[id]` | client_admin, super_admin | Per-darbinieka atsauksmes, vadītāja novērtēšanas forma |
+| `/admin/venue/activities` | client_admin, super_admin | Aktivitāšu tipi (Lāzertags, Airsoft, u.c.) |
+| `/admin/venue/bookings` | client_admin, super_admin | Rezervāciju nedēļas skats, CSV imports, aktivizēšana |
+| `/admin/venue/stats` | client_admin, super_admin | Statistikas pārskats (7d/30d/Viss) |
+| `/admin/venue/questions` | client_admin, super_admin | Atsauksmju jautājumu konfigurācija |
+| `/admin/venue/texts` | client_admin, super_admin | UI tekstu pielāgošana (copy_strings) |
+| `/admin/venue/instructions` | client_admin, super_admin | Venue instrukcijas |
+| `/admin/venue/upsell` | client_admin, super_admin | Moduļu papildus piedāvājums |
+| `/admin/today` | staff, client_admin, super_admin | Šodienas sesiju saraksts |
+| `/admin/session` | staff, client_admin, super_admin | Aktīvā sesija, QR ģenerēšana |
+| `/admin/venues` | super_admin | Visu venue saraksts |
+| `/admin/venues/[id]` | super_admin | Venue iestatījumi |
+| `/admin/venues/new` | super_admin | Jauna venue izveide |
+
+---
+
+## 9. CENU PLĀNI
+
+*(No `app/moduli/page.tsx`)*
 
 | Plāns | Cena | Iekļautie moduļi |
 |---|---|---|
 | **Free** | €0 | Spin Reward + Darbinieku novērtējums |
-| **Starter** | €29/mēn | Free + Tips + Google atgādinājums |
-| **Pamata** | €59/mēn | Starter + Spin+Meta + Digital Stamps |
+| **Starter** | €29/mēn | Free + Tips + Google atsauksmju atgādinājums |
+| **Pamata** | €59/mēn | Starter + Spin+Meta + Digital Stamps (populārākais) |
 | **Viss kopā** | €119/mēn | Pamata + Lead Capture + Leads sildīšana + Maiņu grafiks |
 | **Onboarding** | individuāli | Pēc pieprasījuma |
 | **AuraTag** | individuāli | Pēc pieprasījuma |
 
 ---
 
-## 11. TEHNOLOĢIJU SARAKSTS
+## 10. MODUĻU CENU SARAKSTS (individual add-ons)
 
-| Kategorija | Tehnoloģija |
+| Modulis | Cena |
 |---|---|
-| Framework | Next.js 16.2.7 (Turbopack, App Router) |
-| UI | React 19, Tailwind CSS |
-| Datubāze | Supabase (PostgreSQL + Row Level Security) |
-| Auth | Supabase Auth (email + password) |
-| Video | Remotion + @remotion/lambda (Phase 2) |
-| E-pasts | Resend |
-| Tips | Revolut / Stripe (integrācija nākotnē v1.4) |
-| Datumu formāts | DD.MM.YYYY HH:MM (visā admin UI, lib/fmt.ts) |
-| Deploy | Vercel |
+| Spin Reward | Bezmaksas |
+| Darbinieku novērtējums | Bezmaksas |
+| Tips | no €9/mēn |
+| Google atsauksmju atgādinājums | no €11/mēn |
+| Spin+Meta | no €11/mēn |
+| Lead Capture | no €7/mēn |
+| Leads sildīšana | no €7/mēn |
+| Digital Stamps | no €10/mēn |
+| Maiņu grafiks | no €25/mēn |
+| Onboarding | individuāli |
 
 ---
 
-## 12. INTEGRĀCIJU SAVIENOJUMA KARTE
+## 11. INTEGRĀCIJU KARTE
+
+### 11.1 Resend (e-pasts)
+
+- `lib/resend.ts` — `sendInquiryEmail()` — kontaktformas ziņojums uz gints@spillit.lv
+- `lib/email.ts` — `sendDemoAccessEmail()` — demo piekļuves magic link e-pasts
+- From: `Spillit <noreply@spillit.lv>`
+
+### 11.2 Twilio (SMS)
+
+- `lib/twilio.ts` — `sendSms(to, body)` — QR zaudēšanas novēršana
+- Konfigurācija: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
+- Opcionāls — ja nav konfigurēts, balvas QR joprojām pieejams caur tiešu saiti
+
+### 11.3 QR kods
+
+- `qrcode` npm pakete (v1.5.4)
+- Izmantots: `/dashboard/widgets/[id]/embed` — ģenerē QR uz `/w/{slug}` tiešo URL
+
+### 11.4 Remotion Lambda (video)
+
+- `@remotion/lambda` v4.0.477, `@remotion/cli`, `remotion`
+- `/api/render-session` — renderē personalizētus MP4 AuraTag spēlētājiem
+- Saglabā S3 → Supabase Storage `cards-rendered`
+- Konfigurācija: `REMOTION_AWS_REGION`, `REMOTION_LAMBDA_FN`, `REMOTION_SERVE_URL`
+- Phase 2 — vēl nav production aktīvs
+
+### 11.5 Google Places
+
+- `venues.google_place_id` → izveido `https://search.google.com/local/writereview?placeid=<id>` saiti
+
+### 11.6 Meta (Facebook/Instagram)
+
+- `venues.meta_pixel_id` → Spin+Meta modulis ievada pikseli `/play` lapā
+
+### 11.7 Revolut / Stripe
+
+- `staff.stripe_tip_link` → Tips modulis, novirza klientu uz darbinieka Revolut/Stripe saiti
 
 ```
 Spillit
-  ├── Supabase (DB + Auth + RLS)
+  ├── Supabase (DB + Auth + RLS + Storage)
   │     ├── reviews ←→ spins ←→ prizes
   │     ├── bookings ←→ sessions
-  │     └── game_results ←→ share_events
+  │     ├── game_results ←→ share_events
+  │     └── wheels ←→ wheel_segments ←→ leads
+  │
+  ├── Resend (e-pasts)
+  │     ├── /api/inquiry → admina e-pasts
+  │     └── /api/demo/request-access → demo magic link
+  │
+  ├── Twilio (SMS, opcionāls)
+  │     └── QR zaudēšanas SMS
+  │
+  ├── Remotion Lambda (AWS, Phase 2)
+  │     └── /api/render-session → personalizēts MP4 → CDN
+  │
+  ├── qrcode (npm)
+  │     └── /dashboard/widgets/[id]/embed → QR attēls
   │
   ├── Google Places API
   │     └── venues.google_place_id → Review saite klientiem
@@ -730,20 +649,45 @@ Spillit
   ├── Meta (Facebook/Instagram)
   │     └── venues.meta_pixel_id → Spin+Meta modulis
   │
-  ├── Revolut / Stripe
-  │     └── staff.stripe_tip_link → Tips modulis (klientam)
-  │
-  ├── Resend (e-pasts)
-  │     └── /api/inquiry → admina e-pasts par jauniem pieteikumiem
-  │
-  ├── WhatsApp
-  │     ├── Landing page kontakts
-  │     └── Maiņu grafiks (čeklisti darbiniekiem)
-  │
-  └── Remotion Lambda (AWS)
-        └── /api/render-session → personalizēts MP4 → CDN
+  └── Revolut / Stripe
+        └── staff.stripe_tip_link → Tips modulis
 ```
 
 ---
 
-*Dokuments ģenerēts: 2026-06-17. Projekts: spinreward/spin-reward (master branch).*
+## 12. RPC FUNKCIJAS
+
+Visi RPCs ir `SECURITY DEFINER` ar atbilstošām piekļuves pārbaudēm.
+
+| RPC | Parametri | Apraksts |
+|---|---|---|
+| `get_bookings` | venue_id, from, to | Bookings ar JOIN aktivitāte+staff+has_spin |
+| `get_prize_ledger` | venue_id | Ledger bez datuma filtra (pilns) |
+| `get_prize_ledger_dated` | venue_id, from, to | Ledger ar datuma filtru |
+| `get_staff_reviews` | venue_id, staff_id, from, to | Per-darbinieka atsauksmes |
+| `get_result_by_token` | p_token | AuraTag spēlētāja rezultāts (anon pieejams) |
+| `get_session_results` | p_session | Visi sesijas spēlētāji (anon pieejams) |
+| `redeem_spin` | qr_token | Balvas apstiprināšana (maina status uz 'redeemed') |
+
+---
+
+## 13. TEHNOLOĢIJU SARAKSTS
+
+| Kategorija | Tehnoloģija |
+|---|---|
+| Framework | Next.js 16.2.7 (App Router) |
+| UI | React 19.2.4, Tailwind CSS 4 |
+| Datubāze | Supabase (PostgreSQL + RLS) |
+| Auth | Supabase Auth (@supabase/ssr 0.12.0) |
+| Video | Remotion 4.0.477 + @remotion/lambda (Phase 2) |
+| E-pasts | Resend (lib/resend.ts, lib/email.ts) |
+| SMS | Twilio (lib/twilio.ts) |
+| QR | qrcode 1.5.4 |
+| Validācija | Zod 4.3.6 |
+| Testi | Vitest 4.1.8 (`fileParallelism: false`) + Playwright |
+| Deploy | Vercel (GitHub Actions → amondnet/vercel-action) |
+| CI | GitHub Actions (lint → type-check → test → build) |
+
+---
+
+*Dokuments pārskatīts: 19.06.2026. Projekts: spinreward/spin-reward (master branch).*
