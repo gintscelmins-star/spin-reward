@@ -28,13 +28,13 @@ const T: Record<Lang, {
   lv: {
     nav: {
       modules: 'Moduļi & Cenas',
-      cta: 'Izmēģini bezmaksas!',
+      cta: 'Sākt bezmaksas',
     },
     hero: {
       badge: '🎡 Klientu iesaiste, atsauksmes un lojalitāte',
       tagline: 'Pārvērt katru apmeklējumu atsauksmēs, lojalitātē un labākos darbiniekos',
       sub: 'Feedback un darbinieku reitingi tieši tev — bez publiskas kritikas, ar iespēju uzlabot pirms tā nonāk Google.',
-      cta: 'Izmēģini bezmaksas! →',
+      cta: 'Sākt bezmaksas izmēģinājumu',
       ctaWa: '💬 Jautājumi? WhatsApp',
     },
     audience: {
@@ -57,20 +57,20 @@ const T: Record<Lang, {
     ctaBottom: {
       h2: 'Gatavs sākt?',
       sub: 'Uzstādi savu pirmo laimes ratu dažu minūšu laikā — bez tehniskām zināšanām.',
-      cta: 'Izmēģini bezmaksas! →',
+      cta: 'Sākt bezmaksas izmēģinājumu',
       wa: '💬 WhatsApp',
     },
   },
   en: {
     nav: {
       modules: 'Modules & Pricing',
-      cta: 'Try for free!',
+      cta: 'Start free trial',
     },
     hero: {
       badge: '🎡 Customer engagement, reviews & loyalty',
       tagline: 'Turn every visit into reviews, loyalty and better staff performance',
       sub: 'Feedback and staff ratings delivered directly to you — no public criticism, with the ability to fix issues before they reach Google.',
-      cta: 'Try for free! →',
+      cta: 'Start free trial',
       ctaWa: '💬 Questions? WhatsApp',
     },
     audience: {
@@ -93,7 +93,7 @@ const T: Record<Lang, {
     ctaBottom: {
       h2: 'Ready to start?',
       sub: 'Set up your first spin wheel in minutes — no technical knowledge required.',
-      cta: 'Try for free! →',
+      cta: 'Start free trial',
       wa: '💬 WhatsApp',
     },
   },
@@ -171,7 +171,7 @@ export default function LandingPage() {
               <span>💬</span> WhatsApp
             </a>
             <Link
-              href={demoHref}
+              href="/register"
               className="px-5 py-2 rounded-full text-sm font-bold text-purple-950 transition-all active:scale-95 shadow-md"
               style={{ background: 'linear-gradient(135deg,#FFD700,#FF8C00)' }}
             >
@@ -209,7 +209,7 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
-              href={demoHref}
+              href="/register"
               className="inline-block px-9 py-4 rounded-2xl text-lg font-black text-purple-950 transition-all active:scale-95"
               style={{ background: 'linear-gradient(135deg,#FFD700,#FF8C00)', boxShadow: '0 8px 36px rgba(255,140,0,0.45)' }}
             >
@@ -323,7 +323,7 @@ export default function LandingPage() {
           <p className="text-white/55 mb-9 leading-relaxed">{t.ctaBottom.sub}</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
-              href={demoHref}
+              href="/register"
               className="inline-block px-9 py-4 rounded-2xl text-lg font-black text-purple-950 transition-all active:scale-95"
               style={{ background: 'linear-gradient(135deg,#FFD700,#FF8C00)', boxShadow: '0 8px 36px rgba(255,140,0,0.4)' }}
             >

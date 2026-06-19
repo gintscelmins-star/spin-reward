@@ -213,11 +213,11 @@ export default function ModuliPage() {
               <span>💬</span> WhatsApp
             </a>
             <Link
-              href="/login"
+              href="/register"
               className="px-5 py-2 rounded-full text-sm font-bold text-purple-950 transition-all active:scale-95 shadow-md"
               style={{ background: 'linear-gradient(135deg,#FFD700,#FF8C00)' }}
             >
-              Izmēģini bezmaksas!
+              Sākt bezmaksas izmēģinājumu
             </Link>
           </div>
         </div>
@@ -266,16 +266,16 @@ export default function ModuliPage() {
                     </li>
                   ))}
                 </ul>
-                <a
-                  href="#pieteikums"
+                <Link
+                  href="/register"
                   className={`block w-full py-2 rounded-xl text-sm font-bold text-center transition-all active:scale-95 ${
                     plan.highlight
                       ? 'bg-purple-600 hover:bg-purple-700 text-white'
                       : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
                   }`}
                 >
-                  {plan.price === '€0' ? 'Sākt bezmaksas' : 'Pieteikties'}
-                </a>
+                  {plan.price === '€0' ? 'Sākt bezmaksas izmēģinājumu' : 'Sākt bezmaksas izmēģinājumu'}
+                </Link>
               </div>
             ))}
           </div>
