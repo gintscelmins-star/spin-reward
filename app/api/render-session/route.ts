@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdmin } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import {
   renderMediaOnLambda,
   getRenderProgress,
@@ -112,6 +113,12 @@ async function renderOnePlayer(r: {
 }
 
 export async function POST(req: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   if (!LAMBDA_FN || !SERVE_URL) {
     return NextResponse.json(
       { error: 'REMOTION_LAMBDA_FN or REMOTION_SERVE_URL not configured' },

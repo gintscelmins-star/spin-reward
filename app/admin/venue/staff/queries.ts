@@ -147,7 +147,7 @@ export async function getStaffReviewsRows(
     .lte('created_at', toTs)
     .order('created_at', { ascending: false }) as {
       data: ReviewRecord[] | null
-      error: any
+      error: { message: string } | null
     }
 
   if (error) throw new Error(error.message)

@@ -9,7 +9,9 @@ export default defineConfig({
     testTimeout: 45000,
     hookTimeout: 90000,
     exclude: ['tests/e2e/**', 'node_modules/**'],
-    // Run suites sequentially — each suite owns the same test fixtures
+    // Run files sequentially — test files share the same DB and fixtures; concurrent
+    // file execution causes cross-file cleanup races (e.g. test_key_* deletion).
+    fileParallelism: false,
     sequence: { concurrent: false },
   },
   resolve: {

@@ -44,6 +44,13 @@ export default function SessionClient({ staffList, activities, venueId, todaySes
   const autoStaffId = selectedActivityId ? (actById[selectedActivityId]?.default_staff_id ?? null) : null
   const autoStaffName = autoStaffId ? (staffList.find(s => s.id === autoStaffId)?.name ?? null) : null
 
+  async function generateQr(sessionId: string) {
+    const url = `${window.location.origin}/play?session=${sessionId}`
+    const QRCode = await import('qrcode')
+    const dataUrl = await QRCode.toDataURL(url, { width: 280, margin: 2 })
+    setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, qrDataUrl: dataUrl } : s))
+  }
+
   useEffect(() => {
     if (prevPendingRef.current && !pending && state?.sessionId) {
       const sid = state.sessionId!
@@ -68,13 +75,6 @@ export default function SessionClient({ staffList, activities, venueId, todaySes
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  async function generateQr(sessionId: string) {
-    const url = `${window.location.origin}/play?session=${sessionId}`
-    const QRCode = await import('qrcode')
-    const dataUrl = await QRCode.toDataURL(url, { width: 280, margin: 2 })
-    setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, qrDataUrl: dataUrl } : s))
-  }
 
   function staffName(id: string | null) {
     if (!id) return null

@@ -111,6 +111,7 @@ export default async function DemoDashboard({
   const contactHref = lang === 'en' ? '/?lang=en#kontakts' : '/#kontakts'
 
   const admin = getAdmin()
+  // eslint-disable-next-line react-hooks/purity
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
   const [

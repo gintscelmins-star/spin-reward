@@ -10,7 +10,7 @@ interface Props {
 
 export default function TasksClient({ staffId, venueId }: Props) {
   const [state, formAction, pending] = useActionState<{ error?: string } | null, FormData>(
-    submitStaffTasks as any,
+    submitStaffTasks as unknown as (state: { error?: string } | null, payload: FormData) => Promise<{ error?: string } | null>,
     null
   )
 

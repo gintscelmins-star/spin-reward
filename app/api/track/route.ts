@@ -38,6 +38,17 @@ export async function POST(req: NextRequest) {
   const ua = req.headers.get('user-agent') ?? ''
 
   const admin = getAdmin()
+
+  // Validate the share_token exists to prevent fake event spam
+  const { data: valid } = await admin
+    .from('game_results')
+    .select('share_token')
+    .eq('share_token', token)
+    .single()
+  if (!valid) {
+    return NextResponse.json({ error: 'invalid token' }, { status: 404 })
+  }
+
   await admin.from('share_events').insert({
     share_token: token,
     event_type: event,

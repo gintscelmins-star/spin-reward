@@ -156,6 +156,7 @@ describe('B – Anon Boundaries + PII', () => {
     // Anon can INSERT reviews (no RETURNING — SELECT RLS blocks return but insert succeeds)
     const { error: rErr } = await anon.from('reviews').insert({
       venue_id: f.venueA.id,
+      session_id: f.sessionA.id,
       rating: 5,
       google_redirected: false,
     })
