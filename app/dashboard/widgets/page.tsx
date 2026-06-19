@@ -57,14 +57,24 @@ export default async function WidgetsPage() {
             <p className="text-xs text-gray-400 uppercase tracking-widest mb-0.5">
               {profile.role === 'agency_admin' ? 'Agency' : 'Venue'} Dashboard
             </p>
-            <h1 className="text-2xl font-bold text-gray-800">Wheels</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Mani rati</h1>
           </div>
-          <Link
-            href="/dashboard/widgets/new"
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-sm transition-colors"
-          >
-            + New Wheel
-          </Link>
+          <div className="flex items-center gap-3">
+            {['agency_admin', 'super_admin'].includes(profile.role) && (
+              <Link
+                href="/dashboard/agency"
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl text-sm transition-colors"
+              >
+                Aģentūras pārskats
+              </Link>
+            )}
+            <Link
+              href="/dashboard/widgets/new"
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-sm transition-colors"
+            >
+              + Jauns rats
+            </Link>
+          </div>
         </div>
 
         <div className="bg-white rounded-2xl shadow overflow-hidden">
@@ -111,12 +121,21 @@ export default async function WidgetsPage() {
                     {new Date(w.created_at).toLocaleDateString('en-GB')}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-3 text-xs">
+                    <div className="flex items-center gap-3 text-xs flex-wrap">
                       <Link href={`/dashboard/widgets/${w.id}/segments`} className="text-purple-600 hover:underline">
-                        Segments
+                        Segmenti
                       </Link>
                       <Link href={`/dashboard/widgets/${w.id}/form`} className="text-purple-600 hover:underline">
-                        Form
+                        Forma
+                      </Link>
+                      <Link href={`/dashboard/widgets/${w.id}/preview`} className="text-purple-600 hover:underline">
+                        Preview
+                      </Link>
+                      <Link href={`/dashboard/widgets/${w.id}/embed`} className="text-purple-600 hover:underline">
+                        Embed
+                      </Link>
+                      <Link href={`/dashboard/widgets/${w.id}/analytics`} className="text-purple-600 hover:underline">
+                        Analytics
                       </Link>
                     </div>
                   </td>

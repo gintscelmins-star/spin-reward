@@ -73,6 +73,39 @@ export async function toggleWheelActive(formData: FormData): Promise<void> {
   revalidatePath('/dashboard/widgets')
 }
 
+export async function publishWheel(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  let ctx: Awaited<ReturnType<typeof getAllowedClient>>
+  try { ctx = await getAllowedClient() } catch { return { error: 'Unauthorized' } }
+  const { supabase } = ctx
+
+  const wheelId = formData.get('wheel_id') as string
+
+  const { data: segments } = await supabase
+    .from('wheel_segments')
+    .select('id')
+    .eq('wheel_id', wheelId)
+    .eq('active', true)
+
+  if (!segments || segments.length === 0) {
+    return { error: 'Pievienojiet vismaz 1 segmentu pirms publicēšanas' }
+  }
+
+  const { error } = await supabase
+    .from('wheels')
+    .update({ active: true, updated_at: new Date().toISOString() })
+    .eq('id', wheelId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/dashboard/widgets/${wheelId}/preview`)
+  revalidatePath(`/dashboard/widgets/${wheelId}/embed`)
+  revalidatePath('/dashboard/widgets')
+  return { success: true }
+}
+
 export async function upsertSegment(
   _prev: ActionState,
   formData: FormData
