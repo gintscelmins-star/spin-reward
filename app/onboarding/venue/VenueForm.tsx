@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useState } from 'react'
+import { useActionState, useState } from 'react'
 import { createVenue } from './actions'
 import type { VenueActionState } from './actions'
 
@@ -31,14 +31,10 @@ function toSlug(name: string): string {
 export default function VenueForm() {
   const [state, formAction, pending] = useActionState<VenueActionState, FormData>(createVenue, null)
   const [name, setName] = useState('')
-  const [slug, setSlug] = useState('')
-  const [slugTouched, setSlugTouched] = useState(false)
+  const [slugOverride, setSlugOverride] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!slugTouched) {
-      setSlug(toSlug(name))
-    }
-  }, [name, slugTouched])
+  const derivedSlug = toSlug(name)
+  const slug = slugOverride !== null ? slugOverride : derivedSlug
 
   return (
     <div className="bg-white rounded-2xl shadow border border-gray-100 p-6">
@@ -62,7 +58,7 @@ export default function VenueForm() {
             type="text"
             required
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={e => { setName(e.target.value); setSlugOverride(null) }}
             placeholder="Mans Uzņēmums"
             className="px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 text-gray-800"
           />
@@ -98,8 +94,7 @@ export default function VenueForm() {
               type="text"
               value={slug}
               onChange={e => {
-                setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))
-                setSlugTouched(true)
+                setSlugOverride(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))
               }}
               placeholder="mans-uznemums"
               className="flex-1 px-3 py-3 focus:outline-none text-gray-800 text-sm"

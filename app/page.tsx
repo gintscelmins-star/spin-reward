@@ -132,7 +132,6 @@ export default function LandingPage() {
   const [lang, setLang] = useState<Lang>('lv')
   const t = T[lang]
   const modules = MODULES[lang]
-  const demoHref = lang === 'en' ? '/demo/dashboard?lang=en' : '/demo/dashboard'
 
   return (
     <div className="min-h-screen bg-white">
