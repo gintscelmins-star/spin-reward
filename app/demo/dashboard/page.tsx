@@ -37,6 +37,9 @@ const T = {
       { label: 'Rezervācijas', icon: '📅' },
       { label: 'Šodienas sesijas', icon: '⚡' },
     ],
+    playSectionTitle: 'Gribi pats izspēlēt ratu?',
+    playSectionSub: 'Tieši šādu plūsmu redz tavs klients — no spina līdz balvai.',
+    playCta: 'Izspēlēt ratā →',
     ctaTitle: 'Gatavs sākt ar savu venue?',
     ctaSub: 'Bezmaksas sākums — Spin Reward + darbinieku novērtējums.',
     ctaContact: 'Sazināties →',
@@ -70,6 +73,9 @@ const T = {
       { label: 'Bookings', icon: '📅' },
       { label: "Today's sessions", icon: '⚡' },
     ],
+    playSectionTitle: 'Want to try the wheel yourself?',
+    playSectionSub: 'This is exactly the flow your customer sees — from spin to prize.',
+    playCta: 'Play the wheel →',
     ctaTitle: 'Ready to start with your venue?',
     ctaSub: 'Free to start — Spin Reward + staff rating.',
     ctaContact: 'Get in touch →',
@@ -109,6 +115,7 @@ export default async function DemoDashboard({
   const t = T[lang]
   const waLink = lang === 'en' ? WA_EN : WA_LV
   const contactHref = lang === 'en' ? '/?lang=en#kontakts' : '/#kontakts'
+  const playHref = '/play?venue=melnie-laci-demo'
 
   const admin = getAdmin()
   // eslint-disable-next-line react-hooks/purity
@@ -210,6 +217,24 @@ export default async function DemoDashboard({
               {t.staffBadge(staffList?.filter(s => (s as StaffRow).active).length ?? 0)}
             </span>
           </div>
+        </div>
+
+        {/* Play CTA */}
+        <div className="bg-white rounded-2xl shadow-sm p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <span className="text-4xl">🎡</span>
+            <div>
+              <p className="font-bold text-gray-900 text-base">{t.playSectionTitle}</p>
+              <p className="text-sm text-gray-500 mt-0.5">{t.playSectionSub}</p>
+            </div>
+          </div>
+          <Link
+            href={playHref}
+            className="flex-shrink-0 px-5 py-3 rounded-xl text-sm font-black text-purple-950 transition-all hover:opacity-90"
+            style={{ background: 'linear-gradient(135deg,#FFD700,#FF8C00)' }}
+          >
+            {t.playCta}
+          </Link>
         </div>
 
         {/* Stats */}
