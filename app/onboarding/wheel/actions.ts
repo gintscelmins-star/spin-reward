@@ -34,7 +34,7 @@ export async function completeOnboarding(
   // Get venue name + category
   const { data: venue } = await admin
     .from('venues')
-    .select('name, category')
+    .select('name, venue_type')
     .eq('id', venueId)
     .single()
 
@@ -80,7 +80,7 @@ export async function completeOnboarding(
     wheel_id:           wheel.id,
     label:              p.name,
     color:              SEGMENT_COLORS[i % SEGMENT_COLORS.length],
-    prize_type:         'physical' as const,
+    prize_type:         'gift' as const,
     probability_weight: p.probability_weight,
     expires_days:       30,
     active:             true,
@@ -93,14 +93,14 @@ export async function completeOnboarding(
   // Mark venue as onboarded
   await admin
     .from('venues')
-    .update({ onboarded_at: new Date().toISOString() })
+    .update({ onboarding_completed: true, onboarding_completed_at: new Date().toISOString() })
     .eq('id', venueId)
 
   // Send emails (non-blocking — don't fail onboarding if email fails)
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.spillit.lv'
   await Promise.allSettled([
     sendWelcomeEmail(user.email!, venue.name, `${appUrl}/dashboard`),
-    sendNewVenueNotification(venue.name, user.email!, venue.category ?? 'Nezināma'),
+    sendNewVenueNotification(venue.name, user.email!, venue.venue_type ?? 'Nezināma'),
   ])
 
   redirect('/dashboard')
