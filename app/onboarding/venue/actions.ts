@@ -64,9 +64,9 @@ export async function createVenue(
     .insert({
       name:           venue_name,
       slug:           finalSlug,
-      category:       category || null,
+      venue_type:     category || null,
       plan:           'trial',
-      billing_status: 'trialing',
+      billing_status: 'trial',
       trial_ends_at:  trialEndsAt,
       active:         true,
     })
