@@ -99,9 +99,9 @@ export async function completeOnboarding(
   // Send emails (non-blocking — don't fail onboarding if email fails)
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.spillit.lv'
   await Promise.allSettled([
-    sendWelcomeEmail(user.email!, venue.name, `${appUrl}/dashboard`),
+    sendWelcomeEmail(user.email!, venue.name, `${appUrl}/admin`),
     sendNewVenueNotification(venue.name, user.email!, venue.venue_type ?? 'Nezināma'),
   ])
 
-  redirect('/dashboard')
+  redirect('/admin')
 }

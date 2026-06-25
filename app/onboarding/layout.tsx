@@ -46,7 +46,7 @@ export default async function OnboardingLayout({
         </div>
 
         <Link
-          href="/dashboard"
+          href="/admin"
           className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
         >
           Iziet

@@ -31,15 +31,8 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const isAuthed = !!user
 
-  // Authenticated users leave login/register
+  // Authenticated users leave login/register — send to /admin which has role-based routing
   if (isAuthed && (pathname === '/login' || pathname === '/register')) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
-  }
-
-  // Legacy: /login redirect went to /admin — keep for existing admin users
-  if (isAuthed && pathname === '/login') {
     const url = request.nextUrl.clone()
     url.pathname = '/admin'
     return NextResponse.redirect(url)
