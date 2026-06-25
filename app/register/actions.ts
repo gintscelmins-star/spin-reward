@@ -39,6 +39,9 @@ export async function registerUser(
     return { error: 'Pārāk daudz mēģinājumu. Mēģiniet vēlāk.' }
   }
 
+  // Record attempt immediately — counts every try, not just successful registrations
+  await admin.from('registration_attempts').insert({ email })
+
   // Create confirmed auth user via admin client
   const { data: authData, error: authError } = await admin.auth.admin.createUser({
     email,
@@ -65,9 +68,6 @@ export async function registerUser(
     await admin.auth.admin.deleteUser(userId)
     return { error: `Kļūda reģistrācijas laikā: ${profileError.message}` }
   }
-
-  // Record registration attempt
-  await admin.from('registration_attempts').insert({ email })
 
   // Sign the user in with the server client so cookies are set
   const supabase = await createClient()
