@@ -6,7 +6,6 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   let supabaseResponse = NextResponse.next({ request })
-  supabaseResponse.headers.set('x-pathname', pathname)
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,7 +18,6 @@ export async function proxy(request: NextRequest) {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
-          supabaseResponse.headers.set('x-pathname', pathname)
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
