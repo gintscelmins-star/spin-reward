@@ -64,9 +64,10 @@ export default async function NewVenuePage() {
                 required
                 className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white"
               >
+                <option value="free">Free</option>
                 <option value="starter">Starter</option>
-                <option value="pro">Pro</option>
-                <option value="enterprise">Enterprise</option>
+                <option value="growth">Growth</option>
+                <option value="multi">Multi</option>
               </select>
             </div>
             <div>
