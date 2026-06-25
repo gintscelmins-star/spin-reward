@@ -93,6 +93,35 @@ Mērķis: iznākumu nevar viltot; vienreizējība; krājuma kontrole.
 | H3 | /prize ar fake token | "nederīgs kods" |
 | H4 | tukšs review_questions saraksts | plūsma neaizķeras |
 
+## I. V2 ONBOARDING (vitest — tests/onboarding.test.ts)
+Mērķis: pārliecināties ka pašapkalpošanās reģistrācijas ķēde neuzraisīs DB constraint kļūdas.
+
+| # | Tests | Sagaidāms |
+|---|---|---|
+| I1 | Pilna ķēde: createVenue → savePrizes → completeOnboarding | venue.plan='free', billing_status='trial', venue_type aizpildīts, prizes ≥2, wheel_segments ar derīgu prize_type, onboarding_completed=true |
+| I2 | Rate-limit: 3 mēģinājumi 1h → 4. tiktu bloķēts | count ≥ 3 → bloķēts |
+
+## J. SUPER-ADMIN VENUES + REDEMPTIONS RPC (vitest — tests/admin-venues.test.ts)
+Mērķis: pārbaudīt jaunās RPC funkcijas kā autentificēts lietotājs.
+
+| # | Tests | Sagaidāms |
+|---|---|---|
+| J1 | get_venues_overview() kā super_admin | atgriež rindas ar pareiziem kolonnu nosaukumiem (module_google_enabled, billing_status, review_count, spin_count) |
+| J2 | get_venues_overview() kā client_admin | tukšs masīvs (auth_role() guard) |
+| J3 | manual_redeem_spin() 1. un 2. reize | 1.→'redeemed'; 2.→'already_redeemed' |
+| J4 | get_redemptions() kā super_admin | atgriež spinus ar spin_id lauku |
+
+## K. V2 EMBEDDED WIDGET (Playwright — tests/e2e/widget.spec.ts)
+Mērķis: pilns E2E pārklājums embedded widget plūsmai (iepriekš NULLE pārklājuma).
+
+| # | Tests | Sagaidāms |
+|---|---|---|
+| W1 | /w/{slug} ielādējas un parāda welcome ekrānu | SVG rats vai formas elementi redzami |
+| W2 | Pilna spin plūsma: welcome → forma → e-pasts → reveal | Balvas reveal ekrāns parādās |
+| W3 | POST /api/w/spin atgriež derīgu segment objektu | segment.label, segment.prize_type, segment_index laukos |
+| W4 | POST /api/w/spin ar one_spin_per_email bloķē dublikātu | 2. pieprasījums → 409, error='already_spun' |
+| W5 | GET /api/w/{slug} neatgriež total_views | response nav total_views lauka |
+
 ---
 
 ## MANUĀLAIS (Gints — pēc tam)
