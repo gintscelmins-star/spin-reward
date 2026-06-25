@@ -113,30 +113,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }
 
-  // Decrement stock (fire and forget)
+  // Atomic stock decrement (fire and forget)
   if (winner.remaining !== null) {
-    admin
-      .from('wheel_segments')
-      .update({ remaining: Math.max(0, (winner.remaining ?? 1) - 1) })
-      .eq('id', winner.id)
-      .then(() => {})
+    admin.rpc('decrement_segment_stock', { p_segment_id: winner.id }).then(() => {})
   }
 
-  // Increment wheel counters (fire and forget — not atomic but acceptable for counters)
-  admin
-    .from('wheels')
-    .select('total_leads, total_spins')
-    .eq('id', wheel.id)
-    .single()
-    .then(({ data }) => {
-      if (data) {
-        admin.from('wheels').update({
-          total_leads: (data.total_leads ?? 0) + 1,
-          total_spins: (data.total_spins ?? 0) + 1,
-          updated_at: new Date().toISOString(),
-        }).eq('id', wheel.id).then(() => {})
-      }
-    })
+  // Atomic counter increments (fire and forget)
+  admin.rpc('increment_wheel_counters', { p_wheel_id: wheel.id }).then(() => {})
 
   const displayIndex = allSegments.findIndex(s => s.id === winner.id)
 

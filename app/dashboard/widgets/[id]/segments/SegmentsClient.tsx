@@ -30,6 +30,8 @@ const PRIZE_TYPES = [
   { value: 'discount_pct', label: 'Discount %' },
   { value: 'discount_eur', label: 'Discount €' },
   { value: 'free_product', label: 'Free Product' },
+  { value: 'gift', label: 'Gift / Physical Prize' },
+  { value: 'retry', label: 'Try Again (no win)' },
   { value: 'custom', label: 'Custom' },
 ]
 
