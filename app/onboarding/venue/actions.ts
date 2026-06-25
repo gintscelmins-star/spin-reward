@@ -65,7 +65,7 @@ export async function createVenue(
       name:           venue_name,
       slug:           finalSlug,
       venue_type:     category || null,
-      plan:           'trial',
+      plan:           'free',
       billing_status: 'trial',
       trial_ends_at:  trialEndsAt,
       active:         true,
