@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="lv">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>GUNSnLASERS × Spillit — Lasertag statistikas vizualizācija</title>
+<title>AuraTag — Lasertag Stats &amp; Shareable Video Cards | Spillit</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
@@ -129,6 +129,56 @@ section{padding:64px 32px;max-width:1100px;margin:0 auto}
 .demo-share-btn.purple{background:linear-gradient(120deg,var(--purple-a),var(--purple-b));color:#fff}
 .demo-share-btn.ghost{background:#1a1f2c;color:#c4ccd8;border:1px solid rgba(255,255,255,.09)}
 
+/* ── FORMAT TOGGLE (static/video) ── */
+.format-toggle{display:flex;gap:8px;margin-bottom:10px}
+.format-btn{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;letter-spacing:1px;
+  background:#1a1f2c;color:var(--dim2);border:1px solid rgba(255,255,255,.09);transition:.15s;
+  font-family:'Chakra Petch',sans-serif;cursor:pointer}
+.format-btn.active{background:linear-gradient(120deg,var(--purple-a),var(--purple-b));color:#fff;border-color:transparent}
+.format-note{font-size:12px;color:var(--dim);line-height:1.5;margin-bottom:14px}
+
+/* ── LOGO PLACEHOLDER ── */
+.logo-placeholder{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:5px 12px;border:1.5px dashed rgba(255,255,255,.3);border-radius:7px;
+  font-size:10px;font-weight:700;letter-spacing:.8px;color:rgba(255,255,255,.5);
+  background:rgba(255,255,255,.03);white-space:nowrap;
+}
+.vcard-logo{position:absolute;top:12px;left:12px;z-index:2}
+
+/* ── STYLE SHOWCASE ── */
+.style-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:24px}
+.style-card{border-radius:18px;overflow:hidden;border:1px solid var(--line)}
+.style-card-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;gap:10px}
+.style-name{font-family:'Orbitron',sans-serif;font-weight:800;font-size:13px;letter-spacing:2px}
+.style-board{padding:0 18px 18px}
+.style-row{display:grid;grid-template-columns:22px 1fr 78px 44px;gap:8px;align-items:center;padding:8px 0;font-size:12.5px}
+.style-row-head{font-size:9.5px;letter-spacing:1px;text-transform:uppercase;opacity:.6;font-weight:700;padding-bottom:8px;margin-bottom:2px}
+
+.style-minimal{background:#0c0e17}
+.style-minimal .style-card-head{border-bottom:1px solid var(--line)}
+.style-minimal .style-name{color:var(--cyan)}
+.style-minimal .style-row{font-family:'Chakra Petch',sans-serif;color:var(--dim2);border-bottom:1px solid rgba(255,255,255,.04)}
+.style-minimal .style-row-head{color:var(--dim);border-bottom:1px solid var(--line)}
+.style-minimal .r-name{color:var(--txt);font-weight:600}
+.style-minimal .r-kd{color:var(--cyan);font-weight:700;font-family:'Orbitron',sans-serif}
+
+.style-neon{background:linear-gradient(160deg,#1a0a33,#260f4a 45%,#0d0620)}
+.style-neon .style-card-head{border-bottom:1px solid rgba(255,90,255,.25)}
+.style-neon .style-name{color:#ff5af0;text-shadow:0 0 14px rgba(255,90,240,.7);font-family:'Orbitron',sans-serif}
+.style-neon .style-row{font-family:'Orbitron',sans-serif;color:#d6c8ff;border-bottom:1px solid rgba(255,255,255,.06)}
+.style-neon .style-row-head{color:#b79bff;border-bottom:1px solid rgba(255,90,255,.2)}
+.style-neon .r-name{color:#fff;font-weight:700;text-shadow:0 0 8px rgba(150,200,255,.45)}
+.style-neon .r-kd{color:#3df0ff;font-weight:900;text-shadow:0 0 10px rgba(61,240,255,.75)}
+
+.style-stadium{background:linear-gradient(160deg,#1a0606,#0a0303)}
+.style-stadium .style-card-head{border-bottom:2px solid #ff4d2e}
+.style-stadium .style-name{color:#ff4d2e;font-family:'Orbitron',sans-serif;font-weight:900}
+.style-stadium .style-row{font-family:'Chakra Petch',sans-serif;font-weight:700;color:#f0d8d0;border-bottom:1px solid rgba(255,255,255,.08)}
+.style-stadium .style-row-head{color:#ff8c66;border-bottom:2px solid rgba(255,77,46,.4)}
+.style-stadium .r-name{color:#fff;font-weight:800;letter-spacing:.5px}
+.style-stadium .r-kd{color:#ffc63d;font-weight:900;font-family:'Orbitron',sans-serif}
+
 /* ── WHY ── */
 .why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
 .why-item{display:flex;gap:16px;align-items:flex-start;padding:22px;background:var(--card);border:1px solid var(--line);border-radius:14px}
@@ -159,6 +209,8 @@ footer p{font-size:12px;color:var(--dim)}
   section{padding:48px 18px}
   .demo-screen{grid-template-columns:1fr}
   .reach-grid{grid-template-columns:1fr}
+  .style-grid{grid-template-columns:1fr}
+  .style-row{grid-template-columns:18px 1fr 64px 38px;font-size:11.5px}
   .cta-block{margin:0 18px 64px}
   footer{flex-direction:column;align-items:flex-start}
 }
@@ -168,20 +220,20 @@ footer p{font-size:12px;color:var(--dim)}
 
 <!-- NAV -->
 <nav>
-  <div class="nav-logo">SPILLIT × GNL</div>
-  <a class="nav-cta" href="mailto:gints@spillit.lv">Sazināties →</a>
+  <div class="nav-logo">SPILLIT</div>
+  <a class="nav-cta" href="mailto:gints@spillit.lv">Get in touch →</a>
 </nav>
 
 <!-- HERO -->
 <div class="hero">
-  <p class="hero-kicker">Lasertag × Spillit modulis</p>
-  <h1>Katrs spēlētājs kļūst par <span>GUNSnLASERS bezmaksas reklāmu soc tīklos!</span></h1>
+  <p class="hero-kicker">Lasertag × Spillit module</p>
+  <h1>Every player becomes <span>a free advertiser for YOUR VENUE on social media!</span></h1>
   <p class="hero-sub">
-    Personalizēts video ar statistiku — katram spēlētājam pēc spēles. Viena poga, un viņi dalās ar to IG, WhatsApp, TikTok. <strong style="color:#dbe5f0">Tu iegūsti organisko reach bez investīcijām.</strong>
+    A personalized stats video for every player, right after the game. One tap, and they share it on IG, WhatsApp, TikTok. <strong style="color:#dbe5f0">You get organic reach without spending a cent.</strong>
   </p>
   <div class="hero-btns">
-    <a class="btn-primary" href="/laserstats/lasertag_stats.html">🎯 Skatīt leaderboard demo</a>
-    <a class="btn-outline" href="/laserstats/card.html">🎬 Spēlētāja kartiņa</a>
+    <a class="btn-primary" href="/laserstats/lasertag_stats.html">🎯 View leaderboard demo</a>
+    <a class="btn-outline" href="/laserstats/card.html">🎬 Player card demo</a>
   </div>
 </div>
 
@@ -189,51 +241,51 @@ footer p{font-size:12px;color:var(--dim)}
 <div class="strip" style="margin:0 32px 80px;max-width:100%;box-sizing:border-box">
   <div class="strip-item">
     <div class="strip-num">18</div>
-    <div class="strip-lbl">Spēlētāji/sesijā</div>
+    <div class="strip-lbl">Players/session</div>
   </div>
   <div class="strip-item">
     <div class="strip-num" style="color:var(--gold)">×4.7</div>
-    <div class="strip-lbl">Vidējais reach/spēlētājs</div>
+    <div class="strip-lbl">Avg reach/player</div>
   </div>
   <div class="strip-item">
     <div class="strip-num" style="color:var(--green)">84%</div>
-    <div class="strip-lbl">Dala ar video</div>
+    <div class="strip-lbl">Share via video</div>
   </div>
   <div class="strip-item">
-    <div class="strip-num" style="color:var(--purple-b)">0 €</div>
-    <div class="strip-lbl">Reklāmas izmaksas</div>
+    <div class="strip-num" style="color:var(--purple-b)">$0</div>
+    <div class="strip-lbl">Ad spend</div>
   </div>
 </div>
 
 <!-- FLOW -->
 <section>
-  <p class="section-tag">Kā tas strādā</p>
-  <h2 class="section-title">No spēles beigām līdz soctīkliem — 3 soļi</h2>
-  <p class="section-desc">Pilnautomātisks process. Nekas nav jādara manuāli — operators ievada rezultātus, sistēma paveic visu pārējo.</p>
+  <p class="section-tag">How it works</p>
+  <h2 class="section-title">From game over to social media — fully automated</h2>
+  <p class="section-desc">A fully automated process. Nothing to do manually — staff enters the results, the system handles the rest.</p>
   <div class="flow">
     <div class="flow-step">
       <div class="flow-num">01</div>
       <div class="flow-icon">🎮</div>
-      <div class="flow-title">Spēle beidzas</div>
-      <div class="flow-desc">Operators ievada spēles rezultātus admin panelī. Sistēma automātiski ģenerē personalizētas saites katram spēlētājam.</div>
+      <div class="flow-title">Game ends</div>
+      <div class="flow-desc">Staff enters the match results in the admin panel. The system automatically generates a personalized link for every player.</div>
     </div>
     <div class="flow-step">
       <div class="flow-num">02</div>
       <div class="flow-icon">📲</div>
-      <div class="flow-title">QR kods pie izejas</div>
-      <div class="flow-desc">Spēlētāji skenē QR kodu → redz leaderboard → atrod savu vārdu → atver personalizētu video kartiņu ar saviem datiem.</div>
+      <div class="flow-title">QR code at the exit</div>
+      <div class="flow-desc">Players scan the QR code → see the leaderboard → find their name → open their personalized video card.</div>
     </div>
     <div class="flow-step">
       <div class="flow-num">03</div>
       <div class="flow-icon">🔥</div>
-      <div class="flow-title">Dalās soctīklos</div>
-      <div class="flow-desc">Viena poga "DALĪTIES" → WhatsApp, Instagram, TikTok, Facebook, Telegram. Video ar iedegtu statistiku redzama pat bez saites klikšķa.</div>
+      <div class="flow-title">Shares on social</div>
+      <div class="flow-desc">One "SHARE" button → WhatsApp, Instagram, TikTok, Facebook, Telegram. The stats are baked right into the video — visible before anyone even clicks the link.</div>
     </div>
     <div class="flow-step">
       <div class="flow-num">04</div>
       <div class="flow-icon">📈</div>
-      <div class="flow-title">Organiskais reach</div>
-      <div class="flow-desc">Katrs dalīšanās akts sasniedz vidēji 150–300 sekotājus. 18 spēlētāji × 84% dalīšanās = ~2,700 cilvēku — no vienas spēles.</div>
+      <div class="flow-title">Organic reach</div>
+      <div class="flow-desc">Every share reaches an average of 150–300 followers. 18 players × 84% share rate = ~2,700 people reached — from a single game.</div>
     </div>
   </div>
 </section>
@@ -241,103 +293,165 @@ footer p{font-size:12px;color:var(--dim)}
 <!-- LIVE DEMO PREVIEW -->
 <section>
   <p class="section-tag">Live demo</p>
-  <h2 class="section-title">Izskatās tieši šādi</h2>
-  <p class="section-desc">Pilnīgs leaderboard ar filtrēšanu, individuālā spēlētāja lapa ar video un dalīšanās plūsma.</p>
+  <h2 class="section-title">Here's exactly what it looks like</h2>
+  <p class="section-desc">A full leaderboard with filtering, an individual player page with video, and a built-in sharing flow.</p>
 
   <div class="demo-screen">
     <div>
-      <div class="demo-stat-title">TERMINATORS · COMMANDO · #8</div>
+      <div class="demo-stat-title">PHANTOM · COMMANDO · #8</div>
       <div class="demo-stat-list">
-        <div class="demo-row"><span class="k">Komanda</span><span class="v red">Sarkanā</span></div>
-        <div class="demo-row"><span class="k">Reitings</span><span class="v cyan">31.31</span></div>
-        <div class="demo-row"><span class="k">Trāpījumi</span><span class="v">87</span></div>
-        <div class="demo-row"><span class="k">Ievainojumi</span><span class="v">98</span></div>
-        <div class="demo-row"><span class="k">K:D ratio</span><span class="v red">0.89</span></div>
+        <div class="demo-row"><span class="k">Team</span><span class="v red">Red</span></div>
+        <div class="demo-row"><span class="k">Rating</span><span class="v cyan">31.31</span></div>
+        <div class="demo-row"><span class="k">Hits</span><span class="v">87</span></div>
+        <div class="demo-row"><span class="k">Hit By</span><span class="v">98</span></div>
+        <div class="demo-row"><span class="k">K:D Ratio</span><span class="v red">0.89</span></div>
         <div class="demo-row"><span class="k">K:D +/-</span><span class="v red">-11</span></div>
-        <div class="demo-row"><span class="k">Precizitāte</span><span class="v">3.44%</span></div>
-        <div class="demo-row"><span class="k">Izšautās lodes</span><span class="v">2,530</span></div>
-        <div class="demo-row"><span class="k">Trāp. komandā %</span><span class="v">13.28%</span></div>
+        <div class="demo-row"><span class="k">Accuracy</span><span class="v">3.44%</span></div>
+        <div class="demo-row"><span class="k">Shots Fired</span><span class="v">2,530</span></div>
+        <div class="demo-row"><span class="k">Team Hit %</span><span class="v">13.28%</span></div>
       </div>
       <div class="demo-share-btns">
-        <a class="demo-share-btn purple" href="/laserstats/card.html">🎬 Atvērt kartiņu →</a>
+        <a class="demo-share-btn purple" href="/laserstats/card.html">🎬 Open card →</a>
         <a class="demo-share-btn ghost" href="/laserstats/lasertag_stats.html">📊 Leaderboard →</a>
       </div>
     </div>
     <div>
+      <div class="format-toggle">
+        <button class="format-btn active" data-format="video" type="button">🎬 VIDEO</button>
+        <button class="format-btn" data-format="static" type="button">🖼️ STATIC</button>
+      </div>
+      <p class="format-note">Choose static image cards for faster load times, or animated video cards for maximum shareability — both included in every plan.</p>
       <a href="/laserstats/card.html" class="demo-vcard" style="height:420px;padding:0;border:none;text-decoration:none;position:relative;display:block">
+        <span class="logo-placeholder vcard-logo">[Venue Logo]</span>
         <img src="/auratag/commandopict.jpg" alt="COMMANDO video card" style="width:100%;height:100%;object-fit:cover;object-position:top center;display:block;border-radius:14px">
         <div style="position:absolute;bottom:0;left:0;right:0;padding:14px 16px;background:linear-gradient(to top,rgba(4,5,10,.95) 0%,transparent 100%);border-radius:0 0 14px 14px;display:flex;align-items:center;justify-content:space-between">
           <div>
-            <div style="font-family:'Orbitron',sans-serif;font-size:10px;font-weight:800;letter-spacing:3px;color:var(--cyan)">VIDEO CARD</div>
-            <div style="font-size:11px;color:var(--dim);margin-top:2px">Personalizēts MP4 katram spēlētājam</div>
+            <div id="vcardLabel" style="font-family:'Orbitron',sans-serif;font-size:10px;font-weight:800;letter-spacing:3px;color:var(--cyan)">VIDEO CARD</div>
+            <div id="vcardDesc" style="font-size:11px;color:var(--dim);margin-top:2px">Personalized MP4 for every player</div>
           </div>
-          <span style="font-size:11px;font-weight:700;color:#fff;background:rgba(138,0,255,.7);border-radius:8px;padding:6px 12px;white-space:nowrap">Skatīt →</span>
+          <span style="font-size:11px;font-weight:700;color:#fff;background:rgba(138,0,255,.7);border-radius:8px;padding:6px 12px;white-space:nowrap">View →</span>
         </div>
       </a>
     </div>
   </div>
 </section>
 
+<!-- CHOOSE YOUR STYLE -->
+<section>
+  <p class="section-tag">Customize</p>
+  <h2 class="section-title">Choose your style</h2>
+  <p class="section-desc">Three leaderboard themes, the same powerful stats engine underneath. Pick the one that matches your venue's vibe — or we'll build a custom theme around your brand.</p>
+  <div class="style-grid">
+    <div class="style-card style-minimal">
+      <div class="style-card-head">
+        <span class="style-name">Minimal</span>
+        <span class="logo-placeholder">[Venue Logo]</span>
+      </div>
+      <div class="style-board">
+        <div class="style-row style-row-head"><span>#</span><span>Player</span><span>Class</span><span>K/D</span></div>
+        <div class="style-row"><span>1</span><span class="r-name">Phantom</span><span>COMMANDO</span><span class="r-kd">1.42</span></div>
+        <div class="style-row"><span>2</span><span class="r-name">Viper</span><span>SNIPER</span><span class="r-kd">1.31</span></div>
+        <div class="style-row"><span>3</span><span class="r-name">Reaper</span><span>WARRIOR</span><span class="r-kd">1.18</span></div>
+        <div class="style-row"><span>4</span><span class="r-name">Nova</span><span>SCOUT</span><span class="r-kd">0.95</span></div>
+        <div class="style-row"><span>5</span><span class="r-name">Ghost</span><span>MEDIC</span><span class="r-kd">0.88</span></div>
+        <div class="style-row"><span>6</span><span class="r-name">Blaze</span><span>HEAVY</span><span class="r-kd">0.81</span></div>
+      </div>
+    </div>
+
+    <div class="style-card style-neon">
+      <div class="style-card-head">
+        <span class="style-name">Neon Esports</span>
+        <span class="logo-placeholder">[Venue Logo]</span>
+      </div>
+      <div class="style-board">
+        <div class="style-row style-row-head"><span>#</span><span>Player</span><span>Class</span><span>K/D</span></div>
+        <div class="style-row"><span>1</span><span class="r-name">Phantom</span><span>COMMANDO</span><span class="r-kd">1.42</span></div>
+        <div class="style-row"><span>2</span><span class="r-name">Viper</span><span>SNIPER</span><span class="r-kd">1.31</span></div>
+        <div class="style-row"><span>3</span><span class="r-name">Reaper</span><span>WARRIOR</span><span class="r-kd">1.18</span></div>
+        <div class="style-row"><span>4</span><span class="r-name">Nova</span><span>SCOUT</span><span class="r-kd">0.95</span></div>
+        <div class="style-row"><span>5</span><span class="r-name">Ghost</span><span>MEDIC</span><span class="r-kd">0.88</span></div>
+        <div class="style-row"><span>6</span><span class="r-name">Blaze</span><span>HEAVY</span><span class="r-kd">0.81</span></div>
+      </div>
+    </div>
+
+    <div class="style-card style-stadium">
+      <div class="style-card-head">
+        <span class="style-name">Bold Stadium</span>
+        <span class="logo-placeholder">[Venue Logo]</span>
+      </div>
+      <div class="style-board">
+        <div class="style-row style-row-head"><span>#</span><span>Player</span><span>Class</span><span>K/D</span></div>
+        <div class="style-row"><span>1</span><span class="r-name">Phantom</span><span>COMMANDO</span><span class="r-kd">1.42</span></div>
+        <div class="style-row"><span>2</span><span class="r-name">Viper</span><span>SNIPER</span><span class="r-kd">1.31</span></div>
+        <div class="style-row"><span>3</span><span class="r-name">Reaper</span><span>WARRIOR</span><span class="r-kd">1.18</span></div>
+        <div class="style-row"><span>4</span><span class="r-name">Nova</span><span>SCOUT</span><span class="r-kd">0.95</span></div>
+        <div class="style-row"><span>5</span><span class="r-name">Ghost</span><span>MEDIC</span><span class="r-kd">0.88</span></div>
+        <div class="style-row"><span>6</span><span class="r-name">Blaze</span><span>HEAVY</span><span class="r-kd">0.81</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- REACH -->
 <section>
-  <p class="section-tag">Reach kalkulators</p>
-  <h2 class="section-title">Cik cilvēkus sasniegs viena spēles vakara posts?</h2>
-  <p class="section-desc">Balstoties uz reāliem datiem no GUNSnLASERS pirmās sezonas.</p>
+  <p class="section-tag">Reach calculator</p>
+  <h2 class="section-title">How many people will one night of games reach?</h2>
+  <p class="section-desc">Typical results based on active lasertag venues running AuraTag.</p>
   <div class="reach-grid">
     <div class="reach-card">
       <div class="reach-big" style="color:var(--cyan)">~2,700</div>
-      <div class="reach-sub">Vidējais organiskais reach per vakars<br><span style="font-size:11px;color:var(--dim)">(18 spēl. × 84% × 178 sekotāji avg)</span></div>
+      <div class="reach-sub">Average organic reach per night<br><span style="font-size:11px;color:var(--dim)">(18 players × 84% share rate × 178 avg followers)</span></div>
     </div>
     <div class="reach-card">
       <div class="reach-big" style="color:var(--gold)">~32,400</div>
-      <div class="reach-sub">Reach mēnesī (12 spēles/mēn.)<br><span style="font-size:11px;color:var(--dim)">bez reklāmas budžeta</span></div>
+      <div class="reach-sub">Reach per month (12 game nights/mo.)<br><span style="font-size:11px;color:var(--dim)">zero ad spend</span></div>
     </div>
     <div class="reach-card">
-      <div class="reach-big" style="color:var(--green)">0 €</div>
-      <div class="reach-sub">Papildu izmaksas pēc iestatīšanas<br><span style="font-size:11px;color:var(--dim)">modulis iekļauts Spillit abonementā</span></div>
+      <div class="reach-big" style="color:var(--green)">$0</div>
+      <div class="reach-sub">Extra cost after setup<br><span style="font-size:11px;color:var(--dim)">module included in your Spillit plan</span></div>
     </div>
   </div>
 </section>
 
 <!-- FEATURES -->
 <section>
-  <p class="section-tag">Funkcijas</p>
-  <h2 class="section-title">Viss, ko vajag — jau gatavs</h2>
+  <p class="section-tag">Features</p>
+  <h2 class="section-title">Everything you need — ready to go</h2>
   <div class="feats">
     <div class="feat">
       <div class="feat-icon">📊</div>
-      <div class="feat-title">Leaderboard ar filtrēšanu</div>
-      <div class="feat-desc">Pilns ranžējums pēc reitinga, komanda, K:D. Spēlētājs atrod sevi 3 sekundēs.</div>
+      <div class="feat-title">Leaderboard with filters</div>
+      <div class="feat-desc">Full ranking by rating, team, K:D. Players find themselves in 3 seconds.</div>
       <span class="feat-badge">LIVE DEMO</span>
     </div>
     <div class="feat">
       <div class="feat-icon">🎬</div>
-      <div class="feat-title">Personalizēts video</div>
-      <div class="feat-desc">9:16 formāta video ar kaujas klasi, kaujas vārdu un statistiku. Gatavs IG Reels / TikTok augšupielādei.</div>
+      <div class="feat-title">Personalized video</div>
+      <div class="feat-desc">9:16 video with combat class, call sign, and full stats. Ready to upload to IG Reels / TikTok.</div>
       <span class="feat-badge">720×1280 MP4</span>
     </div>
     <div class="feat">
       <div class="feat-icon">📤</div>
-      <div class="feat-title">10 kanālu dalīšanās</div>
-      <div class="feat-desc">WhatsApp, Instagram, Facebook, TikTok, Telegram, X, LinkedIn + native share + kopēt saiti + lejupielādēt.</div>
+      <div class="feat-title">10-channel sharing</div>
+      <div class="feat-desc">WhatsApp, Instagram, Facebook, TikTok, Telegram, X, LinkedIn + native share + copy link + download.</div>
       <span class="feat-badge">NATIVE SHARE API</span>
     </div>
     <div class="feat">
       <div class="feat-icon">🔗</div>
-      <div class="feat-title">QR kods pie izejas</div>
-      <div class="feat-desc">Statisks QR kods uz venue — vienmēr ved uz jaunāko aktīvo sesiju. Nav jādrukā katru reizi.</div>
+      <div class="feat-title">QR code at the exit</div>
+      <div class="feat-desc">One static QR code per venue — always points to the latest active session. Print it once.</div>
       <span class="feat-badge">AUTO-REDIRECT</span>
     </div>
     <div class="feat">
       <div class="feat-icon">📈</div>
-      <div class="feat-title">Dalīšanās analytics</div>
-      <div class="feat-desc">Redzi cik skati, pa kuriem kanāliem dalās. Pirmās puses sīkfails — bez ārējo datu pārdošanas.</div>
-      <span class="feat-badge">GDPR DRAUDZĪGS</span>
+      <div class="feat-title">Sharing analytics</div>
+      <div class="feat-desc">See view counts and which channels get used most. First-party data — never sold to third parties.</div>
+      <span class="feat-badge">GDPR-FRIENDLY</span>
     </div>
     <div class="feat">
       <div class="feat-icon">⚡</div>
       <div class="feat-title">OG meta tags</div>
-      <div class="feat-desc">Kad kāds kopē saiti Whatsapp vai FB — automātiski parādās preview ar statistiku un spēlētāja vārdu.</div>
+      <div class="feat-desc">When someone shares the link on WhatsApp or Facebook, a rich preview with the player's name and stats appears automatically.</div>
       <span class="feat-badge">RICH PREVIEWS</span>
     </div>
   </div>
@@ -345,35 +459,35 @@ footer p{font-size:12px;color:var(--dim)}
 
 <!-- WHY -->
 <section>
-  <p class="section-tag">Kāpēc tas darbojas</p>
-  <h2 class="section-title">Ego + sociālais pierādījums = dalīšanās</h2>
+  <p class="section-tag">Why it works</p>
+  <h2 class="section-title">Ego + social proof = sharing</h2>
   <div class="why-grid">
     <div class="why-item">
       <div class="why-check">🏆</div>
       <div class="why-text">
-        <strong>Cilvēki dalās ar saviem panākumiem</strong>
-        <span>COMMANDO klase, augsts reitings, laba K:D — tas ir kaut kas ar ko lepoties. Un par to pastāsta draugiem.</span>
+        <strong>People share their wins</strong>
+        <span>COMMANDO class, a high rating, a strong K:D — that's something to be proud of. And people tell their friends about it.</span>
       </div>
     </div>
     <div class="why-item">
       <div class="why-check">📱</div>
       <div class="why-text">
-        <strong>Video formāts dominē feed'os</strong>
-        <span>9:16 video ar tavu vārdu un statistiku ir daudz vieglāk dalīties nekā ekrānuzņēmums. Un TikTok/IG to izveicina.</span>
+        <strong>Video dominates the feed</strong>
+        <span>A 9:16 video with your name and stats is far easier to share than a screenshot — and TikTok/IG actively favor it.</span>
       </div>
     </div>
     <div class="why-item">
       <div class="why-check">👥</div>
       <div class="why-text">
-        <strong>Draugi redz un nāk paši</strong>
-        <span>"Kur var spēlēt? GUNSnLASERS?" — organiskais stāstījums caur draugi-draugiem ir efektīvāks par reklāmu.</span>
+        <strong>Friends see it and show up themselves</strong>
+        <span>"Where can I play this?" — friend-to-friend word of mouth outperforms paid ads every time.</span>
       </div>
     </div>
     <div class="why-item">
       <div class="why-check">🔄</div>
       <div class="why-text">
-        <strong>Atkārtota apmeklēšana</strong>
-        <span>Spēlētāji, kuri ir dalījušies ar rezultātiem, atgriežas biežāk — jo ir radījis publisko "izaicinājumu".</span>
+        <strong>Repeat visits</strong>
+        <span>Players who shared their results come back more often — they've created a public "challenge" for themselves.</span>
       </div>
     </div>
   </div>
@@ -381,10 +495,10 @@ footer p{font-size:12px;color:var(--dim)}
 
 <!-- CTA -->
 <div class="cta-block">
-  <h2>Gatavs palaist savam venue?</h2>
-  <p>Savienojam GUNSnLASERS ar Spillit — uzstādīšana 1 dienā, nav nepieciešama programmēšana.</p>
+  <h2>Ready to launch at your venue?</h2>
+  <p>Setup takes one day — no coding, no hassle, fully white-labeled to your brand.</p>
   <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
-    <a class="btn-primary" href="mailto:gints@spillit.lv">📧 Rakstīt Gintam</a>
+    <a class="btn-primary" href="mailto:gints@spillit.lv">📧 Email us</a>
     <a class="btn-outline" href="https://wa.me/37129320325" target="_blank">💬 WhatsApp</a>
   </div>
 </div>
@@ -392,8 +506,22 @@ footer p{font-size:12px;color:var(--dim)}
 <!-- FOOTER -->
 <footer>
   <div class="footer-logo">SPILLIT</div>
-  <p>© 2025 Spillit · Lasertag statistikas modulis · spillit.lv</p>
+  <p>© 2025 Spillit · AuraTag Lasertag Stats Module · spillit.lv</p>
 </footer>
+
+<script>
+document.querySelectorAll('.format-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.format-btn').forEach(function(b){ b.classList.remove('active') });
+    btn.classList.add('active');
+    var isStatic = btn.dataset.format === 'static';
+    var label = document.getElementById('vcardLabel');
+    var desc  = document.getElementById('vcardDesc');
+    if (label) label.textContent = isStatic ? 'STATIC CARD' : 'VIDEO CARD';
+    if (desc)  desc.textContent  = isStatic ? 'Lightweight image card — instant load' : 'Personalized MP4 for every player';
+  });
+});
+</script>
 
 </body>
 </html>

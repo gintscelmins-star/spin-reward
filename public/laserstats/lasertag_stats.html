@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="lv">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GUNSnLASERS — Spēles Statistika</title>
-<meta property="og:title" content="Māris.N — COMMANDO | GUNSnLASERS">
-<meta property="og:description" content="K/D 0.89 · Precizitāte 3.44% · 2530 lodes. Apskati savu statistiku!">
+<title>AuraTag — Game Stats</title>
+<meta property="og:title" content="Phantom — COMMANDO | AuraTag">
+<meta property="og:description" content="K/D 0.89 · Accuracy 3.44% · 2530 shots. Check out your stats!">
 <meta property="og:image" content="/auratag/commandopict.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -324,8 +324,8 @@ tbody tr:hover td:first-child{box-shadow:inset 3px 0 0 var(--blue2)}
     </div>
   </div>
   <div class="s1-bottom">
-    <button class="goto-btn" onclick="go(2)">SKATĪT PILNU STATISTIKU &nbsp;<i class="fa-solid fa-arrow-right"></i></button>
-    <div class="brand-footer">GUNSnLASERS</div>
+    <button class="goto-btn" onclick="go(2)">VIEW FULL LEADERBOARD &nbsp;<i class="fa-solid fa-arrow-right"></i></button>
+    <div class="brand-footer">YOUR VENUE</div>
   </div>
 </div>
 </div>
@@ -333,15 +333,15 @@ tbody tr:hover td:first-child{box-shadow:inset 3px 0 0 var(--blue2)}
 <!-- ═══════════ SCREEN 2 — LEADERBOARD ═══════════ -->
 <div id="s2" class="screen">
   <div class="s2-header">
-    <div class="s2-title">⚡ LĪDERU TABULA</div>
-    <button class="back-btn" onclick="go(1)"><i class="fa-solid fa-arrow-left"></i> Atpakaļ</button>
+    <div class="s2-title">⚡ LEADERBOARD</div>
+    <button class="back-btn" onclick="go(1)"><i class="fa-solid fa-arrow-left"></i> Back</button>
   </div>
   <div class="tbl-wrap">
     <table>
       <thead><tr>
-        <th>Vieta</th><th>Ierocis</th><th>Komanda</th><th>Spēlētājs</th>
-        <th>Reitings</th><th>Precizitāte</th><th>Lodes</th><th>Trāpījumi</th>
-        <th>Ievainojumi</th><th>K:D</th><th>K:D +/-</th><th>Trāp.%</th><th>Kom.%</th>
+        <th>Rank</th><th>Weapon</th><th>Team</th><th>Player</th>
+        <th>Rating</th><th>Accuracy</th><th>Shots</th><th>Hits</th>
+        <th>Hit By</th><th>K:D</th><th>K:D +/-</th><th>Hit%</th><th>Team%</th>
       </tr></thead>
       <tbody id="lbBody"></tbody>
     </table>
@@ -351,8 +351,8 @@ tbody tr:hover td:first-child{box-shadow:inset 3px 0 0 var(--blue2)}
 <!-- ═══════════ SCREEN 3 — PLAYER ═══════════ -->
 <div id="s3" class="screen">
   <div class="s3-header">
-    <div class="s3-title" id="s3name">SPĒLĒTĀJS</div>
-    <button class="back-btn" onclick="go(2)"><i class="fa-solid fa-arrow-left"></i> Uz tabulu</button>
+    <div class="s3-title" id="s3name">PLAYER</div>
+    <button class="back-btn" onclick="go(2)"><i class="fa-solid fa-arrow-left"></i> To leaderboard</button>
   </div>
   <div class="s3-body">
     <div id="statsPanel"></div>
@@ -370,67 +370,67 @@ tbody tr:hover td:first-child{box-shadow:inset 3px 0 0 var(--blue2)}
 <!-- ═══════════ SCREEN 4 — ADMIN INFO ═══════════ -->
 <div id="s4" class="screen">
   <div class="admin-wrap">
-    <button class="back-btn" onclick="go(1)" style="margin-bottom:20px"><i class="fa-solid fa-arrow-left"></i> Atpakaļ</button>
-    <div class="admin-badge"><i class="fa-solid fa-bolt"></i> SPILLIT PAPILDU MODULIS</div>
-    <div class="price-tag"><i class="fa-solid fa-tag"></i> Individuāla cena · Integrācija ar lāzertaga sistēmu</div>
-    <div class="admin-h1">🎯 LaserTag Statistikas Vizualizācija</div>
+    <button class="back-btn" onclick="go(1)" style="margin-bottom:20px"><i class="fa-solid fa-arrow-left"></i> Back</button>
+    <div class="admin-badge"><i class="fa-solid fa-bolt"></i> SPILLIT ADD-ON MODULE</div>
+    <div class="price-tag"><i class="fa-solid fa-tag"></i> Custom pricing · Integrates with your lasertag system</div>
+    <div class="admin-h1">🎯 LaserTag Stats Visualization</div>
     <div class="admin-sub">
-      Pārvērš garlaicīgas Laserdog/LaserWar HTML tabulas vizuāli aizraujošā, gamificētā pieredzē.
-      Spēlētājs pēc spēles skenē QR → redz komandu rezultātus → apskata līderu tabulu →
-      atver savu profilu ar personīgo video kartīti — un dalās ar to Instagram, TikTok, WhatsApp.
+      Turns boring Laserdog/LaserWar HTML tables into a visually exciting, gamified experience.
+      After the game, players scan a QR code → see the team scoreboard → check the leaderboard →
+      open their own profile with a personal video card — and share it on Instagram, TikTok, WhatsApp.
       <br><br>
-      <strong>Katras kartītes apakšā redzams zāles nosaukums "GUNSnLASERS" — bezmaksas mārketings katru reizi, kad kāds dalās.</strong>
+      <strong>Your venue's name appears at the bottom of every card — free marketing every time someone shares.</strong>
     </div>
     <div class="feat-grid">
       <div class="feat-card">
         <div class="feat-icon">🏆</div>
-        <div class="feat-h">3 ekrāni, 1 QR</div>
-        <div class="feat-p">Komandu scoreboard → pilnā tabula (13 kolonnas, kā Laserdog) → individuālais profils. Spēlētājs tiek ievilkts dziļāk viņa statistikā.</div>
+        <div class="feat-h">3 screens, 1 QR code</div>
+        <div class="feat-p">Team scoreboard → full leaderboard (13 columns, like Laserdog) → individual profile. Players get pulled deeper into their own stats.</div>
       </div>
       <div class="feat-card">
         <div class="feat-icon">🎖️</div>
-        <div class="feat-h">Avatar Prioritātes Dzinis</div>
-        <div class="feat-p">Katrs spēlētājs automātiski saņem medaļu pēc hierarhijas: WARRIOR → DESTROYER → SNIPER → COMMANDO → INVULNERABLE → KAMIKAZE. Katra — savs video/attēls un stils.</div>
+        <div class="feat-h">Medal Priority Engine</div>
+        <div class="feat-p">Every player automatically earns a medal based on a hierarchy: WARRIOR → DESTROYER → SNIPER → COMMANDO → INVULNERABLE → KAMIKAZE. Each one has its own video/image and style.</div>
       </div>
       <div class="feat-card">
         <div class="feat-icon">🎬</div>
-        <div class="feat-h">9:16 Video Kartīte</div>
-        <div class="feat-p">Gritty "Halo/Doom" stila kartiņa ar marines video, metāla rāmi, medaļu slam animāciju un spēlētāja statistiku. Gatava publicēšanai Instagram Reels / TikTok.</div>
+        <div class="feat-h">9:16 Video Card</div>
+        <div class="feat-p">A gritty "Halo/Doom"-style card with marine footage, a metal frame, a medal slam animation, and the player's stats. Ready to post on Instagram Reels / TikTok.</div>
       </div>
       <div class="feat-card">
         <div class="feat-icon">📲</div>
-        <div class="feat-h">Dalīšanās visos tīklos</div>
-        <div class="feat-p">Web Share API (native sheet mobilajā) → Instagram, TikTok, WhatsApp, Messenger, Telegram, X — ar vienu pieskārienu. Desktopam: tiešās pogas + video lejupielāde.</div>
+        <div class="feat-h">Sharing to every network</div>
+        <div class="feat-p">Web Share API (native sheet on mobile) → Instagram, TikTok, WhatsApp, Messenger, Telegram, X — with one tap. On desktop: direct buttons + video download.</div>
       </div>
       <div class="feat-card">
         <div class="feat-icon">📊</div>
-        <div class="feat-h">Automātiska datu apstrāde</div>
-        <div class="feat-p">Nolasa Laserdog / stats.playline.lv izvadi, aprēķina medaļas, sortē, strukturē — bez manuālas ievades. Katram spēlētājam savs profils.</div>
+        <div class="feat-h">Automatic data processing</div>
+        <div class="feat-p">Reads Laserdog / stats.playline.lv exports, calculates medals, sorts and structures the data — no manual entry. Every player gets their own profile.</div>
       </div>
       <div class="feat-card">
         <div class="feat-icon">🏅</div>
-        <div class="feat-h">Viral mārketings</div>
-        <div class="feat-p">Katrs dalīšanās brīdis nes zāles logo sociālajos tīklos. Spēlētāji paši rada organisko sasniedzamību — bez maksas.</div>
+        <div class="feat-h">Viral marketing</div>
+        <div class="feat-p">Every share carries your venue's logo onto social media. Players generate organic reach for you — completely free.</div>
       </div>
     </div>
-    <div style="font-family:'Orbitron';font-size:12px;letter-spacing:2px;color:var(--muted);margin-bottom:12px">SPĒLĒTĀJA CEĻŠ</div>
+    <div style="font-family:'Orbitron';font-size:12px;letter-spacing:2px;color:var(--muted);margin-bottom:12px">PLAYER JOURNEY</div>
     <div class="flow-steps">
-      <div class="step"><div class="step-box"><div class="step-num">1</div><div class="step-txt">Skenē QR<br>pēc spēles</div></div></div>
+      <div class="step"><div class="step-box"><div class="step-num">1</div><div class="step-txt">Scan QR<br>after the game</div></div></div>
       <div class="step-arrow">→</div>
-      <div class="step"><div class="step-box"><div class="step-num">2</div><div class="step-txt">Komandu<br>scoreboard</div></div></div>
+      <div class="step"><div class="step-box"><div class="step-num">2</div><div class="step-txt">Team<br>scoreboard</div></div></div>
       <div class="step-arrow">→</div>
-      <div class="step"><div class="step-box"><div class="step-num">3</div><div class="step-txt">Pilnā<br>tabula</div></div></div>
+      <div class="step"><div class="step-box"><div class="step-num">3</div><div class="step-txt">Full<br>leaderboard</div></div></div>
       <div class="step-arrow">→</div>
-      <div class="step"><div class="step-box"><div class="step-num">4</div><div class="step-txt">Savs profils<br>+ medaļa</div></div></div>
+      <div class="step"><div class="step-box"><div class="step-num">4</div><div class="step-txt">Own profile<br>+ medal</div></div></div>
       <div class="step-arrow">→</div>
-      <div class="step"><div class="step-box"><div class="step-num">5</div><div class="step-txt">Dalās<br>soctīklos</div></div></div>
+      <div class="step"><div class="step-box"><div class="step-num">5</div><div class="step-txt">Shares on<br>social media</div></div></div>
       <div class="step-arrow">→</div>
-      <div class="step"><div class="step-box"><div class="step-num">6</div><div class="step-txt">GUNSnLASERS<br>logo redzams</div></div></div>
+      <div class="step"><div class="step-box"><div class="step-num">6</div><div class="step-txt">Your venue's<br>logo shown</div></div></div>
     </div>
     <div class="admin-btns">
-      <button class="abtn abtn-primary" onclick="go(1)"><i class="fa-solid fa-eye"></i> &nbsp;Skatīt demo</button>
-      <button class="abtn abtn-sec" onclick="window.open('https://wa.me/37129325325?text=Sveiki!%20Interesē%20LaserTag%20statistikas%20vizualizācija','_blank')"><i class="fa-brands fa-whatsapp"></i> &nbsp;Pieprasīt — WhatsApp</button>
-      <button class="abtn abtn-sec" onclick="window.open('mailto:gints@spillit.lv?subject=LaserTag%20Statistikas%20Vizualizācija&body=Sveiki!%20Mani%20interesē%20šis%20modulis.','_blank')"><i class="fa-solid fa-envelope"></i> &nbsp;E-pasts</button>
+      <button class="abtn abtn-primary" onclick="go(1)"><i class="fa-solid fa-eye"></i> &nbsp;View demo</button>
+      <button class="abtn abtn-sec" onclick="window.open('https://wa.me/37129325325?text=Hi!%20Interested%20in%20the%20LaserTag%20stats%20visualization','_blank')"><i class="fa-brands fa-whatsapp"></i> &nbsp;Request — WhatsApp</button>
+      <button class="abtn abtn-sec" onclick="window.open('mailto:gints@spillit.lv?subject=LaserTag%20Stats%20Visualization&body=Hi!%20I%27m%20interested%20in%20this%20module.','_blank')"><i class="fa-solid fa-envelope"></i> &nbsp;Email</button>
     </div>
   </div>
 </div>
@@ -438,21 +438,21 @@ tbody tr:hover td:first-child{box-shadow:inset 3px 0 0 var(--blue2)}
 <script>
 /* ── DATA ── */
 const players=[
-  {name:"Snaipers",     team:"green",wid:14, rating:99.81,acc:10.26,bullets:2350,hits:241,deaths:96, kd:2.51,kdp:145,tp:12.74,ktp:19.5},
-  {name:"stalkeris",    team:"green",wid:61, rating:93.83,acc:16.40,bullets:1189,hits:195,deaths:91, kd:2.14,kdp:104,tp:10.31,ktp:15.78},
+  {name:"Striker",      team:"green",wid:14, rating:99.81,acc:10.26,bullets:2350,hits:241,deaths:96, kd:2.51,kdp:145,tp:12.74,ktp:19.5},
+  {name:"Ghost",        team:"green",wid:61, rating:93.83,acc:16.40,bullets:1189,hits:195,deaths:91, kd:2.14,kdp:104,tp:10.31,ktp:15.78},
   {name:"oveckins29",   team:"green",wid:1,  rating:87.48,acc:12.56,bullets:2054,hits:258,deaths:122,kd:2.11,kdp:136,tp:13.64,ktp:20.87},
   {name:"fogy1",        team:"green",wid:84, rating:71.64,acc:13.70,bullets:1219,hits:167,deaths:98, kd:1.70,kdp:69, tp:8.83, ktp:13.51},
   {name:"Redbullstuntman1.0",team:"green",wid:10,rating:37.96,acc:9.09,bullets:1166,hits:106,deaths:109,kd:0.97,kdp:-3,tp:5.61,ktp:8.58},
   {name:"elpuumo",      team:"green",wid:48, rating:36.55,acc:8.25,bullets:1164,hits:96, deaths:101,kd:0.95,kdp:-5, tp:5.08, ktp:7.77},
   {name:"BOZIS3000",    team:"red",  wid:36, rating:34.21,acc:6.84,bullets:1359,hits:93, deaths:102,kd:0.91,kdp:-9, tp:4.92, ktp:14.20},
-  {name:"Terminators",  team:"red",  wid:13, rating:31.31,acc:3.44,bullets:2530,hits:87, deaths:98, kd:0.89,kdp:-11,tp:4.60, ktp:13.28},
-  {name:"Nezinu",       team:"green",wid:45, rating:31.13,acc:6.03,bullets:1493,hits:90, deaths:107,kd:0.84,kdp:-17,tp:4.76, ktp:7.28},
-  {name:"Melnais Buks", team:"green",wid:41, rating:30.09,acc:4.38,bullets:1897,hits:83, deaths:99, kd:0.84,kdp:-16,tp:4.39, ktp:6.72},
+  {name:"Phantom",      team:"red",  wid:13, rating:31.31,acc:3.44,bullets:2530,hits:87, deaths:98, kd:0.89,kdp:-11,tp:4.60, ktp:13.28},
+  {name:"Reaper",       team:"green",wid:45, rating:31.13,acc:6.03,bullets:1493,hits:90, deaths:107,kd:0.84,kdp:-17,tp:4.76, ktp:7.28},
+  {name:"Falcon",       team:"green",wid:41, rating:30.09,acc:4.38,bullets:1897,hits:83, deaths:99, kd:0.84,kdp:-16,tp:4.39, ktp:6.72},
   {name:"FANTA303",     team:"red",  wid:87, rating:29.24,acc:4.82,bullets:1910,hits:92, deaths:114,kd:0.81,kdp:-22,tp:4.87, ktp:14.05},
   {name:"Leni",         team:"red",  wid:42, rating:24.95,acc:4.51,bullets:1797,hits:81, deaths:117,kd:0.69,kdp:-36,tp:4.28, ktp:12.37},
-  {name:"Snaiper pro",  team:"red",  wid:80, rating:22.34,acc:4.03,bullets:1217,hits:49, deaths:78, kd:0.63,kdp:-29,tp:2.59, ktp:7.48},
+  {name:"Nova",         team:"red",  wid:80, rating:22.34,acc:4.03,bullets:1217,hits:49, deaths:78, kd:0.63,kdp:-29,tp:2.59, ktp:7.48},
   {name:"dass",         team:"green",wid:57, rating:21.24,acc:6.90,bullets:609, hits:42, deaths:74, kd:0.57,kdp:-32,tp:2.22, ktp:6.41},
-  {name:"Haizivs",      team:"red",  wid:75, rating:16.64,acc:4.92,bullets:1117,hits:55, deaths:120,kd:0.46,kdp:-65,tp:2.91, ktp:8.40},
+  {name:"Viper",        team:"red",  wid:75, rating:16.64,acc:4.92,bullets:1117,hits:55, deaths:120,kd:0.46,kdp:-65,tp:2.91, ktp:8.40},
   {name:"tommy fast",   team:"red",  wid:66, rating:16.40,acc:3.07,bullets:2279,hits:70, deaths:150,kd:0.47,kdp:-80,tp:3.70, ktp:10.69},
   {name:"Martini",      team:"red",  wid:46, rating:15.47,acc:3.11,bullets:1448,hits:45, deaths:102,kd:0.44,kdp:-57,tp:2.38, ktp:6.87},
   {name:"Macdl01",      team:"red",  wid:59, rating:12.76,acc:3.22,bullets:1273,hits:41, deaths:113,kd:0.36,kdp:-72,tp:2.17, ktp:6.26},
@@ -500,8 +500,8 @@ function buildS1(){
   const grn=players.filter(p=>p.team==='green').sort((a,b)=>b.score-a.score);
   const redT=red.reduce((s,p)=>s+p.score,0);
   const grnT=grn.reduce((s,p)=>s+p.score,0);
-  document.getElementById('redTotal').textContent=redT.toLocaleString('lv');
-  document.getElementById('blueTotal').textContent=grnT.toLocaleString('lv');
+  document.getElementById('redTotal').textContent=redT.toLocaleString('en-US');
+  document.getElementById('blueTotal').textContent=grnT.toLocaleString('en-US');
   document.getElementById('redRows').innerHTML=red.map((p,i)=>`
     <div class="player-row"><span class="pr-num">${String(p.wid).padStart(2,'0')}</span>
     <div class="pr-bar" style="width:${Math.round(p.score/10)}px"></div>
@@ -566,15 +566,15 @@ function openPlayer(name){
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:6px">${medalsHtml}</div>
     <div class="stats-card">
       <div style="font-family:'Orbitron';font-weight:900;font-size:22px;color:${acol};text-shadow:0 0 16px ${acol}66">${p.name}</div>
-      <div style="color:var(--muted);font-size:13px;margin:4px 0 0;letter-spacing:1px">${p.team==='red'?'RED TEAM':'BLUE TEAM'} · IEROCIS #${p.wid} · ${p.main.key}</div>
+      <div style="color:var(--muted);font-size:13px;margin:4px 0 0;letter-spacing:1px">${p.team==='red'?'RED TEAM':'BLUE TEAM'} · WEAPON #${p.wid} · ${p.main.key}</div>
       <div class="stat-grid">
-        <div class="stat-box hi"><div class="k">Reitings</div><div class="v">${p.rating.toFixed(2)}</div></div>
+        <div class="stat-box hi"><div class="k">Rating</div><div class="v">${p.rating.toFixed(2)}</div></div>
         <div class="stat-box"><div class="k">K:D Ratio</div><div class="v">${p.kd.toFixed(2)}</div></div>
-        <div class="stat-box"><div class="k">Trāpījumi</div><div class="v">${p.hits}</div></div>
-        <div class="stat-box"><div class="k">Ievainojumi</div><div class="v">${p.deaths}</div></div>
-        <div class="stat-box"><div class="k">Lodes</div><div class="v">${p.bullets}</div></div>
+        <div class="stat-box"><div class="k">Hits</div><div class="v">${p.hits}</div></div>
+        <div class="stat-box"><div class="k">Hit By</div><div class="v">${p.deaths}</div></div>
+        <div class="stat-box"><div class="k">Shots</div><div class="v">${p.bullets}</div></div>
         <div class="stat-box"><div class="k">K:D +/-</div><div class="v" style="color:${p.kdp>=0?'#2bff9b':'#ff7a8a'}">${p.kdp>0?'+':''}${p.kdp}</div></div>
-        <div class="stat-box"><div class="k">Precizitāte</div><div class="v">${p.acc.toFixed(2)}%</div></div>
+        <div class="stat-box"><div class="k">Accuracy</div><div class="v">${p.acc.toFixed(2)}%</div></div>
         <div class="stat-box"><div class="k">Winrate</div><div class="v">${Math.min(100,Math.round(p.kd/(p.kd+1)*100))}%</div></div>
       </div>
     </div>`;
@@ -610,13 +610,13 @@ function openPlayer(name){
       </div>
       <div class="cs-sep"></div>
       <div class="cs-item">
-        <div class="cs-label">Precizitāte</div>
+        <div class="cs-label">Accuracy</div>
         <div class="cs-icon"><i class="fa-solid fa-bullseye" style="font-size:8px"></i></div>
         <div class="cs-val">${p.acc.toFixed(0)}%</div>
       </div>
       <div class="cs-sep"></div>
       <div class="cs-item">
-        <div class="cs-label">Izšautās lodes</div>
+        <div class="cs-label">Shots Fired</div>
         <div class="cs-icon"><i class="fa-solid fa-gun" style="font-size:8px"></i></div>
         <div class="cs-val">${p.bullets}</div>
       </div>
@@ -627,25 +627,25 @@ function openPlayer(name){
     </div>
     <div class="card-bottom">
       <div class="card-player">${p.name}</div>
-      <div class="card-venue">GUNSnLASERS</div>
+      <div class="card-venue">YOUR VENUE</div>
     </div>`;
 
   /* share buttons */
-  const shareText=`${p.name} — ${p.main.key} | K/D ${p.kd} · ${p.acc}% precizitāte · ${p.bullets} lodes #GUNSnLASERS`;
+  const shareText=`${p.name} — ${p.main.key} | K/D ${p.kd} · ${p.acc}% accuracy · ${p.bullets} shots #YourVenue`;
   const shareUrl=window.location.href;
   document.getElementById('shareRow').innerHTML=`
     <button class="share-btn share-main" onclick="doShare('${p.name}','${shareText}','${shareUrl}')">
-      <i class="fa-solid fa-share-nodes"></i> Dalīties
+      <i class="fa-solid fa-share-nodes"></i> Share
     </button>
     <button class="share-btn share-dl" onclick="dlVideo()">
-      <i class="fa-solid fa-download"></i> Lejupielādēt
+      <i class="fa-solid fa-download"></i> Download
     </button>`;
   document.getElementById('shareIcons').innerHTML=`
     <button class="soc-btn s-fb" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}','_blank')"><i class="fa-brands fa-facebook"></i> Facebook</button>
     <button class="soc-btn s-x" onclick="window.open('https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}','_blank')"><i class="fa-brands fa-x-twitter"></i> X</button>
     <button class="soc-btn s-wa" onclick="window.open('https://wa.me/?text=${encodeURIComponent(shareText+' '+shareUrl)}','_blank')"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
     <button class="soc-btn s-tg" onclick="window.open('https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}','_blank')"><i class="fa-brands fa-telegram"></i> Telegram</button>
-    <button class="soc-btn s-cp" onclick="navigator.clipboard.writeText('${shareUrl}');this.textContent='✓ Nokopēts!'"><i class="fa-solid fa-copy"></i> Kopēt saiti</button>`;
+    <button class="soc-btn s-cp" onclick="navigator.clipboard.writeText('${shareUrl}');this.textContent='✓ Copied!'"><i class="fa-solid fa-copy"></i> Copy link</button>`;
 
   go(3);
 }
@@ -660,11 +660,11 @@ async function doShare(name,text,url){
         const blob=await resp.blob();
         const file=new File([blob],`${name}-auratag.mp4`,{type:'video/mp4'});
         if(navigator.canShare && navigator.canShare({files:[file]})){
-          await navigator.share({files:[file],title:`${name} — GUNSnLASERS`,text});
+          await navigator.share({files:[file],title:`${name} — YOUR VENUE`,text});
           return;
         }
       }
-      await navigator.share({title:`${name} — GUNSnLASERS`,text,url});
+      await navigator.share({title:`${name} — YOUR VENUE`,text,url});
     }catch(e){if(e.name!=='AbortError') icons.classList.toggle('show');}
   } else {
     icons.classList.toggle('show');
